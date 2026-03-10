@@ -1,7 +1,11 @@
 <div class="page-container">
     <div class="page-header">
         <div>
-            <h1 class="page-title">Ürünler</h1>
+            <h1 class="page-title">
+                <span class="material-icons-outlined page-title-icon"
+                    style="color: var(--primary-400);">inventory_2</span>
+                Ürünler
+            </h1>
             <p class="page-subtitle">Ürün kataloğunuzu yönetin</p>
         </div>
         <button class="btn btn-primary" (click)="openAddModal()">
@@ -26,17 +30,70 @@
                 <span class="material-icons-outlined">check_circle</span>
             </div>
             <div class="stat-info">
-                <span class="stat-value">{{ products().filter(p => p.isActive).length }}</span>
+                <span class="stat-value">{{ activeCount }}</span>
                 <span class="stat-label">Aktif Ürün</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--warning-bg); color: var(--warning);">
+                <span class="material-icons-outlined">category</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ categories.length }}</span>
+                <span class="stat-label">Kategori</span>
             </div>
         </div>
     </div>
 
-    <!-- Toolbar -->
-    <div class="toolbar">
-        <div class="toolbar-search">
-            <span class="material-icons-outlined search-icon">search</span>
-            <input type="text" placeholder="Ürün adı, barkod veya kategori ara..." [(ngModel)]="searchTerm" />
+    <!-- ═══ HERO SEARCH BAR ═══════════════════════════════ -->
+    <div class="hero-search-section">
+        <div class="hero-search-bar" [class.search-active]="searchTerm">
+            <span class="material-icons-outlined hero-search-icon">search</span>
+            <input type="text" class="hero-search-input" placeholder="Ürün adı, barkod veya kategori ara..."
+                [(ngModel)]="searchTerm" (input)="onSearchInput()" id="product-search-input" />
+
+            <!-- Loading spinner while debouncing -->
+            @if (isSearching()) {
+            <div class="search-spinner"></div>
+            }
+
+            <!-- Clear button -->
+            @if (searchTerm) {
+            <button class="search-clear-btn" (click)="clearSearch()" title="Aramayı Temizle">
+                <span class="material-icons-outlined">close</span>
+            </button>
+            }
+
+            <!-- Barcode Scanner Button (inside search bar) -->
+            <button class="barcode-scan-btn" (click)="openBarcodeScanner()" title="Barkod Tara">
+                <span class="material-icons-outlined">qr_code_scanner</span>
+                <span class="barcode-scan-text">Barkod Tara</span>
+            </button>
+        </div>
+
+        <!-- Filter chips row -->
+        <div class="filter-chips-row">
+            <div class="filter-chips">
+                <button class="filter-chip" [class.chip-active]="categoryFilter() === 'all'"
+                    (click)="categoryFilter.set('all')">
+                    Tümü
+                    <span class="chip-count">{{ products().length }}</span>
+                </button>
+                @for (cat of categories; track cat) {
+                <button class="filter-chip" [class.chip-active]="categoryFilter() === cat"
+                    (click)="categoryFilter.set(cat)">
+                    {{ cat }}
+                </button>
+                }
+            </div>
+
+            <!-- Result count -->
+            @if (debouncedTerm() || categoryFilter() !== 'all') {
+            <div class="search-result-badge">
+                <span class="material-icons-outlined">filter_list</span>
+                <strong>{{ filteredProducts.length }}</strong> sonuç bulundu
+            </div>
+            }
         </div>
     </div>
 
@@ -57,12 +114,20 @@
                 </thead>
                 <tbody>
                     @for (product of filteredProducts; track product.id) {
-                    <tr>
-                        <td class="font-medium" style="color: var(--text-primary);">{{ product.name }}</td>
-                        <td><code
-                                style="background: var(--bg-secondary); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;">{{ product.barcode }}</code>
+                    <tr [class.row-inactive]="!product.isActive">
+                        <td class="font-medium" style="color: var(--text-primary);">
+                            <span [innerHTML]="highlightMatch(product.name)"></span>
                         </td>
-                        <td>{{ product.categoryName }}</td>
+                        <td>
+                            <code class="barcode-badge">
+                                <span [innerHTML]="highlightMatch(product.barcode)"></span>
+                            </code>
+                        </td>
+                        <td>
+                            <span class="category-chip">
+                                <span [innerHTML]="highlightMatch(product.categoryName)"></span>
+                            </span>
+                        </td>
                         <td class="amount">₺{{ product.unitPrice.toLocaleString('tr-TR') }}</td>
                         <td>{{ product.unit }}</td>
                         <td>
@@ -76,6 +141,12 @@
                                 <button class="action-btn edit" title="Düzenle" (click)="openEditModal(product)">
                                     <span class="material-icons-outlined">edit</span>
                                 </button>
+                                <button class="action-btn" [title]="product.isActive ? 'Pasife Al' : 'Aktife Al'"
+                                    (click)="toggleStatus(product.id)"
+                                    [style.color]="product.isActive ? 'var(--warning)' : 'var(--success)'">
+                                    <span class="material-icons-outlined">{{ product.isActive ? 'block' : 'check_circle'
+                                        }}</span>
+                                </button>
                                 <button class="action-btn delete" title="Sil" (click)="deleteProduct(product.id)">
                                     <span class="material-icons-outlined">delete</span>
                                 </button>
@@ -88,15 +159,24 @@
             @if (filteredProducts.length === 0) {
             <div class="empty-state">
                 <span class="material-icons-outlined">inventory_2</span>
-                <h3>Ürün bulunamadı</h3>
-                <p>Arama kriterlerinize uygun ürün yok</p>
+                @if (debouncedTerm() || categoryFilter() !== 'all') {
+                <h3>Sonuç bulunamadı</h3>
+                <p>"{{ debouncedTerm() }}" aramasına uygun ürün yok</p>
+                <button class="btn btn-secondary btn-sm" (click)="clearSearch(); categoryFilter.set('all')">
+                    <span class="material-icons-outlined">restart_alt</span>
+                    Filtreleri Temizle
+                </button>
+                } @else {
+                <h3>Henüz ürün yok</h3>
+                <p>Yeni bir ürün ekleyerek başlayın</p>
+                }
             </div>
             }
         </div>
     </div>
 </div>
 
-<!-- Modal -->
+<!-- ═══ Ürün Ekleme/Düzenleme Modalı ═══════════════════════ -->
 @if (showModal()) {
 <div class="overlay" (click)="closeModal()"></div>
 <div class="modal" style="width: 520px;">
@@ -141,6 +221,65 @@
         <button class="btn btn-primary" (click)="saveProduct()">
             <span class="material-icons-outlined">{{ editingProduct() ? 'save' : 'add' }}</span>
             {{ editingProduct() ? 'Güncelle' : 'Kaydet' }}
+        </button>
+    </div>
+</div>
+}
+
+<!-- ═══ BARKOD TARAYICI MODALI ══════════════════════════════ -->
+@if (showBarcodeScanner()) {
+<div class="overlay" (click)="closeBarcodeScanner()"></div>
+<div class="modal barcode-modal">
+    <div class="modal-header">
+        <h2>
+            <span class="material-icons-outlined"
+                style="color: var(--primary-400); vertical-align: middle; margin-right: 6px;">qr_code_scanner</span>
+            Barkod Okuyucu
+        </h2>
+        <button class="modal-close" (click)="closeBarcodeScanner()">
+            <span class="material-icons-outlined">close</span>
+        </button>
+    </div>
+
+    <div class="barcode-content">
+        <!-- Camera placeholder -->
+        <div class="camera-area">
+            <div class="camera-frame">
+                <div class="corner tl"></div>
+                <div class="corner tr"></div>
+                <div class="corner bl"></div>
+                <div class="corner br"></div>
+                <div class="scan-line"></div>
+            </div>
+            <p class="camera-hint">
+                <span class="material-icons-outlined">videocam</span>
+                Kamera erişimi için tarayıcı izni gerekiyor
+            </p>
+            <p class="camera-subhint">Mobil cihazınızda barkodu kameraya gösterin</p>
+        </div>
+
+        <!-- Divider -->
+        <div class="barcode-divider">
+            <span>veya</span>
+        </div>
+
+        <!-- Manual barcode input -->
+        <div class="manual-barcode-section">
+            <label class="form-label">Barkod Numarasını Yazın</label>
+            <div class="manual-barcode-input-group">
+                <span class="material-icons-outlined">keyboard</span>
+                <input class="form-input" [(ngModel)]="barcodeManualInput" placeholder="8690001234567"
+                    (keydown)="onBarcodeScanKeydown($event)" autofocus inputmode="numeric"
+                    style="font-family: 'JetBrains Mono', monospace; letter-spacing: 2px;" />
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeBarcodeScanner()">İptal</button>
+        <button class="btn btn-primary" (click)="applyBarcodeSearch()" [disabled]="!barcodeManualInput.trim()">
+            <span class="material-icons-outlined">search</span>
+            Barkod ile Ara
         </button>
     </div>
 </div>

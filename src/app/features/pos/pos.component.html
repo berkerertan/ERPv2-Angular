@@ -1,151 +1,365 @@
 <div class="pos-layout">
-  <!-- Left: Barcode & Cart -->
+  <!-- ═══ LEFT: Main Area ══════════════════════════════ -->
   <div class="pos-main">
-    <!-- Scan Bar -->
-    <div class="scan-section card">
-      <div class="scan-header">
-        <span class="material-icons-outlined scan-icon">qr_code_scanner</span>
-        <h3>Barkod / QR Tarama</h3>
+
+    <!-- ─── Hero Search Bar (POS style) ─────────────── -->
+    <div class="pos-search-section">
+      <div class="pos-search-bar" [class.search-active]="searchTerm" [class.has-results]="searchResults.length > 0">
+        <span class="material-icons-outlined pos-search-icon">search</span>
+        <input type="text" class="pos-search-input" placeholder="Ürün adı veya barkod ile ara... (Enter ile ekle)"
+          [(ngModel)]="searchTerm" (input)="onSearchInput()" (keydown)="onSearchKeydown($event)" id="pos-search-input"
+          autofocus />
+
+        @if (isSearching()) {
+        <div class="pos-spinner"></div>
+        }
+
+        @if (searchTerm) {
+        <button class="pos-clear-btn" (click)="clearSearch()">
+          <span class="material-icons-outlined">close</span>
+        </button>
+        }
+
+        <button class="pos-barcode-btn" (click)="openBarcodeScanner()" title="Barkod Tara">
+          <span class="material-icons-outlined">qr_code_scanner</span>
+          <span class="scan-btn-label">Barkod Tara</span>
+        </button>
       </div>
-      <div class="scan-row">
-        <select class="toolbar-filter" [(ngModel)]="selectedWarehouseId">
-          <option value="">Depo Seçin</option>
-          @for (w of warehouses; track w.id) {
-            <option [value]="w.id">{{ w.name }}</option>
-          }
-        </select>
-        <div class="scan-input-wrapper">
-          <span class="material-icons-outlined">barcode_reader</span>
-          <input
-            type="text"
-            placeholder="Barkod okutun veya yazın..."
-            [(ngModel)]="barcode"
-            (keyup.enter)="onBarcodeSubmit()"
-            class="scan-input"
-            autofocus />
-          @if (isScanning()) {
-            <div class="spinner spinner-sm"></div>
-          }
-        </div>
+
+      <!-- Dropdown search results -->
+      @if (searchResults.length > 0) {
+      <div class="search-dropdown">
+        @for (p of searchResults; track p.id) {
+        <button class="search-result-item" (click)="addProductFromSearch(p)">
+          <div class="result-info">
+            <span class="result-name" [innerHTML]="highlightMatch(p.name)"></span>
+            <span class="result-meta">
+              <code class="result-barcode" [innerHTML]="highlightMatch(p.barcode)"></code>
+              <span class="result-category">{{ p.category }}</span>
+            </span>
+          </div>
+          <div class="result-price">₺{{ p.unitPrice.toLocaleString('tr-TR') }}</div>
+          <span class="material-icons-outlined result-add-icon">add_circle</span>
+        </button>
+        }
       </div>
+      }
     </div>
 
-    <!-- Cart Table -->
+    <!-- ─── Settings Bar ────────────────────────────── -->
+    <div class="pos-settings-bar">
+      <div class="setting-item">
+        <span class="material-icons-outlined setting-icon">warehouse</span>
+        <select class="setting-select" [(ngModel)]="selectedWarehouseId">
+          @for (w of warehouses; track w.id) {
+          <option [value]="w.id">{{ w.name }}</option>
+          }
+        </select>
+      </div>
+      <div class="setting-item">
+        <span class="material-icons-outlined setting-icon">person</span>
+        <select class="setting-select" [(ngModel)]="selectedBuyerId">
+          <option value="">Peşin Satış</option>
+          @for (b of buyers; track b.id) {
+          <option [value]="b.id">{{ b.name }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Print current cart as quote -->
+      <button class="print-quote-btn" (click)="printCurrentCart()" [disabled]="cart().length === 0"
+        title="Fiş Yazdır (Teklif)">
+        <span class="material-icons-outlined">receipt_long</span>
+        <span class="print-label">Fiş Yazdır</span>
+      </button>
+    </div>
+
+    <!-- ─── Cart Table ──────────────────────────────── -->
     <div class="cart-section">
       <div class="cart-header">
-        <h3>Sepet <span class="cart-count">{{ cartItemCount }} ürün</span></h3>
+        <h3>
+          <span class="material-icons-outlined" style="color: var(--primary-400);">shopping_cart</span>
+          Sepet
+          <span class="cart-count">{{ cartItemCount }} ürün</span>
+        </h3>
         @if (cart().length > 0) {
-          <button class="btn btn-ghost btn-sm" (click)="clearCart()">
-            <span class="material-icons-outlined">delete_sweep</span>
-            Temizle
-          </button>
+        <button class="btn btn-ghost btn-sm" (click)="clearCart()">
+          <span class="material-icons-outlined">delete_sweep</span>
+          Sepeti Temizle
+        </button>
         }
       </div>
 
       @if (cart().length > 0) {
-        <div class="table-container">
-          <table class="data-table">
-            <thead>
-              <tr>
-                <th>Ürün</th>
-                <th>Barkod</th>
-                <th>Birim Fiyat</th>
-                <th>Miktar</th>
-                <th>Toplam</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (item of cart(); track item.barcode) {
-                <tr>
-                  <td class="font-medium">{{ item.name }}</td>
-                  <td><code class="barcode-text">{{ item.barcode }}</code></td>
-                  <td>₺{{ item.unitPrice.toFixed(2) }}</td>
-                  <td>
-                    <div class="qty-control">
-                      <button class="qty-btn" (click)="updateQuantity(item, -1)">
-                        <span class="material-icons-outlined">remove</span>
-                      </button>
-                      <span class="qty-value">{{ item.quantity }}</span>
-                      <button class="qty-btn" (click)="updateQuantity(item, 1)">
-                        <span class="material-icons-outlined">add</span>
-                      </button>
-                    </div>
-                  </td>
-                  <td class="font-semibold">₺{{ item.total.toFixed(2) }}</td>
-                  <td>
-                    <button class="action-btn delete" (click)="removeItem(item)" title="Kaldır">
-                      <span class="material-icons-outlined">close</span>
-                    </button>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
+      <div class="table-container">
+        <table class="data-table pos-table">
+          <thead>
+            <tr>
+              <th class="col-num">#</th>
+              <th>Ürün</th>
+              <th>Barkod</th>
+              <th class="col-number">Birim Fiyat</th>
+              <th class="col-qty">Miktar</th>
+              <th class="col-number">Toplam</th>
+              <th class="col-action"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (item of cart(); track item.barcode; let idx = $index) {
+            <tr class="cart-row">
+              <td class="row-num">{{ idx + 1 }}</td>
+              <td class="product-name">{{ item.name }}</td>
+              <td><code class="barcode-text">{{ item.barcode }}</code></td>
+              <td class="col-number">₺{{ item.unitPrice.toLocaleString('tr-TR') }}</td>
+              <td class="col-qty">
+                <div class="qty-control">
+                  <button class="qty-btn" (click)="updateQuantity(item, -1)">
+                    <span class="material-icons-outlined">remove</span>
+                  </button>
+                  <input class="qty-input" type="number" [value]="item.quantity" min="1"
+                    (change)="setQuantity(item, $event)" />
+                  <button class="qty-btn" (click)="updateQuantity(item, 1)">
+                    <span class="material-icons-outlined">add</span>
+                  </button>
+                </div>
+              </td>
+              <td class="col-number item-total">₺{{ item.total.toLocaleString('tr-TR') }}</td>
+              <td class="col-action">
+                <button class="remove-btn" (click)="removeItem(item)" title="Kaldır">
+                  <span class="material-icons-outlined">close</span>
+                </button>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+      </div>
       } @else {
-        <div class="empty-cart">
-          <span class="material-icons-outlined">shopping_cart</span>
-          <p>Sepet boş — barkod okutarak ürün ekleyin</p>
+      <div class="empty-cart">
+        <div class="empty-cart-icon-wrap">
+          <span class="material-icons-outlined">point_of_sale</span>
         </div>
+        <h3>Sepet Boş</h3>
+        <p>Ürün aramak için yukarıdaki arama çubuğunu kullanın<br>veya barkod okuyucu ile ürün ekleyin</p>
+      </div>
       }
     </div>
   </div>
 
-  <!-- Right: Summary & Pay -->
+  <!-- ═══ RIGHT: Summary & Payment ═════════════════════ -->
   <div class="pos-sidebar">
-    <div class="summary-card card">
-      <h3>Satış Özeti</h3>
-
-      <div class="form-group">
-        <label class="form-label">Müşteri / Cari</label>
-        <select class="form-input" [(ngModel)]="selectedBuyerId">
-          <option value="">Peşin Satış</option>
-          @for (b of buyers; track b.id) {
-            <option [value]="b.id">{{ b.name }}</option>
-          }
-        </select>
+    <div class="summary-card">
+      <!-- Summary header -->
+      <div class="summary-header">
+        <span class="material-icons-outlined">receipt</span>
+        <h3>Satış Özeti</h3>
       </div>
 
-      <div class="summary-rows">
+      <!-- Totals -->
+      <div class="summary-totals">
         <div class="summary-row">
           <span>Ara Toplam</span>
-          <span>₺{{ cartTotal.toFixed(2) }}</span>
+          <span class="amount">₺{{ cartTotal.toFixed(2) }}</span>
         </div>
         <div class="summary-row">
           <span>KDV (%18)</span>
-          <span>₺{{ (cartTotal * 0.18).toFixed(2) }}</span>
+          <span class="amount">₺{{ cartTax.toFixed(2) }}</span>
         </div>
         <div class="summary-divider"></div>
-        <div class="summary-row total">
+        <div class="summary-row grand-total">
           <span>Genel Toplam</span>
-          <span>₺{{ (cartTotal * 1.18).toFixed(2) }}</span>
+          <span>₺{{ cartGrandTotal.toFixed(2) }}</span>
         </div>
       </div>
 
-      <button
-        class="btn btn-primary btn-lg pay-btn"
-        (click)="completeSale()"
-        [disabled]="cart().length === 0">
+      <!-- Payment Method -->
+      <div class="payment-section">
+        <span class="payment-label">Ödeme Yöntemi</span>
+        <div class="payment-methods">
+          <button class="payment-btn" [class.active]="paymentMethod() === 'cash'" (click)="selectPayment('cash')">
+            <span class="material-icons-outlined">payments</span>
+            Nakit
+          </button>
+          <button class="payment-btn" [class.active]="paymentMethod() === 'card'" (click)="selectPayment('card')">
+            <span class="material-icons-outlined">credit_card</span>
+            Kart
+          </button>
+          <button class="payment-btn" [class.active]="paymentMethod() === 'credit'" (click)="selectPayment('credit')">
+            <span class="material-icons-outlined">account_balance</span>
+            Veresiye
+          </button>
+        </div>
+      </div>
+
+      <!-- Complete Sale -->
+      <button class="complete-sale-btn" (click)="completeSale()" [disabled]="cart().length === 0">
         <span class="material-icons-outlined">point_of_sale</span>
         Satışı Tamamla
+        @if (cart().length > 0) {
+        <span class="sale-amount">₺{{ cartGrandTotal.toFixed(2) }}</span>
+        }
       </button>
 
-      <!-- Quick Keys -->
-      <div class="quick-keys">
-        <button class="quick-key" (click)="completeSale()" [disabled]="cart().length === 0">
-          <span class="material-icons-outlined">payments</span>
-          <span>Nakit</span>
-        </button>
-        <button class="quick-key" [disabled]="cart().length === 0">
-          <span class="material-icons-outlined">credit_card</span>
-          <span>Kart</span>
-        </button>
-        <button class="quick-key" [disabled]="cart().length === 0">
-          <span class="material-icons-outlined">account_balance</span>
-          <span>Veresiye</span>
-        </button>
-      </div>
+      <!-- Quick print -->
+      <button class="print-btn-sidebar" (click)="printCurrentCart()" [disabled]="cart().length === 0">
+        <span class="material-icons-outlined">print</span>
+        Fiş Yazdır / Teklif
+      </button>
     </div>
   </div>
 </div>
+
+<!-- ═══ BARKOD TARAYICI MODALI ══════════════════════════ -->
+@if (showBarcodeScanner()) {
+<div class="overlay" (click)="closeBarcodeScanner()"></div>
+<div class="modal barcode-modal">
+  <div class="modal-header">
+    <h2>
+      <span class="material-icons-outlined"
+        style="color: var(--primary-400); vertical-align: middle;">qr_code_scanner</span>
+      Barkod Okuyucu
+    </h2>
+    <button class="modal-close" (click)="closeBarcodeScanner()">
+      <span class="material-icons-outlined">close</span>
+    </button>
+  </div>
+
+  <div class="barcode-content">
+    <div class="camera-area">
+      <div class="camera-frame">
+        <div class="corner tl"></div>
+        <div class="corner tr"></div>
+        <div class="corner bl"></div>
+        <div class="corner br"></div>
+        <div class="scan-line"></div>
+      </div>
+      <p class="camera-hint">
+        <span class="material-icons-outlined">videocam</span>
+        Kamera erişimi için izin gerekiyor
+      </p>
+      <p class="camera-subhint">Barkodu kameraya gösterin</p>
+    </div>
+
+    <div class="barcode-divider"><span>veya</span></div>
+
+    <div class="manual-barcode-section">
+      <label class="form-label">Barkod Numarası</label>
+      <div class="manual-barcode-input-group">
+        <span class="material-icons-outlined">keyboard</span>
+        <input class="form-input" [(ngModel)]="barcodeManualInput" placeholder="8690001234567"
+          (keydown)="onBarcodeScanKeydown($event)" autofocus inputmode="numeric"
+          style="font-family: 'JetBrains Mono', monospace; letter-spacing: 2px;" />
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn btn-secondary" (click)="closeBarcodeScanner()">İptal</button>
+    <button class="btn btn-primary" (click)="applyBarcodeScan()" [disabled]="!barcodeManualInput.trim()">
+      <span class="material-icons-outlined">add_shopping_cart</span>
+      Sepete Ekle
+    </button>
+  </div>
+</div>
+}
+
+<!-- ═══ FİŞ ÖN İZLEME MODALI ═══════════════════════════ -->
+@if (showReceipt() && lastSaleData()) {
+<div class="overlay" (click)="closeReceipt()"></div>
+<div class="modal receipt-modal">
+  <div class="modal-header">
+    <h2>
+      <span class="material-icons-outlined" style="color: var(--success); vertical-align: middle;">check_circle</span>
+      Satış Tamamlandı
+    </h2>
+    <button class="modal-close" (click)="closeReceipt()">
+      <span class="material-icons-outlined">close</span>
+    </button>
+  </div>
+
+  <!-- Receipt Preview -->
+  <div class="receipt-preview">
+    <div class="receipt-paper">
+      <div class="receipt-brand">ERPv2</div>
+      <div class="receipt-subtitle">Kurumsal Yönetim Sistemi</div>
+      <div class="receipt-dashed"></div>
+
+      <div class="receipt-info-row">
+        <span>Fiş No:</span>
+        <span>{{ lastSaleData()!.receiptNo }}</span>
+      </div>
+      <div class="receipt-info-row">
+        <span>Tarih:</span>
+        <span>{{ lastSaleData()!.date }}</span>
+      </div>
+      <div class="receipt-info-row">
+        <span>Müşteri:</span>
+        <span>{{ lastSaleData()!.customer }}</span>
+      </div>
+      <div class="receipt-info-row">
+        <span>Ödeme:</span>
+        <span>{{ lastSaleData()!.paymentMethod }}</span>
+      </div>
+
+      <div class="receipt-dashed"></div>
+
+      <table class="receipt-items-table">
+        <thead>
+          <tr>
+            <th>Ürün</th>
+            <th>Ad.</th>
+            <th>Tutar</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of lastSaleData()!.items; track item.barcode) {
+          <tr>
+            <td>{{ item.name }}</td>
+            <td class="center">{{ item.quantity }}</td>
+            <td class="right">₺{{ item.total.toFixed(2) }}</td>
+          </tr>
+          }
+        </tbody>
+      </table>
+
+      <div class="receipt-dashed"></div>
+
+      <div class="receipt-total-row">
+        <span>Ara Toplam:</span>
+        <span>₺{{ lastSaleData()!.total.toFixed(2) }}</span>
+      </div>
+      <div class="receipt-total-row">
+        <span>KDV (%18):</span>
+        <span>₺{{ lastSaleData()!.tax.toFixed(2) }}</span>
+      </div>
+      <div class="receipt-total-row grand">
+        <span>TOPLAM:</span>
+        <span>₺{{ lastSaleData()!.grandTotal.toFixed(2) }}</span>
+      </div>
+
+      <div class="receipt-dashed"></div>
+      <div class="receipt-barcode">||||| |||| ||||| ||||</div>
+      <div class="receipt-thanks">Teşekkürler!</div>
+    </div>
+  </div>
+
+  <div class="modal-footer">
+    <button class="btn btn-secondary" (click)="closeReceipt()">Kapat</button>
+    <button class="btn btn-primary" (click)="printReceipt()">
+      <span class="material-icons-outlined">print</span>
+      Fiş Yazdır
+    </button>
+  </div>
+</div>
+}
+
+<!-- ═══ NOTIFICATION TOAST ══════════════════════════════ -->
+@if (notification()) {
+<div class="pos-toast" [class.toast-success]="notification()!.type === 'success'"
+  [class.toast-warning]="notification()!.type === 'warning'" [class.toast-info]="notification()!.type === 'info'">
+  <span class="material-icons-outlined">
+    {{ notification()!.type === 'success' ? 'check_circle' : notification()!.type === 'warning' ? 'warning' : 'info' }}
+  </span>
+  {{ notification()!.message }}
+</div>
+}

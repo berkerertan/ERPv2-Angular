@@ -1,12 +1,487 @@
 /* Product-specific overrides - uses shared crud-page.css */
+
+/* ─── Form Row ──────────────────────────────────────── */
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--space-4);
 }
 
+/* ─── Page title icon ───────────────────────────────── */
+.page-title-icon {
+    vertical-align: middle;
+    margin-right: 6px;
+    font-size: 28px;
+}
+
+/* ═══════════════════════════════════════════════════════ */
+/* ═══ HERO SEARCH BAR ══════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════ */
+.hero-search-section {
+    margin-bottom: var(--space-5);
+}
+
+.hero-search-bar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: var(--bg-card);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-xl);
+    padding: 4px 4px 4px 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.hero-search-bar:focus-within {
+    border-color: var(--primary-500);
+    box-shadow:
+        0 0 0 4px rgba(76, 110, 245, 0.12),
+        0 4px 24px rgba(0, 0, 0, 0.15);
+}
+
+.hero-search-bar.search-active {
+    border-color: var(--primary-600);
+    box-shadow:
+        0 0 0 4px rgba(76, 110, 245, 0.15),
+        0 4px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Search icon */
+.hero-search-icon {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 24px;
+    color: var(--text-muted);
+    transition: color 0.2s;
+    pointer-events: none;
+}
+
+.hero-search-bar:focus-within .hero-search-icon {
+    color: var(--primary-400);
+}
+
+/* Search input */
+.hero-search-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 16px 16px 16px 56px;
+    color: var(--text-primary);
+    font-size: 1.0625rem;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    outline: none;
+    min-width: 0;
+}
+
+.hero-search-input::placeholder {
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+/* Clear button */
+.search-clear-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    color: var(--text-muted);
+    background: var(--bg-hover);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+    margin-right: 4px;
+}
+
+.search-clear-btn:hover {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.search-clear-btn .material-icons-outlined {
+    font-size: 16px;
+}
+
+/* Loading spinner */
+.search-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-color);
+    border-top-color: var(--primary-400);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    flex-shrink: 0;
+    margin-right: 8px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ─── Barcode Button (inside hero bar) ──────────────── */
+.barcode-scan-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 12px 20px;
+    background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+    border: none;
+    border-radius: 12px;
+    color: white;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.barcode-scan-btn:hover {
+    background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+    box-shadow: 0 4px 16px rgba(76, 110, 245, 0.35);
+    transform: translateY(-1px);
+}
+
+.barcode-scan-btn:active {
+    transform: translateY(0);
+}
+
+.barcode-scan-btn .material-icons-outlined {
+    font-size: 20px;
+}
+
+/* ─── Filter Chips Row ──────────────────────────────── */
+.filter-chips-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4);
+    margin-top: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.filter-chips {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.filter-chip {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 6px 14px;
+    border-radius: var(--radius-full);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.filter-chip:hover {
+    border-color: var(--primary-500);
+    color: var(--text-secondary);
+    background: var(--bg-hover);
+}
+
+.filter-chip.chip-active {
+    background: rgba(76, 110, 245, 0.12);
+    border-color: var(--primary-500);
+    color: var(--primary-400);
+    font-weight: 600;
+}
+
+.chip-count {
+    background: rgba(76, 110, 245, 0.2);
+    color: var(--primary-400);
+    padding: 1px 7px;
+    border-radius: var(--radius-full);
+    font-size: 0.6875rem;
+    font-weight: 700;
+}
+
+/* ─── Search Result Badge ───────────────────────────── */
+.search-result-badge {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 6px 14px;
+    background: rgba(76, 110, 245, 0.08);
+    border: 1px solid rgba(76, 110, 245, 0.18);
+    border-radius: var(--radius-full);
+    color: var(--primary-400);
+    font-size: 0.8125rem;
+    white-space: nowrap;
+    animation: fadeIn 0.2s ease;
+}
+
+.search-result-badge .material-icons-outlined {
+    font-size: 16px;
+}
+
+/* ─── Search Highlight ──────────────────────────────── */
+:host ::ng-deep .search-highlight,
+::ng-deep .search-highlight {
+    background: rgba(252, 196, 25, 0.25);
+    color: var(--warning);
+    border-radius: 2px;
+    padding: 0 2px;
+    font-weight: 600;
+}
+
+/* ─── Barcode Badge ─────────────────────────────────── */
+.barcode-badge {
+    background: var(--bg-secondary);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    letter-spacing: 0.5px;
+}
+
+/* ─── Category Chip ─────────────────────────────────── */
+.category-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: var(--radius-full);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+/* ─── Inactive Row ──────────────────────────────────── */
+.row-inactive {
+    opacity: 0.55;
+}
+
+/* ═══ BARKOD TARAYICI MODALI ═══════════════════════════ */
+.barcode-modal {
+    width: 420px;
+}
+
+.barcode-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+}
+
+/* Camera Area */
+.camera-area {
+    position: relative;
+    background: var(--bg-secondary);
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--space-8) var(--space-6);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    min-height: 180px;
+    overflow: hidden;
+}
+
+.camera-frame {
+    position: absolute;
+    width: 160px;
+    height: 100px;
+    pointer-events: none;
+}
+
+.camera-frame .corner {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-color: var(--primary-400);
+    border-style: solid;
+    border-width: 0;
+}
+
+.corner.tl {
+    top: 0;
+    left: 0;
+    border-top-width: 3px;
+    border-left-width: 3px;
+    border-radius: 4px 0 0 0;
+}
+
+.corner.tr {
+    top: 0;
+    right: 0;
+    border-top-width: 3px;
+    border-right-width: 3px;
+    border-radius: 0 4px 0 0;
+}
+
+.corner.bl {
+    bottom: 0;
+    left: 0;
+    border-bottom-width: 3px;
+    border-left-width: 3px;
+    border-radius: 0 0 0 4px;
+}
+
+.corner.br {
+    bottom: 0;
+    right: 0;
+    border-bottom-width: 3px;
+    border-right-width: 3px;
+    border-radius: 0 0 4px 0;
+}
+
+/* Scan line animation */
+.scan-line {
+    position: absolute;
+    left: 4px;
+    right: 4px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--primary-400), transparent);
+    border-radius: 1px;
+    animation: scanLineMove 2s ease-in-out infinite;
+}
+
+@keyframes scanLineMove {
+
+    0%,
+    100% {
+        top: 8px;
+        opacity: 0.3;
+    }
+
+    50% {
+        top: calc(100% - 10px);
+        opacity: 1;
+    }
+}
+
+.camera-hint {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+    z-index: 1;
+    margin-top: var(--space-6);
+}
+
+.camera-hint .material-icons-outlined {
+    font-size: 20px;
+    color: var(--primary-400);
+}
+
+.camera-subhint {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    opacity: 0.7;
+    z-index: 1;
+}
+
+/* Divider */
+.barcode-divider {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.barcode-divider::before,
+.barcode-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border-color);
+}
+
+/* Manual Barcode Input */
+.manual-barcode-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.manual-barcode-input-group {
+    position: relative;
+}
+
+.manual-barcode-input-group .material-icons-outlined {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    color: var(--text-muted);
+}
+
+.manual-barcode-input-group .form-input {
+    padding-left: 40px;
+    font-size: 1rem;
+}
+
+/* ─── Responsive ────────────────────────────────────── */
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .barcode-scan-text {
+        display: none;
+    }
+
+    .barcode-scan-btn {
+        padding: 12px 14px;
+    }
+
+    .hero-search-input {
+        font-size: 0.9375rem;
+        padding: 14px 8px 14px 48px;
+    }
+
+    .hero-search-icon {
+        left: 16px;
+        font-size: 22px;
+    }
+
+    .barcode-modal {
+        width: 95vw;
+    }
+
+    .filter-chips-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
 @media (max-width: 480px) {
     .form-row {
         grid-template-columns: 1fr;
+    }
+
+    .filter-chips {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        flex-wrap: nowrap;
+        padding-bottom: 4px;
+    }
+
+    .filter-chip {
+        flex-shrink: 0;
     }
 }
