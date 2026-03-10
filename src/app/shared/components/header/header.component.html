@@ -1,0 +1,77 @@
+<header class="header">
+    <div class="header-left">
+        <!-- Mobile Menu Toggle -->
+        <button class="btn-icon mobile-menu-btn" (click)="onMenuToggle()">
+            <span class="material-icons-outlined">menu</span>
+        </button>
+
+        <!-- Search Bar -->
+        <div class="search-bar">
+            <span class="material-icons-outlined search-icon">search</span>
+            <input type="text" placeholder="Ara... (Ctrl+K)" class="search-input" />
+        </div>
+    </div>
+
+    <div class="header-right">
+        <!-- Notifications -->
+        <div class="header-action" (click)="toggleNotifications()">
+            <button class="btn-icon" title="Bildirimler">
+                <span class="material-icons-outlined">notifications</span>
+                <span class="notification-dot"></span>
+            </button>
+
+            <!-- Notifications Dropdown -->
+            @if (showNotifications()) {
+            <div class="dropdown notifications-dropdown" (click)="$event.stopPropagation()">
+                <div class="dropdown-header">
+                    <h4>Bildirimler</h4>
+                    <button class="btn-ghost btn-sm">Tümünü Okundu İşaretle</button>
+                </div>
+                <div class="dropdown-body">
+                    <div class="empty-state">
+                        <span class="material-icons-outlined">notifications_none</span>
+                        <p>Yeni bildirim yok</p>
+                    </div>
+                </div>
+            </div>
+            }
+        </div>
+
+        <!-- Profile -->
+        <div class="header-action" (click)="toggleProfileMenu()">
+            <button class="profile-btn">
+                <div class="avatar">
+                    <span class="avatar-text">
+                        {{ authService.currentUser()?.firstName?.charAt(0) }}{{
+                        authService.currentUser()?.lastName?.charAt(0) }}
+                    </span>
+                </div>
+                <div class="profile-info">
+                    <span class="profile-name">{{ authService.userFullName() }}</span>
+                    <span class="profile-role">{{ authService.currentUser()?.role }}</span>
+                </div>
+                <span class="material-icons-outlined chevron">expand_more</span>
+            </button>
+
+            <!-- Profile Dropdown -->
+            @if (showProfileMenu()) {
+            <div class="dropdown profile-dropdown" (click)="$event.stopPropagation()">
+                <div class="dropdown-item" routerLink="/settings">
+                    <span class="material-icons-outlined">settings</span>
+                    <span>Ayarlar</span>
+                </div>
+                <div class="dropdown-divider"></div>
+                <div class="dropdown-item danger" (click)="logout()">
+                    <span class="material-icons-outlined">logout</span>
+                    <span>Çıkış Yap</span>
+                </div>
+            </div>
+            }
+        </div>
+    </div>
+</header>
+
+<!-- Click outside to close -->
+@if (showProfileMenu() || showNotifications()) {
+<div class="backdrop" (click)="closeMenus()"></div>
+}

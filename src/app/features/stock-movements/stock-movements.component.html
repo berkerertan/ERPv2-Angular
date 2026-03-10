@@ -1,0 +1,129 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Stok Hareketleri</h1>
+            <p class="page-subtitle">Stok giriş/çıkış hareketlerini ve bakiyeleri takip edin</p>
+        </div>
+        <button class="btn btn-primary" (click)="openAddModal()">
+            <span class="material-icons-outlined">add</span>
+            Yeni Hareket
+        </button>
+    </div>
+
+    <div class="tabs">
+        <button class="tab" [class.active]="activeTab() === 'movements'"
+            (click)="activeTab.set('movements')">Hareketler</button>
+        <button class="tab" [class.active]="activeTab() === 'balances'"
+            (click)="activeTab.set('balances')">Bakiyeler</button>
+    </div>
+
+    <div class="toolbar">
+        <div class="toolbar-search">
+            <span class="material-icons-outlined search-icon">search</span>
+            <input type="text" placeholder="Ürün veya depo ara..." [(ngModel)]="searchTerm" />
+        </div>
+    </div>
+
+    @if (activeTab() === 'movements') {
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Ürün</th>
+                    <th>Depo</th>
+                    <th>Tür</th>
+                    <th>Miktar</th>
+                    <th>Açıklama</th>
+                    <th>Tarih</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (m of filteredMovements; track m.id) {
+                <tr>
+                    <td class="font-medium" style="color: var(--text-primary);">{{ m.productName }}</td>
+                    <td>{{ m.warehouseName }}</td>
+                    <td>
+                        <span class="badge" [class.badge-success]="m.movementType === 'In'"
+                            [class.badge-danger]="m.movementType === 'Out'">
+                            <span class="material-icons-outlined" style="font-size:12px;">{{ m.movementType === 'In' ?
+                                'arrow_downward' : 'arrow_upward' }}</span>
+                            {{ m.movementType === 'In' ? 'Giriş' : 'Çıkış' }}
+                        </span>
+                    </td>
+                    <td class="font-semibold">{{ m.quantity }}</td>
+                    <td class="text-muted">{{ m.description }}</td>
+                    <td class="text-muted">{{ m.createdAt }}</td>
+                    <td>
+                        <div class="actions-cell">
+                            <button class="action-btn delete" title="Sil" (click)="deleteMovement(m.id)">
+                                <span class="material-icons-outlined">delete</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    } @else {
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Ürün</th>
+                    <th>Depo</th>
+                    <th>Bakiye</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (b of balances(); track b.productName + b.warehouseName) {
+                <tr>
+                    <td class="font-medium" style="color: var(--text-primary);">{{ b.productName }}</td>
+                    <td>{{ b.warehouseName }}</td>
+                    <td>
+                        <span class="font-semibold" [class.amount]="true" [class.positive]="b.balance > 0"
+                            [class.negative]="b.balance <= 0">
+                            {{ b.balance }}
+                        </span>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    }
+</div>
+
+@if (showModal()) {
+<div class="overlay" (click)="closeModal()"></div>
+<div class="modal" style="width: 480px;">
+    <div class="modal-header">
+        <h2>Yeni Stok Hareketi</h2>
+        <button class="modal-close" (click)="closeModal()"><span class="material-icons-outlined">close</span></button>
+    </div>
+    <div class="modal-form">
+        <div class="form-group">
+            <label class="form-label">Hareket Türü</label>
+            <select class="form-input" [(ngModel)]="formData.movementType">
+                <option value="In">Giriş (In)</option>
+                <option value="Out">Çıkış (Out)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Miktar</label>
+            <input class="form-input" type="number" [(ngModel)]="formData.quantity" />
+        </div>
+        <div class="form-group">
+            <label class="form-label">Açıklama</label>
+            <input class="form-input" [(ngModel)]="formData.description" placeholder="Hareket açıklaması" />
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeModal()">İptal</button>
+        <button class="btn btn-primary" (click)="saveMovement()">
+            <span class="material-icons-outlined">save</span> Kaydet
+        </button>
+    </div>
+</div>
+}

@@ -1,0 +1,56 @@
+<!-- Mobile Overlay -->
+<div class="sidebar-overlay" [class.active]="isMobileOpen()" (click)="closeMobile()">
+</div>
+
+<!-- Sidebar -->
+<aside class="sidebar" [class.collapsed]="isCollapsed()" [class.mobile-open]="isMobileOpen()">
+
+    <!-- Logo Area -->
+    <div class="sidebar-logo">
+        <div class="logo-icon">
+            <span class="material-icons-outlined">hub</span>
+        </div>
+        @if (!isCollapsed()) {
+        <span class="logo-text">ERPv2</span>
+        <button class="collapse-btn" (click)="toggleCollapse()">
+            <span class="material-icons-outlined">chevron_left</span>
+        </button>
+        }
+    </div>
+
+    <!-- Navigation -->
+    <nav class="sidebar-nav">
+        @for (section of navSections; track section.title) {
+        <div class="nav-section">
+            @if (!isCollapsed()) {
+            <div class="nav-section-title">{{ section.title }}</div>
+            } @else {
+            <div class="nav-section-divider"></div>
+            }
+            <ul class="nav-list">
+                @for (item of section.items; track item.route) {
+                <li class="nav-item">
+                    <a class="nav-link" [routerLink]="item.route" routerLinkActive="active"
+                        [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }" (click)="closeMobile()"
+                        [title]="isCollapsed() ? item.label : ''">
+                        <span class="nav-icon material-icons-outlined">{{ item.icon }}</span>
+                        @if (!isCollapsed()) {
+                        <span class="nav-label">{{ item.label }}</span>
+                        }
+                    </a>
+                </li>
+                }
+            </ul>
+        </div>
+        }
+    </nav>
+
+    <!-- Expand button (when collapsed) -->
+    @if (isCollapsed()) {
+    <div class="sidebar-footer">
+        <button class="collapse-btn expand" (click)="toggleCollapse()">
+            <span class="material-icons-outlined">chevron_right</span>
+        </button>
+    </div>
+    }
+</aside>

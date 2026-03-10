@@ -1,0 +1,44 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Raporlar</h1>
+            <p class="page-subtitle">İş analizleri ve raporlar</p>
+        </div>
+    </div>
+
+    <div class="reports-grid">
+        @for (r of reports; track r.id) {
+        <div class="report-card card" [class.active]="activeReport() === r.id" (click)="activeReport.set(r.id)">
+            <div class="report-card-icon">
+                <span class="material-icons-outlined">{{ r.icon }}</span>
+            </div>
+            <div class="report-card-info">
+                <h3>{{ r.label }}</h3>
+                <p>{{ r.description }}</p>
+            </div>
+            <span class="material-icons-outlined report-arrow">chevron_right</span>
+        </div>
+        }
+    </div>
+
+    <!-- Report Content Area -->
+    <div class="report-content card">
+        <div class="report-content-header">
+            <h2>{{ reports.find(r => r.id === activeReport())?.label }}</h2>
+            <div class="report-actions">
+                <button class="btn btn-secondary btn-sm"><span class="material-icons-outlined">download</span>
+                    Excel</button>
+                <button class="btn btn-secondary btn-sm"><span class="material-icons-outlined">print</span>
+                    Yazdır</button>
+            </div>
+        </div>
+
+        <div class="report-placeholder">
+            <span class="material-icons-outlined">assessment</span>
+            <h3>Rapor Alanı</h3>
+            <p>API bağlantısı kurulduğunda burada {{ reports.find(r => r.id === activeReport())?.label?.toLowerCase() }}
+                verisi görüntülenecektir.</p>
+            <p class="text-xs text-muted">Endpoint: GET /api/reports/{{ activeReport() }}</p>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,147 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Ürünler</h1>
+            <p class="page-subtitle">Ürün kataloğunuzu yönetin</p>
+        </div>
+        <button class="btn btn-primary" (click)="openAddModal()">
+            <span class="material-icons-outlined">add</span>
+            Yeni Ürün
+        </button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(76, 110, 245, 0.12); color: var(--primary-400);">
+                <span class="material-icons-outlined">inventory_2</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ products().length }}</span>
+                <span class="stat-label">Toplam Ürün</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--success-bg); color: var(--success);">
+                <span class="material-icons-outlined">check_circle</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ products().filter(p => p.isActive).length }}</span>
+                <span class="stat-label">Aktif Ürün</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <div class="toolbar-search">
+            <span class="material-icons-outlined search-icon">search</span>
+            <input type="text" placeholder="Ürün adı, barkod veya kategori ara..." [(ngModel)]="searchTerm" />
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-container">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Ürün Adı</th>
+                        <th>Barkod</th>
+                        <th>Kategori</th>
+                        <th>Birim Fiyat</th>
+                        <th>Birim</th>
+                        <th>Durum</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (product of filteredProducts; track product.id) {
+                    <tr>
+                        <td class="font-medium" style="color: var(--text-primary);">{{ product.name }}</td>
+                        <td><code
+                                style="background: var(--bg-secondary); padding: 2px 8px; border-radius: 4px; font-size: 0.75rem;">{{ product.barcode }}</code>
+                        </td>
+                        <td>{{ product.categoryName }}</td>
+                        <td class="amount">₺{{ product.unitPrice.toLocaleString('tr-TR') }}</td>
+                        <td>{{ product.unit }}</td>
+                        <td>
+                            <span class="badge" [class.badge-success]="product.isActive"
+                                [class.badge-danger]="!product.isActive">
+                                {{ product.isActive ? 'Aktif' : 'Pasif' }}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="actions-cell">
+                                <button class="action-btn edit" title="Düzenle" (click)="openEditModal(product)">
+                                    <span class="material-icons-outlined">edit</span>
+                                </button>
+                                <button class="action-btn delete" title="Sil" (click)="deleteProduct(product.id)">
+                                    <span class="material-icons-outlined">delete</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+            @if (filteredProducts.length === 0) {
+            <div class="empty-state">
+                <span class="material-icons-outlined">inventory_2</span>
+                <h3>Ürün bulunamadı</h3>
+                <p>Arama kriterlerinize uygun ürün yok</p>
+            </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+@if (showModal()) {
+<div class="overlay" (click)="closeModal()"></div>
+<div class="modal" style="width: 520px;">
+    <div class="modal-header">
+        <h2>{{ editingProduct() ? 'Ürün Düzenle' : 'Yeni Ürün' }}</h2>
+        <button class="modal-close" (click)="closeModal()">
+            <span class="material-icons-outlined">close</span>
+        </button>
+    </div>
+    <div class="modal-form">
+        <div class="form-group">
+            <label class="form-label">Ürün Adı</label>
+            <input class="form-input" [(ngModel)]="formData.name" placeholder="Ürün adı" />
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Barkod</label>
+                <input class="form-input" [(ngModel)]="formData.barcode" placeholder="Barkod numarası" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Kategori</label>
+                <input class="form-input" [(ngModel)]="formData.categoryName" placeholder="Kategori" />
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Birim Fiyat (₺)</label>
+                <input class="form-input" type="number" [(ngModel)]="formData.unitPrice" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Birim</label>
+                <input class="form-input" [(ngModel)]="formData.unit" placeholder="Adet, Kg, Lt..." />
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Açıklama</label>
+            <input class="form-input" [(ngModel)]="formData.description" placeholder="Açıklama (opsiyonel)" />
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeModal()">İptal</button>
+        <button class="btn btn-primary" (click)="saveProduct()">
+            <span class="material-icons-outlined">{{ editingProduct() ? 'save' : 'add' }}</span>
+            {{ editingProduct() ? 'Güncelle' : 'Kaydet' }}
+        </button>
+    </div>
+</div>
+}

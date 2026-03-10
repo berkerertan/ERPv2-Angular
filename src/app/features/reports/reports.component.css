@@ -1,0 +1,118 @@
+.reports-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--space-4);
+    margin-bottom: var(--space-6);
+}
+
+.report-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    padding: var(--space-5);
+}
+
+.report-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.report-card.active {
+    border-color: var(--primary-500);
+    background: rgba(76, 110, 245, 0.05);
+}
+
+.report-card-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-lg);
+    background: rgba(76, 110, 245, 0.12);
+    color: var(--primary-400);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.report-card-info {
+    flex: 1;
+}
+
+.report-card-info h3 {
+    font-size: 0.9375rem;
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.report-card-info p {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.report-arrow {
+    color: var(--text-muted);
+    font-size: 20px;
+    transition: transform var(--transition-fast);
+}
+
+.report-card:hover .report-arrow {
+    transform: translateX(2px);
+}
+
+.report-content {
+    min-height: 400px;
+}
+
+.report-content-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-6);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.report-content-header h2 {
+    font-size: 1.125rem;
+}
+
+.report-actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.report-placeholder {
+    text-align: center;
+    padding: var(--space-10) var(--space-6);
+    color: var(--text-muted);
+}
+
+.report-placeholder .material-icons-outlined {
+    font-size: 56px;
+    opacity: 0.3;
+    margin-bottom: var(--space-4);
+}
+
+.report-placeholder h3 {
+    color: var(--text-secondary);
+    margin-bottom: var(--space-2);
+}
+
+.report-placeholder p {
+    font-size: 0.875rem;
+    margin-bottom: var(--space-2);
+}
+
+@media (max-width: 768px) {
+    .reports-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .report-content-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-3);
+    }
+}

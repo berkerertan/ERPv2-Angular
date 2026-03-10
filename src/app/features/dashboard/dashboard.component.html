@@ -1,0 +1,93 @@
+<div class="dashboard">
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Dashboard</h1>
+            <p class="page-subtitle">Genel bakış ve özet bilgiler</p>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="kpi-grid">
+        @for (card of kpiCards; track card.title; let i = $index) {
+        <div class="kpi-card card" [style.animation-delay]="i * 80 + 'ms'">
+            <div class="kpi-header">
+                <div>
+                    <p class="kpi-label">{{ card.title }}</p>
+                    <h2 class="kpi-value">{{ card.value }}</h2>
+                </div>
+                <div class="kpi-icon" [attr.data-color]="card.color">
+                    <span class="material-icons-outlined">{{ card.icon }}</span>
+                </div>
+            </div>
+            <div class="kpi-footer">
+                <span class="kpi-change" [class.positive]="card.changeType === 'positive'"
+                    [class.negative]="card.changeType === 'negative'">
+                    <span class="material-icons-outlined">
+                        {{ card.changeType === 'positive' ? 'arrow_upward' : 'arrow_downward' }}
+                    </span>
+                    {{ card.change }}
+                </span>
+                <span class="kpi-period">Son 30 gün</span>
+            </div>
+        </div>
+        }
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="section">
+        <h3 class="section-title">Hızlı İşlemler</h3>
+        <div class="quick-actions">
+            @for (action of quickActions; track action.label) {
+            <a [routerLink]="action.route" class="quick-action-btn" [attr.data-color]="action.color">
+                <span class="material-icons-outlined">{{ action.icon }}</span>
+                <span>{{ action.label }}</span>
+            </a>
+            }
+        </div>
+    </div>
+
+    <!-- Recent Orders -->
+    <div class="section">
+        <div class="section-header">
+            <h3 class="section-title">Son Siparişler</h3>
+            <a routerLink="/sales-orders" class="btn btn-ghost btn-sm">
+                <span>Tümünü Gör</span>
+                <span class="material-icons-outlined">arrow_forward</span>
+            </a>
+        </div>
+
+        <div class="card table-card">
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Sipariş No</th>
+                            <th>Müşteri</th>
+                            <th>Tutar</th>
+                            <th>Durum</th>
+                            <th>Tarih</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (order of recentOrders; track order.id) {
+                        <tr>
+                            <td>
+                                <span class="order-id">{{ order.id }}</span>
+                            </td>
+                            <td>{{ order.customer }}</td>
+                            <td class="font-medium">{{ order.amount }}</td>
+                            <td>
+                                <span class="badge" [ngClass]="getStatusBadge(order.status)">
+                                    {{ getStatusLabel(order.status) }}
+                                </span>
+                            </td>
+                            <td class="text-muted">{{ order.date }}</td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

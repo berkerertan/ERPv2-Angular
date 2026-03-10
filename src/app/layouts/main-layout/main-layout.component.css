@@ -1,0 +1,24 @@
+.layout {
+    min-height: 100vh;
+}
+
+.main-content {
+    margin-left: var(--sidebar-width);
+    margin-top: var(--header-height);
+    padding: var(--space-6);
+    min-height: calc(100vh - var(--header-height));
+    transition: margin-left var(--transition-slow);
+    animation: fadeIn var(--transition-base) forwards;
+}
+
+.sidebar-collapsed .main-content {
+    margin-left: var(--sidebar-collapsed);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: 0;
+        padding: var(--space-4);
+    }
+}

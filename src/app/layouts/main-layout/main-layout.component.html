@@ -1,0 +1,12 @@
+<div class="layout" [class.sidebar-collapsed]="isSidebarCollapsed">
+    <app-sidebar></app-sidebar>
+    <app-header (toggleSidebar)="onToggleSidebar()"></app-header>
+
+    <main class="main-content">
+        <router-outlet></router-outlet>
+    </main>
+</div>
+
+<!-- Global UI Components -->
+<app-toast></app-toast>
+<app-confirm-dialog></app-confirm-dialog>

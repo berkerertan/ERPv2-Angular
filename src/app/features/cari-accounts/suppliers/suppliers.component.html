@@ -1,0 +1,298 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">
+                <span class="material-icons-outlined page-title-icon supplier-icon">local_shipping</span>
+                Tedarikçiler
+            </h1>
+            <p class="page-subtitle">Tedarikçi hesaplarını ve alım geçmişini yönetin</p>
+        </div>
+        <button class="btn btn-primary" (click)="openAddModal()">
+            <span class="material-icons-outlined">person_add</span>
+            Yeni Tedarikçi
+        </button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--warning-bg); color: var(--warning);">
+                <span class="material-icons-outlined">local_shipping</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ accounts().length }}</span>
+                <span class="stat-label">Toplam Tedarikçi</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--success-bg); color: var(--success);">
+                <span class="material-icons-outlined">check_circle</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ activeCount }}</span>
+                <span class="stat-label">Aktif</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--danger-bg); color: var(--danger);">
+                <span class="material-icons-outlined">account_balance_wallet</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">₺{{ (totalBalance * -1).toLocaleString('tr-TR') }}</span>
+                <span class="stat-label">Toplam Borç</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(76,110,245,0.12); color: var(--primary-400);">
+                <span class="material-icons-outlined">shopping_cart</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">₺{{ totalPurchaseSum.toLocaleString('tr-TR') }}</span>
+                <span class="stat-label">Toplam Alım</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="toolbar">
+        <div class="toolbar-search">
+            <span class="material-icons-outlined search-icon">search</span>
+            <input type="text" placeholder="Firma, yetkili, telefon veya şehir ara..." [(ngModel)]="searchTerm" />
+        </div>
+        <select class="toolbar-filter" [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
+            <option value="all">Tüm Durumlar</option>
+            <option value="active">Aktif</option>
+            <option value="inactive">Pasif</option>
+        </select>
+    </div>
+
+    <!-- Table -->
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Firma Adı</th>
+                    <th>Yetkili</th>
+                    <th>Telefon</th>
+                    <th>Şehir</th>
+                    <th>Sipariş</th>
+                    <th>Toplam Tutar</th>
+                    <th>Yapılan Ödeme</th>
+                    <th>Kalan Borç</th>
+                    <th>Puan</th>
+                    <th>Durum</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (a of filteredAccounts; track a.id) {
+                <tr>
+                    <td>
+                        <div class="customer-cell">
+                            <div class="customer-avatar supplier">{{ a.name.charAt(0) }}</div>
+                            <div class="customer-info">
+                                <span class="customer-name" (click)="viewDetail(a)">{{ a.name }}</span>
+                                <span class="customer-email">{{ a.email }}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="text-muted">{{ a.contactPerson }}</td>
+                    <td>{{ a.phone }}</td>
+                    <td>
+                        <span class="cell-with-icon">
+                            <span class="material-icons-outlined">location_on</span>
+                            {{ a.city }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="order-count supplier-order">{{ a.orderCount }}</span>
+                    </td>
+                    <td class="amount">₺{{ a.totalPurchase.toLocaleString('tr-TR') }}</td>
+                    <td>
+                        <span class="amount positive">₺{{ a.totalPayments.toLocaleString('tr-TR') }}</span>
+                    </td>
+                    <td>
+                        <span class="amount" [class.negative]="a.remainingDebt > 0">₺{{
+                            a.remainingDebt.toLocaleString('tr-TR') }}</span>
+                    </td>
+                    <td>
+                        <span class="rating-stars">{{ getRatingStars(a.rating) }}</span>
+                    </td>
+                    <td>
+                        <span class="badge" [class.badge-success]="a.isActive" [class.badge-danger]="!a.isActive">
+                            {{ a.isActive ? 'Aktif' : 'Pasif' }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="actions-cell">
+                            <button class="action-btn view" title="Detay" (click)="viewDetail(a)">
+                                <span class="material-icons-outlined">visibility</span>
+                            </button>
+                            <button class="action-btn edit" title="Düzenle" (click)="openEditModal(a)">
+                                <span class="material-icons-outlined">edit</span>
+                            </button>
+                            <button class="action-btn" [title]="a.isActive ? 'Pasife Al' : 'Aktife Al'"
+                                (click)="toggleStatus(a.id)"
+                                [style.color]="a.isActive ? 'var(--warning)' : 'var(--success)'">
+                                <span class="material-icons-outlined">{{ a.isActive ? 'block' : 'check_circle' }}</span>
+                            </button>
+                            <button class="action-btn delete" title="Sil" (click)="deleteAccount(a.id)">
+                                <span class="material-icons-outlined">delete</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Summary Footer -->
+    <div class="summary-footer">
+        <div class="summary-item">
+            <span class="material-icons-outlined summary-icon" style="color: var(--warning);">receipt_long</span>
+            <div class="summary-text">
+                <span class="summary-label">Toplam Tutar</span>
+                <span class="summary-value">₺{{ totalPurchaseSum.toLocaleString('tr-TR') }}</span>
+            </div>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-item">
+            <span class="material-icons-outlined summary-icon" style="color: var(--success);">paid</span>
+            <div class="summary-text">
+                <span class="summary-label">Yapılan Ödeme</span>
+                <span class="summary-value positive">₺{{ totalPaymentsSum.toLocaleString('tr-TR') }}</span>
+            </div>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-item">
+            <span class="material-icons-outlined summary-icon" style="color: var(--danger);">account_balance</span>
+            <div class="summary-text">
+                <span class="summary-label">Kalan Borç</span>
+                <span class="summary-value negative">₺{{ totalDebtSum.toLocaleString('tr-TR') }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ─── Yeni/Düzenle Modalı ──────────────────────────────── -->
+@if (showModal()) {
+<div class="overlay" (click)="closeModal()"></div>
+<div class="modal" style="width: 600px;">
+    <div class="modal-header">
+        <h2>{{ editingAccount() ? 'Tedarikçi Düzenle' : 'Yeni Tedarikçi' }}</h2>
+        <button class="modal-close" (click)="closeModal()"><span class="material-icons-outlined">close</span></button>
+    </div>
+    <div class="modal-form">
+        <div class="form-group">
+            <label class="form-label">Firma Adı</label>
+            <input class="form-input" [(ngModel)]="formData.name" placeholder="Tedarikçi firma adı" />
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Yetkili Kişi</label>
+                <input class="form-input" [(ngModel)]="formData.contactPerson" placeholder="Yetkili adı soyadı" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Telefon</label>
+                <input class="form-input" [(ngModel)]="formData.phone" placeholder="0212 ..." />
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">E-posta</label>
+                <input class="form-input" [(ngModel)]="formData.email" placeholder="email@firma.com" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Şehir</label>
+                <input class="form-input" [(ngModel)]="formData.city" placeholder="Şehir" />
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">VKN</label>
+                <input class="form-input" [(ngModel)]="formData.taxNumber" placeholder="Vergi numarası" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Vergi Dairesi</label>
+                <input class="form-input" [(ngModel)]="formData.taxOffice" placeholder="Vergi dairesi adı" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Adres</label>
+            <input class="form-input" [(ngModel)]="formData.address" placeholder="Açık adres" />
+        </div>
+        <div class="form-group">
+            <label class="form-label">Not</label>
+            <input class="form-input" [(ngModel)]="formData.notes" placeholder="Not (opsiyonel)" />
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeModal()">İptal</button>
+        <button class="btn btn-primary" (click)="save()">
+            <span class="material-icons-outlined">save</span>
+            {{ editingAccount() ? 'Güncelle' : 'Kaydet' }}
+        </button>
+    </div>
+</div>
+}
+
+<!-- ─── Detay Modalı ─────────────────────────────────────── -->
+@if (showDetailModal() && selectedAccount()) {
+<div class="overlay" (click)="closeDetailModal()"></div>
+<div class="modal" style="width: 560px;">
+    <div class="modal-header">
+        <h2>Tedarikçi Detayı</h2>
+        <button class="modal-close" (click)="closeDetailModal()"><span
+                class="material-icons-outlined">close</span></button>
+    </div>
+    <div class="detail-avatar-section">
+        <div class="detail-avatar-large supplier">{{ selectedAccount().name.charAt(0) }}</div>
+        <h3>{{ selectedAccount().name }}</h3>
+        <div class="detail-badges">
+            <span class="badge" [class.badge-success]="selectedAccount().isActive"
+                [class.badge-danger]="!selectedAccount().isActive">
+                {{ selectedAccount().isActive ? 'Aktif' : 'Pasif' }}
+            </span>
+            <span class="rating-stars">{{ getRatingStars(selectedAccount().rating) }}</span>
+        </div>
+    </div>
+    <div class="detail-grid">
+        <div class="detail-row"><span class="detail-label">Yetkili</span><span class="detail-value">{{
+                selectedAccount().contactPerson }}</span></div>
+        <div class="detail-row"><span class="detail-label">Telefon</span><span class="detail-value">{{
+                selectedAccount().phone }}</span></div>
+        <div class="detail-row"><span class="detail-label">E-posta</span><span class="detail-value">{{
+                selectedAccount().email }}</span></div>
+        <div class="detail-row"><span class="detail-label">Şehir</span><span class="detail-value">{{
+                selectedAccount().city }}</span></div>
+        <div class="detail-row"><span class="detail-label">VKN</span><span class="detail-value font-mono">{{
+                selectedAccount().taxNumber }}</span></div>
+        <div class="detail-row"><span class="detail-label">Vergi Dairesi</span><span class="detail-value">{{
+                selectedAccount().taxOffice }}</span></div>
+        <div class="detail-row" style="grid-column: 1 / -1;"><span class="detail-label">Adres</span><span
+                class="detail-value">{{ selectedAccount().address }}</span></div>
+    </div>
+    <div class="detail-stats">
+        <div class="detail-stat-card">
+            <span class="detail-stat-value">{{ selectedAccount().orderCount }}</span>
+            <span class="detail-stat-label">Sipariş</span>
+        </div>
+        <div class="detail-stat-card">
+            <span class="detail-stat-value">₺{{ selectedAccount().totalPurchase.toLocaleString('tr-TR') }}</span>
+            <span class="detail-stat-label">Toplam Alım</span>
+        </div>
+        <div class="detail-stat-card">
+            <span class="detail-stat-value amount negative">₺{{ (selectedAccount().balance * -1).toLocaleString('tr-TR')
+                }}</span>
+            <span class="detail-stat-label">Borç</span>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="openEditModal(selectedAccount()); closeDetailModal()">
+            <span class="material-icons-outlined">edit</span> Düzenle
+        </button>
+        <button class="btn btn-primary" (click)="closeDetailModal()">Kapat</button>
+    </div>
+</div>
+}

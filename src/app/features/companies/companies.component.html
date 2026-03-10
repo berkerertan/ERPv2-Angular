@@ -1,0 +1,74 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Şirketler</h1>
+            <p class="page-subtitle">Şirket bilgilerini yönetin</p>
+        </div>
+        <button class="btn btn-primary" (click)="openAddModal()"><span class="material-icons-outlined">add</span> Yeni
+            Şirket</button>
+    </div>
+    <div class="toolbar">
+        <div class="toolbar-search"><span class="material-icons-outlined search-icon">search</span><input type="text"
+                placeholder="Şirket ara..." [(ngModel)]="searchTerm" /></div>
+    </div>
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Şirket Adı</th>
+                    <th>Vergi No</th>
+                    <th>Telefon</th>
+                    <th>E-posta</th>
+                    <th>Adres</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (i of filteredItems; track i.id) {
+                <tr>
+                    <td class="font-medium" style="color: var(--text-primary);">
+                        <div class="cell-with-icon"><span class="material-icons-outlined">business</span>{{ i.name }}
+                        </div>
+                    </td>
+                    <td>{{ i.taxNumber }}</td>
+                    <td>{{ i.phone }}</td>
+                    <td class="text-muted">{{ i.email }}</td>
+                    <td class="text-muted">{{ i.address }}</td>
+                    <td>
+                        <div class="actions-cell"><button class="action-btn edit" (click)="openEditModal(i)"><span
+                                    class="material-icons-outlined">edit</span></button><button
+                                class="action-btn delete" (click)="deleteItem(i.id)"><span
+                                    class="material-icons-outlined">delete</span></button></div>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+@if (showModal()) {
+<div class="overlay" (click)="closeModal()"></div>
+<div class="modal" style="width: 520px;">
+    <div class="modal-header">
+        <h2>{{ editingItem() ? 'Şirket Düzenle' : 'Yeni Şirket' }}</h2><button class="modal-close"
+            (click)="closeModal()"><span class="material-icons-outlined">close</span></button>
+    </div>
+    <div class="modal-form">
+        <div class="form-group"><label class="form-label">Şirket Adı</label><input class="form-input"
+                [(ngModel)]="formData.name" placeholder="Şirket adı" /></div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Vergi No</label><input class="form-input"
+                    [(ngModel)]="formData.taxNumber" /></div>
+            <div class="form-group"><label class="form-label">Telefon</label><input class="form-input"
+                    [(ngModel)]="formData.phone" /></div>
+        </div>
+        <div class="form-group"><label class="form-label">E-posta</label><input class="form-input"
+                [(ngModel)]="formData.email" /></div>
+        <div class="form-group"><label class="form-label">Adres</label><input class="form-input"
+                [(ngModel)]="formData.address" /></div>
+    </div>
+    <div class="modal-footer"><button class="btn btn-secondary" (click)="closeModal()">İptal</button><button
+            class="btn btn-primary" (click)="save()"><span class="material-icons-outlined">save</span> {{ editingItem()
+            ? 'Güncelle' : 'Kaydet' }}</button></div>
+</div>
+}

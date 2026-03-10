@@ -1,0 +1,151 @@
+<div class="pos-layout">
+  <!-- Left: Barcode & Cart -->
+  <div class="pos-main">
+    <!-- Scan Bar -->
+    <div class="scan-section card">
+      <div class="scan-header">
+        <span class="material-icons-outlined scan-icon">qr_code_scanner</span>
+        <h3>Barkod / QR Tarama</h3>
+      </div>
+      <div class="scan-row">
+        <select class="toolbar-filter" [(ngModel)]="selectedWarehouseId">
+          <option value="">Depo Seçin</option>
+          @for (w of warehouses; track w.id) {
+            <option [value]="w.id">{{ w.name }}</option>
+          }
+        </select>
+        <div class="scan-input-wrapper">
+          <span class="material-icons-outlined">barcode_reader</span>
+          <input
+            type="text"
+            placeholder="Barkod okutun veya yazın..."
+            [(ngModel)]="barcode"
+            (keyup.enter)="onBarcodeSubmit()"
+            class="scan-input"
+            autofocus />
+          @if (isScanning()) {
+            <div class="spinner spinner-sm"></div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Cart Table -->
+    <div class="cart-section">
+      <div class="cart-header">
+        <h3>Sepet <span class="cart-count">{{ cartItemCount }} ürün</span></h3>
+        @if (cart().length > 0) {
+          <button class="btn btn-ghost btn-sm" (click)="clearCart()">
+            <span class="material-icons-outlined">delete_sweep</span>
+            Temizle
+          </button>
+        }
+      </div>
+
+      @if (cart().length > 0) {
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Ürün</th>
+                <th>Barkod</th>
+                <th>Birim Fiyat</th>
+                <th>Miktar</th>
+                <th>Toplam</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of cart(); track item.barcode) {
+                <tr>
+                  <td class="font-medium">{{ item.name }}</td>
+                  <td><code class="barcode-text">{{ item.barcode }}</code></td>
+                  <td>₺{{ item.unitPrice.toFixed(2) }}</td>
+                  <td>
+                    <div class="qty-control">
+                      <button class="qty-btn" (click)="updateQuantity(item, -1)">
+                        <span class="material-icons-outlined">remove</span>
+                      </button>
+                      <span class="qty-value">{{ item.quantity }}</span>
+                      <button class="qty-btn" (click)="updateQuantity(item, 1)">
+                        <span class="material-icons-outlined">add</span>
+                      </button>
+                    </div>
+                  </td>
+                  <td class="font-semibold">₺{{ item.total.toFixed(2) }}</td>
+                  <td>
+                    <button class="action-btn delete" (click)="removeItem(item)" title="Kaldır">
+                      <span class="material-icons-outlined">close</span>
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <div class="empty-cart">
+          <span class="material-icons-outlined">shopping_cart</span>
+          <p>Sepet boş — barkod okutarak ürün ekleyin</p>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Right: Summary & Pay -->
+  <div class="pos-sidebar">
+    <div class="summary-card card">
+      <h3>Satış Özeti</h3>
+
+      <div class="form-group">
+        <label class="form-label">Müşteri / Cari</label>
+        <select class="form-input" [(ngModel)]="selectedBuyerId">
+          <option value="">Peşin Satış</option>
+          @for (b of buyers; track b.id) {
+            <option [value]="b.id">{{ b.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="summary-rows">
+        <div class="summary-row">
+          <span>Ara Toplam</span>
+          <span>₺{{ cartTotal.toFixed(2) }}</span>
+        </div>
+        <div class="summary-row">
+          <span>KDV (%18)</span>
+          <span>₺{{ (cartTotal * 0.18).toFixed(2) }}</span>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-row total">
+          <span>Genel Toplam</span>
+          <span>₺{{ (cartTotal * 1.18).toFixed(2) }}</span>
+        </div>
+      </div>
+
+      <button
+        class="btn btn-primary btn-lg pay-btn"
+        (click)="completeSale()"
+        [disabled]="cart().length === 0">
+        <span class="material-icons-outlined">point_of_sale</span>
+        Satışı Tamamla
+      </button>
+
+      <!-- Quick Keys -->
+      <div class="quick-keys">
+        <button class="quick-key" (click)="completeSale()" [disabled]="cart().length === 0">
+          <span class="material-icons-outlined">payments</span>
+          <span>Nakit</span>
+        </button>
+        <button class="quick-key" [disabled]="cart().length === 0">
+          <span class="material-icons-outlined">credit_card</span>
+          <span>Kart</span>
+        </button>
+        <button class="quick-key" [disabled]="cart().length === 0">
+          <span class="material-icons-outlined">account_balance</span>
+          <span>Veresiye</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

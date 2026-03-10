@@ -1,0 +1,308 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">
+                <span class="material-icons-outlined page-title-icon efatura-icon">verified</span>
+                E-Fatura
+            </h1>
+            <p class="page-subtitle">Tescilli mükelleflere e-fatura düzenleyin ve takip edin</p>
+        </div>
+        <button class="btn btn-primary" (click)="openCreateModal()">
+            <span class="material-icons-outlined">add</span>
+            Yeni E-Fatura
+        </button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(76,110,245,0.12); color: var(--primary-400);">
+                <span class="material-icons-outlined">receipt_long</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ invoices().length }}</span>
+                <span class="stat-label">Toplam E-Fatura</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--warning-bg); color: var(--warning);">
+                <span class="material-icons-outlined">pending</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ draftCount + sentCount }}</span>
+                <span class="stat-label">İşlemde</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--success-bg); color: var(--success);">
+                <span class="material-icons-outlined">check_circle</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ approvedCount }}</span>
+                <span class="stat-label">Onaylı</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(34,197,94,0.1); color: #22c55e;">
+                <span class="material-icons-outlined">payments</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">₺{{ totalAmount.toLocaleString('tr-TR') }}</span>
+                <span class="stat-label">Onaylı Toplam</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab" [class.active]="activeTab() === 'all'" (click)="activeTab.set('all')">Tümü</button>
+        <button class="tab" [class.active]="activeTab() === 'Draft'" (click)="activeTab.set('Draft')">Taslak</button>
+        <button class="tab" [class.active]="activeTab() === 'Sent'" (click)="activeTab.set('Sent')">Gönderildi</button>
+        <button class="tab" [class.active]="activeTab() === 'Approved'"
+            (click)="activeTab.set('Approved')">Onaylı</button>
+        <button class="tab" [class.active]="activeTab() === 'Rejected'"
+            (click)="activeTab.set('Rejected')">Reddedildi</button>
+    </div>
+
+    <!-- Search -->
+    <div class="toolbar">
+        <div class="toolbar-search">
+            <span class="material-icons-outlined search-icon">search</span>
+            <input type="text" placeholder="Fatura no, müşteri veya VKN ara..." [(ngModel)]="searchTerm" />
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Fatura No</th>
+                    <th>Tür</th>
+                    <th>Müşteri / Tedarikçi</th>
+                    <th>VKN</th>
+                    <th>Tutar</th>
+                    <th>KDV</th>
+                    <th>Durum</th>
+                    <th>Tarih</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (inv of filteredInvoices; track inv.id) {
+                <tr>
+                    <td>
+                        <span class="invoice-number" (click)="viewDetail(inv)">{{ inv.invoiceNumber }}</span>
+                    </td>
+                    <td>
+                        <span class="badge" [class.badge-info]="inv.invoiceCategory === 'Satis'"
+                            [class.badge-warning]="inv.invoiceCategory === 'Iade'">
+                            {{ inv.invoiceCategory === 'Satis' ? 'Satış' : 'İade' }}
+                        </span>
+                    </td>
+                    <td class="font-medium" style="color: var(--text-primary);">{{ inv.cariAccountName }}</td>
+                    <td class="text-muted font-mono">{{ inv.taxNumber }}</td>
+                    <td class="amount font-semibold">₺{{ inv.grandTotal.toLocaleString('tr-TR') }}</td>
+                    <td class="text-muted">₺{{ inv.taxTotal.toLocaleString('tr-TR') }}</td>
+                    <td>
+                        <span class="badge" [ngClass]="getStatusBadge(inv.status)">{{ getStatusLabel(inv.status)
+                            }}</span>
+                    </td>
+                    <td class="text-muted">{{ inv.issueDate }}</td>
+                    <td>
+                        <div class="actions-cell">
+                            @if (inv.status === 'Draft') {
+                            <button class="action-btn approve" title="GIB'e Gönder" (click)="sendInvoice(inv.id)">
+                                <span class="material-icons-outlined">send</span>
+                            </button>
+                            }
+                            <button class="action-btn view" title="Detay" (click)="viewDetail(inv)">
+                                <span class="material-icons-outlined">visibility</span>
+                            </button>
+                            <button class="action-btn edit" title="PDF İndir" (click)="downloadPdf(inv.id)">
+                                <span class="material-icons-outlined">picture_as_pdf</span>
+                            </button>
+                            @if (inv.status === 'Draft') {
+                            <button class="action-btn delete" title="Sil" (click)="deleteInvoice(inv.id)">
+                                <span class="material-icons-outlined">delete</span>
+                            </button>
+                            }
+                        </div>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ─── Fatura Oluşturma Modalı ──────────────────────────── -->
+@if (showCreateModal()) {
+<div class="overlay" (click)="closeCreateModal()"></div>
+<div class="modal invoice-modal">
+    <div class="modal-header">
+        <h2><span class="material-icons-outlined" style="color: var(--primary-400);">verified</span> Yeni E-Fatura</h2>
+        <button class="modal-close" (click)="closeCreateModal()"><span
+                class="material-icons-outlined">close</span></button>
+    </div>
+
+    <div class="modal-form">
+        <!-- Üst Bilgiler -->
+        <div class="form-section">
+            <h3 class="form-section-title">Fatura Bilgileri</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Fatura Türü</label>
+                    <select class="form-input" [(ngModel)]="formData.invoiceCategory">
+                        <option value="Satis">Satış Faturası</option>
+                        <option value="Iade">İade Faturası</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Düzenleme Tarihi</label>
+                    <input class="form-input" type="date" [(ngModel)]="formData.issueDate" />
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Müşteri / Tedarikçi</label>
+                    <input class="form-input" [(ngModel)]="formData.cariAccountName" placeholder="Firma adı" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">VKN / TCKN</label>
+                    <input class="form-input" [(ngModel)]="formData.taxNumber" placeholder="Vergi / TC kimlik no" />
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Vade Tarihi</label>
+                    <input class="form-input" type="date" [(ngModel)]="formData.dueDate" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Not</label>
+                    <input class="form-input" [(ngModel)]="formData.notes" placeholder="Fatura notu (opsiyonel)" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Kalem Listesi -->
+        <div class="form-section">
+            <div class="form-section-header">
+                <h3 class="form-section-title">Fatura Kalemleri</h3>
+                <button class="btn btn-secondary btn-sm" (click)="addItem()">
+                    <span class="material-icons-outlined">add</span> Kalem Ekle
+                </button>
+            </div>
+
+            <div class="invoice-items-table">
+                <div class="invoice-items-header">
+                    <span class="col-product">Ürün / Hizmet</span>
+                    <span class="col-qty">Miktar</span>
+                    <span class="col-unit">Birim</span>
+                    <span class="col-price">Birim Fiyat</span>
+                    <span class="col-tax">KDV %</span>
+                    <span class="col-total">Toplam</span>
+                    <span class="col-action"></span>
+                </div>
+
+                @for (item of formData.items; track $index; let i = $index) {
+                <div class="invoice-item-row">
+                    <input class="form-input col-product" [(ngModel)]="item.productName" placeholder="Ürün adı" />
+                    <input class="form-input col-qty" type="number" [(ngModel)]="item.quantity" min="1" />
+                    <select class="form-input col-unit" [(ngModel)]="item.unit">
+                        <option>Adet</option>
+                        <option>Kg</option>
+                        <option>Lt</option>
+                        <option>Paket</option>
+                        <option>Kutu</option>
+                        <option>Metre</option>
+                    </select>
+                    <input class="form-input col-price" type="number" [(ngModel)]="item.unitPrice" min="0"
+                        step="0.01" />
+                    <select class="form-input col-tax" [(ngModel)]="item.taxRate">
+                        <option [ngValue]="0">%0</option>
+                        <option [ngValue]="1">%1</option>
+                        <option [ngValue]="8">%8</option>
+                        <option [ngValue]="10">%10</option>
+                        <option [ngValue]="18">%18</option>
+                        <option [ngValue]="20">%20</option>
+                    </select>
+                    <span class="col-total item-total">₺{{ getItemTotal(item).toLocaleString('tr-TR',
+                        {minimumFractionDigits: 2}) }}</span>
+                    <button class="action-btn delete col-action" (click)="removeItem(i)"
+                        [disabled]="formData.items.length === 1">
+                        <span class="material-icons-outlined">close</span>
+                    </button>
+                </div>
+                }
+            </div>
+        </div>
+
+        <!-- Toplam Özeti -->
+        <div class="invoice-totals">
+            <div class="total-row">
+                <span>Ara Toplam</span>
+                <span>₺{{ getFormSubtotal().toLocaleString('tr-TR', {minimumFractionDigits: 2}) }}</span>
+            </div>
+            <div class="total-row">
+                <span>KDV Toplam</span>
+                <span>₺{{ getFormTaxTotal().toLocaleString('tr-TR', {minimumFractionDigits: 2}) }}</span>
+            </div>
+            <div class="total-row grand-total">
+                <span>Genel Toplam</span>
+                <span>₺{{ getFormGrandTotal().toLocaleString('tr-TR', {minimumFractionDigits: 2}) }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeCreateModal()">İptal</button>
+        <button class="btn btn-primary" (click)="saveInvoice()">
+            <span class="material-icons-outlined">save</span> Taslak Kaydet
+        </button>
+    </div>
+</div>
+}
+
+<!-- ─── Fatura Detay Modalı ──────────────────────────────── -->
+@if (showDetailModal() && selectedInvoice()) {
+<div class="overlay" (click)="closeDetailModal()"></div>
+<div class="modal invoice-detail-modal">
+    <div class="modal-header">
+        <h2>Fatura Detayı</h2>
+        <button class="modal-close" (click)="closeDetailModal()"><span
+                class="material-icons-outlined">close</span></button>
+    </div>
+    <div class="detail-grid">
+        <div class="detail-row"><span class="detail-label">Fatura No</span><span class="detail-value">{{
+                selectedInvoice().invoiceNumber }}</span></div>
+        <div class="detail-row"><span class="detail-label">Tür</span><span class="detail-value">{{
+                selectedInvoice().invoiceCategory === 'Satis' ? 'Satış' : 'İade' }} Faturası</span></div>
+        <div class="detail-row"><span class="detail-label">Müşteri</span><span class="detail-value">{{
+                selectedInvoice().cariAccountName }}</span></div>
+        <div class="detail-row"><span class="detail-label">VKN</span><span class="detail-value font-mono">{{
+                selectedInvoice().taxNumber }}</span></div>
+        <div class="detail-row"><span class="detail-label">Tarih</span><span class="detail-value">{{
+                selectedInvoice().issueDate }}</span></div>
+        <div class="detail-row"><span class="detail-label">Durum</span><span class="badge"
+                [ngClass]="getStatusBadge(selectedInvoice().status)">{{ getStatusLabel(selectedInvoice().status)
+                }}</span></div>
+        @if (selectedInvoice().ettn) {
+        <div class="detail-row full-width"><span class="detail-label">ETTN</span><span
+                class="detail-value font-mono text-xs">{{ selectedInvoice().ettn }}</span></div>
+        }
+        <div class="detail-row"><span class="detail-label">KDV</span><span class="detail-value">₺{{
+                selectedInvoice().taxTotal.toLocaleString('tr-TR') }}</span></div>
+        <div class="detail-row"><span class="detail-label">Genel Toplam</span><span
+                class="detail-value amount font-semibold" style="font-size: 1.125rem;">₺{{
+                selectedInvoice().grandTotal.toLocaleString('tr-TR') }}</span></div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="downloadPdf(selectedInvoice().id)"><span
+                class="material-icons-outlined">picture_as_pdf</span> PDF</button>
+        <button class="btn btn-secondary" (click)="downloadXml(selectedInvoice().id)"><span
+                class="material-icons-outlined">code</span> XML</button>
+        <button class="btn btn-primary" (click)="closeDetailModal()">Kapat</button>
+    </div>
+</div>
+}

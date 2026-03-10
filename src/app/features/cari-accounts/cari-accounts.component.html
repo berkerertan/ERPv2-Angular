@@ -1,0 +1,124 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Cari Hesaplar</h1>
+            <p class="page-subtitle">Tedarikçi ve alıcı hesaplarını yönetin</p>
+        </div>
+        <button class="btn btn-primary" (click)="openAddModal()">
+            <span class="material-icons-outlined">person_add</span>
+            Yeni Cari
+        </button>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(76,110,245,0.12); color: var(--primary-400);"><span
+                    class="material-icons-outlined">people</span></div>
+            <div class="stat-info"><span class="stat-value">{{ accounts().length }}</span><span
+                    class="stat-label">Toplam Cari</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--success-bg); color: var(--success);"><span
+                    class="material-icons-outlined">shopping_bag</span></div>
+            <div class="stat-info"><span class="stat-value">{{ accounts().filter(a => a.type === 'Buyer').length
+                    }}</span><span class="stat-label">Alıcılar</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--warning-bg); color: var(--warning);"><span
+                    class="material-icons-outlined">local_shipping</span></div>
+            <div class="stat-info"><span class="stat-value">{{ accounts().filter(a => a.type === 'Supplier').length
+                    }}</span><span class="stat-label">Tedarikçiler</span></div>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab" [class.active]="activeTab() === 'all'" (click)="activeTab.set('all')">Tümü</button>
+        <button class="tab" [class.active]="activeTab() === 'buyers'"
+            (click)="activeTab.set('buyers')">Alıcılar</button>
+        <button class="tab" [class.active]="activeTab() === 'suppliers'"
+            (click)="activeTab.set('suppliers')">Tedarikçiler</button>
+    </div>
+
+    <div class="toolbar">
+        <div class="toolbar-search">
+            <span class="material-icons-outlined search-icon">search</span>
+            <input type="text" placeholder="İsim veya telefon ara..." [(ngModel)]="searchTerm" />
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Ad</th>
+                    <th>Tür</th>
+                    <th>Telefon</th>
+                    <th>E-posta</th>
+                    <th>Bakiye</th>
+                    <th>Durum</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (a of filteredAccounts; track a.id) {
+                <tr>
+                    <td class="font-medium" style="color: var(--text-primary);">{{ a.name }}</td>
+                    <td><span class="badge" [class.badge-info]="a.type === 'Buyer'"
+                            [class.badge-warning]="a.type === 'Supplier'">{{ a.type === 'Buyer' ? 'Alıcı' : 'Tedarikçi'
+                            }}</span></td>
+                    <td>{{ a.phone }}</td>
+                    <td class="text-muted">{{ a.email }}</td>
+                    <td><span class="amount" [class.positive]="a.balance > 0" [class.negative]="a.balance < 0">₺{{
+                            a.balance.toLocaleString('tr-TR') }}</span></td>
+                    <td><span class="badge" [class.badge-success]="a.isActive" [class.badge-danger]="!a.isActive">{{
+                            a.isActive ? 'Aktif' : 'Pasif' }}</span></td>
+                    <td>
+                        <div class="actions-cell">
+                            <button class="action-btn edit" title="Düzenle" (click)="openEditModal(a)"><span
+                                    class="material-icons-outlined">edit</span></button>
+                            <button class="action-btn delete" title="Sil" (click)="deleteAccount(a.id)"><span
+                                    class="material-icons-outlined">delete</span></button>
+                        </div>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (showModal()) {
+<div class="overlay" (click)="closeModal()"></div>
+<div class="modal" style="width: 520px;">
+    <div class="modal-header">
+        <h2>{{ editingAccount() ? 'Cari Düzenle' : 'Yeni Cari Hesap' }}</h2>
+        <button class="modal-close" (click)="closeModal()"><span class="material-icons-outlined">close</span></button>
+    </div>
+    <div class="modal-form">
+        <div class="form-group"><label class="form-label">Ad</label><input class="form-input"
+                [(ngModel)]="formData.name" placeholder="Cari adı" /></div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Tür</label><select class="form-input"
+                    [(ngModel)]="formData.type">
+                    <option value="Buyer">Alıcı</option>
+                    <option value="Supplier">Tedarikçi</option>
+                </select></div>
+            <div class="form-group"><label class="form-label">Telefon</label><input class="form-input"
+                    [(ngModel)]="formData.phone" placeholder="0532 ..." /></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">E-posta</label><input class="form-input"
+                    [(ngModel)]="formData.email" placeholder="email@domain.com" /></div>
+            <div class="form-group"><label class="form-label">Vergi No</label><input class="form-input"
+                    [(ngModel)]="formData.taxNumber" placeholder="Vergi numarası" /></div>
+        </div>
+        <div class="form-group"><label class="form-label">Adres</label><input class="form-input"
+                [(ngModel)]="formData.address" placeholder="Adres" /></div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeModal()">İptal</button>
+        <button class="btn btn-primary" (click)="save()"><span class="material-icons-outlined">save</span> {{
+            editingAccount() ? 'Güncelle' : 'Kaydet' }}</button>
+    </div>
+</div>
+}

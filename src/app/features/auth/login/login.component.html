@@ -1,0 +1,69 @@
+<div class="login-card card-glass">
+    <!-- Logo -->
+    <div class="login-header">
+        <div class="login-logo">
+            <span class="material-icons-outlined">hub</span>
+        </div>
+        <h1 class="login-title">ERPv2</h1>
+        <p class="login-subtitle">Kurumsal Yönetim Sistemine Giriş Yapın</p>
+    </div>
+
+    <!-- Error Message -->
+    @if (errorMessage()) {
+    <div class="alert alert-danger">
+        <span class="material-icons-outlined">error_outline</span>
+        <span>{{ errorMessage() }}</span>
+    </div>
+    }
+
+    <!-- Login Form -->
+    <form class="login-form" (ngSubmit)="onSubmit()">
+        <div class="form-group">
+            <label class="form-label" for="email">E-posta Adresi</label>
+            <div class="input-wrapper">
+                <span class="input-icon material-icons-outlined">mail</span>
+                <input id="email" type="email" class="form-input has-icon" placeholder="ornek@sirket.com"
+                    [(ngModel)]="email" name="email" autocomplete="email" [disabled]="isLoading()" />
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" for="password">Şifre</label>
+            <div class="input-wrapper">
+                <span class="input-icon material-icons-outlined">lock</span>
+                <input id="password" [type]="showPassword() ? 'text' : 'password'"
+                    class="form-input has-icon has-toggle" placeholder="••••••••" [(ngModel)]="password" name="password"
+                    autocomplete="current-password" [disabled]="isLoading()" />
+                <button type="button" class="password-toggle" (click)="togglePassword()">
+                    <span class="material-icons-outlined">
+                        {{ showPassword() ? 'visibility_off' : 'visibility' }}
+                    </span>
+                </button>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg login-btn" [disabled]="isLoading()">
+            @if (isLoading()) {
+            <div class="spinner spinner-sm"></div>
+            <span>Giriş Yapılıyor...</span>
+            } @else {
+            <span class="material-icons-outlined">login</span>
+            <span>Giriş Yap</span>
+            }
+        </button>
+    </form>
+
+    <!-- Footer -->
+    <div class="login-footer">
+        <p>Hesabınız yok mu? <a routerLink="/auth/register" class="link">Kayıt Olun</a></p>
+    </div>
+
+    <!-- Dev Login -->
+    <div class="dev-login">
+        <div class="dev-divider"><span>veya</span></div>
+        <button type="button" class="btn btn-secondary btn-lg login-btn dev-login-btn" (click)="devLogin()">
+            <span class="material-icons-outlined">code</span>
+            <span>Geliştirici Girişi (Backend Yok)</span>
+        </button>
+    </div>
+</div>

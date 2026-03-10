@@ -1,0 +1,59 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Satın Alma Siparişleri</h1>
+            <p class="page-subtitle">Tedarikçi siparişlerini yönetin</p>
+        </div>
+        <button class="btn btn-primary"><span class="material-icons-outlined">add</span> Yeni Sipariş</button>
+    </div>
+
+    <div class="tabs">
+        <button class="tab" [class.active]="activeTab() === 'all'" (click)="activeTab.set('all')">Tümü</button>
+        <button class="tab" [class.active]="activeTab() === 'Draft'" (click)="activeTab.set('Draft')">Taslak</button>
+        <button class="tab" [class.active]="activeTab() === 'Approved'"
+            (click)="activeTab.set('Approved')">Onaylı</button>
+    </div>
+
+    <div class="toolbar">
+        <div class="toolbar-search"><span class="material-icons-outlined search-icon">search</span><input type="text"
+                placeholder="Sipariş no veya tedarikçi ara..." [(ngModel)]="searchTerm" /></div>
+    </div>
+
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Sipariş No</th>
+                    <th>Tedarikçi</th>
+                    <th>Tutar</th>
+                    <th>Durum</th>
+                    <th>Tarih</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (o of filteredOrders; track o.id) {
+                <tr>
+                    <td><span style="color: var(--primary-400); font-weight: 600;">{{ o.orderNumber }}</span></td>
+                    <td class="font-medium" style="color: var(--text-primary);">{{ o.cariAccountName }}</td>
+                    <td class="amount">₺{{ o.totalAmount.toLocaleString('tr-TR') }}</td>
+                    <td><span class="badge" [ngClass]="getStatusBadge(o.status)">{{ getStatusLabel(o.status) }}</span>
+                    </td>
+                    <td class="text-muted">{{ o.createdAt }}</td>
+                    <td>
+                        <div class="actions-cell">
+                            @if (o.status === 'Draft') { <button class="action-btn approve" title="Onayla"
+                                (click)="approveOrder(o.id)"><span
+                                    class="material-icons-outlined">check_circle</span></button> }
+                            <button class="action-btn edit" title="Düzenle"><span
+                                    class="material-icons-outlined">edit</span></button>
+                            <button class="action-btn delete" title="Sil" (click)="deleteOrder(o.id)"><span
+                                    class="material-icons-outlined">delete</span></button>
+                        </div>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -1,0 +1,470 @@
+@if (buyer()) {
+<div class="page-container">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <a routerLink="/cari-accounts/buyers" class="breadcrumb-link">
+            <span class="material-icons-outlined">arrow_back</span>
+            Alıcılar
+        </a>
+        <span class="material-icons-outlined breadcrumb-sep">chevron_right</span>
+        <span class="breadcrumb-current">{{ buyer().name }}</span>
+    </div>
+
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="profile-left">
+            <div class="profile-avatar">{{ buyer().name.charAt(0) }}</div>
+            <div class="profile-info">
+                <h1 class="profile-name">{{ buyer().name }}</h1>
+                <div class="profile-meta">
+                    <span class="meta-item"><span class="material-icons-outlined">email</span> {{ buyer().email
+                        }}</span>
+                    <span class="meta-item"><span class="material-icons-outlined">phone</span> {{ buyer().phone
+                        }}</span>
+                    <span class="meta-item"><span class="material-icons-outlined">location_on</span> {{ buyer().city
+                        }}</span>
+                </div>
+                <div class="profile-tags">
+                    <span class="badge" [class.badge-success]="buyer().isActive"
+                        [class.badge-danger]="!buyer().isActive">
+                        {{ buyer().isActive ? 'Aktif Müşteri' : 'Pasif' }}
+                    </span>
+                    <span class="badge badge-info">VKN: {{ buyer().taxNumber }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="profile-actions">
+            <button class="btn btn-secondary btn-sm" (click)="showBulkAddModal.set(true)"
+                title="Excel'den yapıştır (Ctrl+V)">
+                <span class="material-icons-outlined">content_paste</span>
+                Yapıştır
+            </button>
+            <div class="keyboard-hints">
+                <span class="hint"><kbd>Ctrl+V</kbd> Yapıştır</span>
+                <span class="hint"><kbd>Ctrl+A</kbd> Tümünü Seç</span>
+                <span class="hint"><kbd>Del</kbd> Seçilenleri Sil</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(76,110,245,0.12); color: var(--primary-400);">
+                <span class="material-icons-outlined">inventory_2</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ totalProductCount }}</span>
+                <span class="stat-label">Alınan Ürün</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--success-bg); color: var(--success);">
+                <span class="material-icons-outlined">check_circle</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ deliveredCount }}</span>
+                <span class="stat-label">Teslim Edildi</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--warning-bg); color: var(--warning);">
+                <span class="material-icons-outlined">pending</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ pendingCount }}</span>
+                <span class="stat-label">Beklemede</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(34,197,94,0.1); color: #22c55e;">
+                <span class="material-icons-outlined">payments</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">₺{{ totalAmount.toLocaleString('tr-TR') }}</span>
+                <span class="stat-label">Toplam Tutar</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab" [class.active]="activeTab() === 'all'" (click)="activeTab.set('all')">
+            Tümü <span class="tab-count">{{ products().length }}</span>
+        </button>
+        <button class="tab" [class.active]="activeTab() === 'Delivered'" (click)="activeTab.set('Delivered')">
+            Teslim Edildi <span class="tab-count">{{ deliveredCount }}</span>
+        </button>
+        <button class="tab" [class.active]="activeTab() === 'Pending'" (click)="activeTab.set('Pending')">
+            Beklemede <span class="tab-count">{{ pendingCount }}</span>
+        </button>
+        <button class="tab" [class.active]="activeTab() === 'Cancelled'" (click)="activeTab.set('Cancelled')">
+            İptal
+        </button>
+    </div>
+
+    <!-- Search -->
+    <div class="toolbar">
+        <div class="toolbar-search">
+            <span class="material-icons-outlined search-icon">search</span>
+            <input type="text" placeholder="Ürün adı, barkod veya kategori ara..." [(ngModel)]="searchTerm" />
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- ═══ SPREADSHEET TABLE ═════════════════════════════ -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <div class="spreadsheet-wrapper">
+        <table class="data-table spreadsheet-table">
+            <thead>
+                <tr>
+                    <th class="col-checkbox">
+                        <input type="checkbox" [checked]="allSelected" (change)="toggleSelectAll()"
+                            title="Tümünü Seç (Ctrl+A)" />
+                    </th>
+                    <th>Tarih</th>
+                    <th>Ürün Adı</th>
+                    <th>Barkod</th>
+                    <th>Kategori</th>
+                    <th class="col-number">Adet</th>
+                    <th class="col-number">Liste Fiyatı</th>
+                    <th class="col-number">Satış Fiyatı</th>
+                    <th class="col-number">Toplam Tutar</th>
+                    <th class="col-number">Yapılan Ödeme</th>
+                    <th class="col-number">Kalan Bakiye</th>
+                    <th>Durum</th>
+                    <th class="col-actions">İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- ─── Existing Products ─────────────────────── -->
+                @for (p of filteredProducts; track p.id) {
+                <tr [class.row-selected]="p.selected" [class.row-editing]="editingCell()?.id === p.id">
+                    <td class="col-checkbox">
+                        <input type="checkbox" [checked]="p.selected" (change)="toggleSelect(p.id)" />
+                    </td>
+
+                    <!-- Date (first column now) -->
+                    <td class="editable-cell" (dblclick)="startEdit(p.id, 'date')">
+                        @if (isEditing(p.id, 'date')) {
+                        <input class="cell-input" type="date" [(ngModel)]="p.date" (blur)="onCellBlur()"
+                            (keydown)="onCellKeydown($event, p.id, 'date')" autofocus />
+                        } @else {
+                        <span class="text-muted">{{ p.date }}</span>
+                        }
+                    </td>
+
+                    <!-- Product Name (inline editable) -->
+                    <td class="editable-cell" (dblclick)="startEdit(p.id, 'productName')">
+                        @if (isEditing(p.id, 'productName')) {
+                        <input class="cell-input" [(ngModel)]="p.productName" (blur)="onCellBlur()"
+                            (keydown)="onCellKeydown($event, p.id, 'productName')" autofocus />
+                        } @else {
+                        <div class="cell-display">
+                            <span class="cell-text">{{ p.productName }}</span>
+                            <span class="cell-edit-hint material-icons-outlined">edit</span>
+                        </div>
+                        }
+                    </td>
+
+                    <!-- Barcode -->
+                    <td class="editable-cell" (dblclick)="startEdit(p.id, 'barcode')">
+                        @if (isEditing(p.id, 'barcode')) {
+                        <input class="cell-input font-mono" [(ngModel)]="p.barcode" (blur)="onCellBlur()"
+                            (keydown)="onCellKeydown($event, p.id, 'barcode')" autofocus />
+                        } @else {
+                        <span class="font-mono text-muted">{{ p.barcode }}</span>
+                        }
+                    </td>
+
+                    <!-- Category -->
+                    <td class="editable-cell" (dblclick)="startEdit(p.id, 'category')">
+                        @if (isEditing(p.id, 'category')) {
+                        <select class="cell-input" [(ngModel)]="p.category" (blur)="onCellBlur()"
+                            (change)="onCellBlur()" autofocus>
+                            <option>Elektronik</option>
+                            <option>Aksesuar</option>
+                            <option>Mobilya</option>
+                            <option>Kırtasiye</option>
+                            <option>Gıda</option>
+                            <option>Tekstil</option>
+                            <option>Diğer</option>
+                        </select>
+                        } @else {
+                        <span class="category-badge">{{ p.category }}</span>
+                        }
+                    </td>
+
+                    <!-- Adet (Quantity) -->
+                    <td class="editable-cell col-number" (dblclick)="startEdit(p.id, 'quantity')">
+                        @if (isEditing(p.id, 'quantity')) {
+                        <input class="cell-input text-right" type="number" [(ngModel)]="p.quantity" min="1"
+                            (blur)="onCellBlur()" (keydown)="onCellKeydown($event, p.id, 'quantity')" autofocus />
+                        } @else {
+                        <span>{{ p.quantity }}</span>
+                        }
+                    </td>
+
+                    <!-- Liste Fiyatı -->
+                    <td class="editable-cell col-number" (dblclick)="startEdit(p.id, 'listPrice')">
+                        @if (isEditing(p.id, 'listPrice')) {
+                        <input class="cell-input text-right" type="number" [(ngModel)]="p.listPrice" min="0" step="0.01"
+                            (blur)="onCellBlur()" (keydown)="onCellKeydown($event, p.id, 'listPrice')" autofocus />
+                        } @else {
+                        <span class="amount text-muted">₺{{ p.listPrice.toLocaleString('tr-TR') }}</span>
+                        }
+                    </td>
+
+                    <!-- Satış Fiyatı (Unit Price) -->
+                    <td class="editable-cell col-number" (dblclick)="startEdit(p.id, 'unitPrice')">
+                        @if (isEditing(p.id, 'unitPrice')) {
+                        <input class="cell-input text-right" type="number" [(ngModel)]="p.unitPrice" min="0" step="0.01"
+                            (blur)="onCellBlur()" (keydown)="onCellKeydown($event, p.id, 'unitPrice')" autofocus />
+                        } @else {
+                        <span class="amount">₺{{ p.unitPrice.toLocaleString('tr-TR') }}</span>
+                        }
+                    </td>
+
+                    <!-- Toplam Tutar (auto-calculated) -->
+                    <td class="col-number">
+                        <span class="amount font-semibold">₺{{ (p.quantity * p.unitPrice).toLocaleString('tr-TR')
+                            }}</span>
+                    </td>
+
+                    <!-- Yapılan Ödeme -->
+                    <td class="editable-cell col-number" (dblclick)="startEdit(p.id, 'payment')">
+                        @if (isEditing(p.id, 'payment')) {
+                        <input class="cell-input text-right" type="number" [(ngModel)]="p.payment" min="0" step="0.01"
+                            (blur)="onCellBlur()" (keydown)="onCellKeydown($event, p.id, 'payment')" autofocus />
+                        } @else {
+                        <span class="amount positive">₺{{ p.payment.toLocaleString('tr-TR') }}</span>
+                        }
+                    </td>
+
+                    <!-- Kalan Bakiye (auto-calculated) -->
+                    <td class="col-number">
+                        <span class="amount" [class.negative]="(p.quantity * p.unitPrice - p.payment) > 0">
+                            ₺{{ ((p.quantity * p.unitPrice) - p.payment).toLocaleString('tr-TR') }}
+                        </span>
+                    </td>
+
+                    <!-- Status -->
+                    <td>
+                        <span class="badge" [ngClass]="getStatusBadge(p.status)">{{ getStatusLabel(p.status) }}</span>
+                    </td>
+
+                    <!-- Actions -->
+                    <td>
+                        <div class="actions-cell">
+                            @if (p.status === 'Pending') {
+                            <button class="action-btn approve" title="Teslim Et" (click)="markDelivered(p.id)">
+                                <span class="material-icons-outlined">done</span>
+                            </button>
+                            }
+                            <button class="action-btn" title="Çoğalt" (click)="duplicateProduct(p)"
+                                style="color: var(--info);">
+                                <span class="material-icons-outlined">content_copy</span>
+                            </button>
+                            @if (p.status === 'Pending') {
+                            <button class="action-btn" title="İptal Et" (click)="cancelProduct(p.id)"
+                                style="color: var(--warning);">
+                                <span class="material-icons-outlined">block</span>
+                            </button>
+                            }
+                            <button class="action-btn delete" title="Sil" (click)="removeProduct(p.id)">
+                                <span class="material-icons-outlined">delete</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                }
+
+                <!-- ─── Quick Add Rows (always visible) ────────── -->
+                <tr class="quick-add-separator">
+                    <td colspan="13">
+                        <div class="separator-line">
+                            <span class="separator-label">
+                                <span class="material-icons-outlined">add_circle</span>
+                                Hızlı Ekleme — Ürün adını yazıp Enter'a basın
+                            </span>
+                        </div>
+                    </td>
+                </tr>
+
+                @for (row of quickAddRows(); track $index; let i = $index) {
+                <tr class="quick-add-row" [class.quick-row-filled]="row.productName.trim()">
+                    <td class="col-checkbox row-number">{{ i + 1 }}</td>
+                    <td>
+                        <input class="cell-input quick-input" type="date" [(ngModel)]="row.date" />
+                    </td>
+                    <td>
+                        <input class="cell-input quick-input" [(ngModel)]="row.productName" placeholder="Ürün adı..."
+                            (keydown)="onQuickRowKeydown($event, i)" />
+                    </td>
+                    <td>
+                        <input class="cell-input quick-input font-mono" [(ngModel)]="row.barcode" placeholder="Barkod"
+                            (keydown)="onQuickRowKeydown($event, i)" />
+                    </td>
+                    <td>
+                        <select class="cell-input quick-input" [(ngModel)]="row.category">
+                            <option value="">Kategori</option>
+                            <option>Elektronik</option>
+                            <option>Aksesuar</option>
+                            <option>Mobilya</option>
+                            <option>Kırtasiye</option>
+                            <option>Gıda</option>
+                            <option>Tekstil</option>
+                            <option>Diğer</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input class="cell-input quick-input text-right" type="number" [(ngModel)]="row.quantity"
+                            min="1" (keydown)="onQuickRowKeydown($event, i)" />
+                    </td>
+                    <td>
+                        <input class="cell-input quick-input text-right" type="number" [(ngModel)]="row.listPrice"
+                            min="0" step="0.01" placeholder="0" (keydown)="onQuickRowKeydown($event, i)" />
+                    </td>
+                    <td>
+                        <input class="cell-input quick-input text-right" type="number" [(ngModel)]="row.unitPrice"
+                            min="0" step="0.01" placeholder="0" (keydown)="onQuickRowKeydown($event, i)" />
+                    </td>
+                    <td class="col-number">
+                        <span class="amount quick-total">₺{{ (row.quantity * row.unitPrice).toLocaleString('tr-TR')
+                            }}</span>
+                    </td>
+                    <td class="col-number text-muted">—</td>
+                    <td class="col-number text-muted">—</td>
+                    <td>
+                        <select class="cell-input quick-input" [(ngModel)]="row.status">
+                            <option value="Pending">Beklemede</option>
+                            <option value="Delivered">Teslim Edildi</option>
+                        </select>
+                    </td>
+                    <td>
+                        <div class="actions-cell">
+                            @if (row.productName.trim()) {
+                            <button class="action-btn approve" title="Kaydet (Enter)" (click)="commitQuickRow(i)">
+                                <span class="material-icons-outlined">check</span>
+                            </button>
+                            }
+                            <button class="action-btn delete" title="Satırı Temizle" (click)="removeQuickRow(i)">
+                                <span class="material-icons-outlined">close</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+
+        <!-- Quick Add Footer -->
+        <div class="quick-add-footer">
+            <button class="btn btn-ghost btn-sm" (click)="addMoreQuickRows()">
+                <span class="material-icons-outlined">add</span>
+                3 Satır Daha Ekle
+            </button>
+            @if (filledQuickRowCount > 0) {
+            <button class="btn btn-primary btn-sm" (click)="commitAllQuickRows()">
+                <span class="material-icons-outlined">playlist_add_check</span>
+                {{ filledQuickRowCount }} Ürünü Toplu Ekle
+            </button>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ═══ BULK ACTION BAR (floating bottom) ═════════════════ -->
+<!-- ═══════════════════════════════════════════════════════ -->
+@if (selectedCount > 0) {
+<div class="bulk-action-bar">
+    <div class="bulk-info">
+        <span class="material-icons-outlined">check_box</span>
+        <strong>{{ selectedCount }}</strong> ürün seçildi
+        <span class="bulk-total">(₺{{ selectedTotal.toLocaleString('tr-TR') }})</span>
+    </div>
+    <div class="bulk-actions">
+        <button class="btn btn-success btn-sm" (click)="bulkMarkDelivered()">
+            <span class="material-icons-outlined">done_all</span>
+            Teslim Et
+        </button>
+        <button class="btn btn-secondary btn-sm" (click)="bulkCancel()">
+            <span class="material-icons-outlined">block</span>
+            İptal Et
+        </button>
+        <button class="btn btn-danger btn-sm" (click)="bulkDelete()">
+            <span class="material-icons-outlined">delete_sweep</span>
+            Toplu Sil
+        </button>
+        <button class="btn btn-ghost btn-sm" (click)="clearSelection()">
+            <span class="material-icons-outlined">close</span>
+            Vazgeç
+        </button>
+    </div>
+</div>
+}
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- ═══ BULK PASTE MODAL (Excel'den Yapıştır) ═════════════ -->
+<!-- ═══════════════════════════════════════════════════════ -->
+@if (showBulkAddModal()) {
+<div class="overlay" (click)="showBulkAddModal.set(false)"></div>
+<div class="modal" style="width: 680px;">
+    <div class="modal-header">
+        <h2>
+            <span class="material-icons-outlined"
+                style="color: var(--primary-400); vertical-align: middle; margin-right: 6px;">content_paste_go</span>
+            Excel'den Ürün Yapıştır
+        </h2>
+        <button class="modal-close" (click)="showBulkAddModal.set(false)">
+            <span class="material-icons-outlined">close</span>
+        </button>
+    </div>
+
+    <div class="paste-instructions">
+        <div class="instruction-card">
+            <span class="material-icons-outlined">table_chart</span>
+            <div>
+                <strong>Excel / Google Sheets'ten Yapıştırın</strong>
+                <p>Hücreleri kopyalayıp (Ctrl+C) aşağıdaki alana yapıştırın (Ctrl+V)</p>
+            </div>
+        </div>
+        <div class="column-format">
+            <span class="col-tag">A: Ürün Adı</span>
+            <span class="col-tag">B: Barkod</span>
+            <span class="col-tag">C: Kategori</span>
+            <span class="col-tag">D: Adet</span>
+            <span class="col-tag">E: Satış Fiyatı</span>
+        </div>
+    </div>
+
+    <div class="modal-form">
+        <div class="form-group">
+            <label class="form-label">Yapıştırma Alanı</label>
+            <textarea class="form-input paste-area" [(ngModel)]="bulkAddText" placeholder="Excel verilerini buraya yapıştırın...
+
+Örnek (Tab veya ; ile ayrılmış):
+Laptop HP ProBook	8680001001	Elektronik	2	4500
+Samsung Monitor	8680001002	Elektronik	3	2800
+Mekanik Klavye	8680001003	Aksesuar	5	450" rows="10"></textarea>
+        </div>
+
+        @if (bulkAddText.trim()) {
+        <div class="paste-preview">
+            <span class="material-icons-outlined">preview</span>
+            <strong>{{ bulkAddText.trim().split('\n').length }}</strong> satır algılandı
+        </div>
+        }
+    </div>
+
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showBulkAddModal.set(false)">İptal</button>
+        <button class="btn btn-primary" (click)="processPaste()" [disabled]="!bulkAddText.trim()">
+            <span class="material-icons-outlined">playlist_add</span>
+            Ürünleri Ekle
+        </button>
+    </div>
+</div>
+}
+}
