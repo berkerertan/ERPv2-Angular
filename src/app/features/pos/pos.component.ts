@@ -41,6 +41,13 @@ export class PosComponent implements OnDestroy, AfterViewInit {
     cart = signal<CartItem[]>([]);
     isScanning = signal(false);
 
+    // ─── Buyer search (Veresiye) ───────────────────────
+    buyerSearchTerm = '';
+    private _buyerSearchTimer: any = null;
+    debouncedBuyerTerm = signal('');
+    selectedBuyer = signal<{ id: string; name: string; phone: string; balance: number } | null>(null);
+    showBuyerDropdown = signal(false);
+
     // Barcode scanner modal
     showBarcodeScanner = signal(false);
     barcodeManualInput = '';
@@ -61,11 +68,14 @@ export class PosComponent implements OnDestroy, AfterViewInit {
     ];
 
     buyers = [
-        { id: '1', name: 'Peşin Müşteri' },
-        { id: '2', name: 'Ahmet Yılmaz' },
-        { id: '3', name: 'Mehmet Kaya' },
-        { id: '4', name: 'Fatma Çelik' },
-        { id: '5', name: 'Ali Öztürk' },
+        { id: '1', name: 'Peşin Müşteri', phone: '', balance: 0 },
+        { id: '2', name: 'Ahmet Yılmaz', phone: '0532 111 22 33', balance: -2500 },
+        { id: '3', name: 'Mehmet Kaya', phone: '0544 222 33 44', balance: -8700 },
+        { id: '4', name: 'Fatma Çelik', phone: '0555 333 44 55', balance: 0 },
+        { id: '5', name: 'Ali Öztürk', phone: '0533 444 55 66', balance: -1200 },
+        { id: '6', name: 'Ayşe Demir', phone: '0542 555 66 77', balance: -4300 },
+        { id: '7', name: 'Hasan Arslan', phone: '0531 666 77 88', balance: 0 },
+        { id: '8', name: 'Zeynep Koç', phone: '0546 777 88 99', balance: -950 },
     ];
 
     // Quick product catalog for search
@@ -111,9 +121,66 @@ export class PosComponent implements OnDestroy, AfterViewInit {
     }
 
     get selectedCustomerName(): string {
+        if (this.paymentMethod() === 'credit' && this.selectedBuyer()) {
+            return this.selectedBuyer()!.name;
+        }
         if (!this.selectedBuyerId) return 'Peşin Satış';
         const b = this.buyers.find(b => b.id === this.selectedBuyerId);
         return b ? b.name : 'Peşin Satış';
+    }
+
+    // ─── Buyer Search (Veresiye) ───────────────────────
+    get filteredBuyers() {
+        const term = this.debouncedBuyerTerm().toLowerCase();
+        const allBuyers = this.buyers.filter(b => b.id !== '1'); // exclude Peşin Müşteri
+        if (!term) return allBuyers.slice(0, 6);
+        return allBuyers.filter(b =>
+            b.name.toLowerCase().includes(term) ||
+            b.phone.includes(term)
+        ).slice(0, 6);
+    }
+
+    onBuyerSearchInput(): void {
+        if (this._buyerSearchTimer) clearTimeout(this._buyerSearchTimer);
+        this._buyerSearchTimer = setTimeout(() => {
+            this.debouncedBuyerTerm.set(this.buyerSearchTerm);
+            this.showBuyerDropdown.set(true);
+        }, 200);
+    }
+
+    selectBuyer(buyer: { id: string; name: string; phone: string; balance: number }): void {
+        this.selectedBuyer.set(buyer);
+        this.selectedBuyerId = buyer.id;
+        this.buyerSearchTerm = '';
+        this.debouncedBuyerTerm.set('');
+        this.showBuyerDropdown.set(false);
+        this.showNotification(`Veresiye: ${buyer.name} seçildi`, 'info');
+    }
+
+    clearBuyerSelection(): void {
+        this.selectedBuyer.set(null);
+        this.selectedBuyerId = '';
+        this.buyerSearchTerm = '';
+        this.debouncedBuyerTerm.set('');
+    }
+
+    onBuyerSearchFocus(): void {
+        this.showBuyerDropdown.set(true);
+        if (!this.debouncedBuyerTerm()) {
+            this.debouncedBuyerTerm.set('');
+        }
+    }
+
+    onBuyerSearchBlur(): void {
+        // Delay to allow click on dropdown items
+        setTimeout(() => this.showBuyerDropdown.set(false), 200);
+    }
+
+    highlightBuyerMatch(text: string): string {
+        const term = this.debouncedBuyerTerm();
+        if (!term) return text;
+        const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        return text.replace(regex, '<mark class="search-highlight">$1</mark>');
     }
 
     ngAfterViewInit(): void {
@@ -258,10 +325,20 @@ export class PosComponent implements OnDestroy, AfterViewInit {
     // ─── Sale & Receipt ────────────────────────────────
     selectPayment(method: string): void {
         this.paymentMethod.set(method);
+        // Clear buyer when switching away from credit
+        if (method !== 'credit') {
+            this.clearBuyerSelection();
+        }
     }
 
     completeSale(): void {
         if (this.cart().length === 0) return;
+
+        // Veresiye requires a buyer
+        if (this.paymentMethod() === 'credit' && !this.selectedBuyer()) {
+            this.showNotification('Veresiye satış için lütfen bir alıcı seçin!', 'warning');
+            return;
+        }
 
         const now = new Date();
         const receiptNo = 'FIS-' + now.getFullYear() +
@@ -428,5 +505,6 @@ export class PosComponent implements OnDestroy, AfterViewInit {
     ngOnDestroy(): void {
         if (this._searchTimer) clearTimeout(this._searchTimer);
         if (this._notifTimer) clearTimeout(this._notifTimer);
+        if (this._buyerSearchTimer) clearTimeout(this._buyerSearchTimer);
     }
 }

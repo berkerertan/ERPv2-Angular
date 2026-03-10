@@ -42,8 +42,7 @@
             <button class="profile-btn">
                 <div class="avatar">
                     <span class="avatar-text">
-                        {{ authService.currentUser()?.firstName?.charAt(0) }}{{
-                        authService.currentUser()?.lastName?.charAt(0) }}
+                        {{ authService.currentUser()?.userName?.charAt(0)?.toUpperCase() }}{{ authService.currentUser()?.userName?.split(' ')?.[1]?.charAt(0)?.toUpperCase() || '' }}
                     </span>
                 </div>
                 <div class="profile-info">

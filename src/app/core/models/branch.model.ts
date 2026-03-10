@@ -1,11 +1,20 @@
+/** Branch — Backend BranchDto + CreateBranchRequest + UpdateBranchRequest */
+
 export interface Branch {
     id: string;
-    name: string;
     companyId: string;
-    companyName?: string;
-    address?: string;
-    phone?: string;
-    isActive: boolean;
-    createdAt?: string;
-    updatedAt?: string;
+    code?: string;
+    name: string;
+}
+
+export interface CreateBranchRequest {
+    companyId: string;
+    code?: string;
+    name: string;
+}
+
+export interface UpdateBranchRequest {
+    companyId?: string;
+    code?: string;
+    name?: string;
 }

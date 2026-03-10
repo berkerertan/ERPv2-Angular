@@ -1,21 +1,46 @@
+/** PurchaseOrder — Backend PurchaseOrderDto + Items + Create/Update Requests */
+
+import { OrderStatus } from './sales-order.model';
+
 export interface PurchaseOrder {
     id: string;
-    orderNumber?: string;
-    cariAccountId: string;
-    cariAccountName?: string;
-    status: 'Draft' | 'Approved' | 'Cancelled';
+    orderNo?: string;
+    supplierCariAccountId: string;
+    warehouseId: string;
+    status: OrderStatus;
+    orderDateUtc: string;
     totalAmount: number;
-    items?: PurchaseOrderItem[];
-    notes?: string;
-    createdAt?: string;
-    updatedAt?: string;
+    items?: PurchaseOrderItemDto[];
 }
 
-export interface PurchaseOrderItem {
-    id?: string;
+export interface PurchaseOrderItemDto {
     productId: string;
-    productName?: string;
     quantity: number;
     unitPrice: number;
-    totalPrice: number;
+}
+
+export interface CreatePurchaseOrderRequest {
+    orderNo?: string;
+    supplierCariAccountId: string;
+    warehouseId: string;
+    items: CreatePurchaseOrderItemRequest[];
+}
+
+export interface CreatePurchaseOrderItemRequest {
+    productId: string;
+    quantity: number;
+    unitPrice: number;
+}
+
+export interface UpdatePurchaseOrderRequest {
+    orderNo?: string;
+    supplierCariAccountId?: string;
+    warehouseId?: string;
+    items?: UpdatePurchaseOrderItemRequest[];
+}
+
+export interface UpdatePurchaseOrderItemRequest {
+    productId: string;
+    quantity: number;
+    unitPrice: number;
 }

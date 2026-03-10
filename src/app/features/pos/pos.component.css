@@ -1121,6 +1121,284 @@
     }
 }
 
+/* ═══ VERESIYE BUYER SEARCH ════════════════════════════ */
+.credit-buyer-section {
+    animation: creditSlideIn 0.3s ease;
+}
+
+@keyframes creditSlideIn {
+    from { opacity: 0; max-height: 0; transform: translateY(-8px); }
+    to { opacity: 1; max-height: 500px; transform: translateY(0); }
+}
+
+.credit-buyer-search {
+    position: relative;
+}
+
+.credit-label {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--warning);
+    margin-bottom: var(--space-2);
+}
+
+.credit-label .material-icons-outlined {
+    font-size: 16px;
+}
+
+.credit-search-wrap {
+    position: relative;
+}
+
+.credit-search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    color: var(--text-muted);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.credit-search-input {
+    width: 100%;
+    padding: 10px 12px 10px 36px;
+    background: var(--bg-elevated);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 0.8125rem;
+    outline: none;
+    transition: all var(--transition-fast);
+}
+
+.credit-search-input:focus {
+    border-color: var(--warning);
+    box-shadow: 0 0 0 3px rgba(252, 196, 25, 0.15);
+}
+
+.credit-search-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* Buyer Dropdown */
+.buyer-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 4px;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    z-index: 50;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    max-height: 260px;
+    overflow-y: auto;
+    animation: dropdownIn 0.15s ease;
+}
+
+.buyer-dropdown-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: 10px 12px;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background 0.12s;
+}
+
+.buyer-dropdown-item:last-child { border-bottom: none; }
+
+.buyer-dropdown-item:hover {
+    background: var(--bg-hover);
+}
+
+.buyer-item-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex: 1;
+    min-width: 0;
+}
+
+.buyer-avatar {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    background: rgba(76, 110, 245, 0.15);
+    color: var(--primary-400);
+    font-size: 0.75rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.buyer-item-details {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.buyer-item-name {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.buyer-item-phone {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.buyer-balance {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    white-space: nowrap;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+}
+
+.buyer-balance.negative {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.buyer-balance.clear {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+.buyer-no-result {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: 16px;
+    color: var(--text-muted);
+    font-size: 0.8125rem;
+}
+
+.buyer-no-result .material-icons-outlined {
+    font-size: 20px;
+    opacity: 0.5;
+}
+
+/* ─── Selected Buyer Card ───────────────────────────── */
+.selected-buyer-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: 10px 12px;
+    background: rgba(76, 110, 245, 0.08);
+    border: 1px solid rgba(76, 110, 245, 0.2);
+    border-radius: var(--radius-md);
+    animation: fadeIn 0.2s ease;
+}
+
+.selected-buyer-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex: 1;
+    min-width: 0;
+}
+
+.selected-buyer-avatar {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-full);
+    background: var(--primary-600);
+    color: white;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.selected-buyer-details {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.selected-buyer-name {
+    font-size: 0.8125rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.selected-buyer-phone {
+    font-size: 0.6875rem;
+    color: var(--text-muted);
+}
+
+.selected-buyer-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.buyer-balance-tag {
+    font-size: 0.625rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    white-space: nowrap;
+}
+
+.buyer-balance-tag.negative {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.buyer-balance-tag.clear {
+    background: var(--success-bg);
+    color: var(--success);
+}
+
+.change-buyer-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.change-buyer-btn:hover {
+    background: var(--bg-hover);
+    color: var(--primary-400);
+}
+
+.change-buyer-btn .material-icons-outlined { font-size: 18px; }
+
 /* ═══ RESPONSIVE ═══════════════════════════════════════ */
 @media (max-width: 1024px) {
     .pos-layout {

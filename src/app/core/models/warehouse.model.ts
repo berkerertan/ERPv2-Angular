@@ -1,10 +1,20 @@
+/** Warehouse — Backend WarehouseDto + CreateWarehouseRequest + UpdateWarehouseRequest */
+
 export interface Warehouse {
     id: string;
+    branchId: string;
+    code?: string;
     name: string;
+}
+
+export interface CreateWarehouseRequest {
+    branchId: string;
+    code?: string;
+    name: string;
+}
+
+export interface UpdateWarehouseRequest {
     branchId?: string;
-    branchName?: string;
-    address?: string;
-    isActive: boolean;
-    createdAt?: string;
-    updatedAt?: string;
+    code?: string;
+    name?: string;
 }

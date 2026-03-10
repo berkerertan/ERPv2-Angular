@@ -191,8 +191,89 @@
         </div>
       </div>
 
+      <!-- ═══ VERESIYE: Buyer Search ═════════════════ -->
+      @if (paymentMethod() === 'credit') {
+      <div class="credit-buyer-section">
+        @if (!selectedBuyer()) {
+        <!-- Search input -->
+        <div class="credit-buyer-search">
+          <label class="credit-label">
+            <span class="material-icons-outlined">person_search</span>
+            Alıcı Seçin (Veresiye)
+          </label>
+          <div class="credit-search-wrap">
+            <span class="material-icons-outlined credit-search-icon">search</span>
+            <input type="text"
+              class="credit-search-input"
+              placeholder="İsim veya telefon ile ara..."
+              [(ngModel)]="buyerSearchTerm"
+              (input)="onBuyerSearchInput()"
+              (focus)="onBuyerSearchFocus()"
+              (blur)="onBuyerSearchBlur()"
+              id="buyer-search-input" />
+          </div>
+
+          <!-- Dropdown -->
+          @if (showBuyerDropdown() && filteredBuyers.length > 0) {
+          <div class="buyer-dropdown">
+            @for (buyer of filteredBuyers; track buyer.id) {
+            <button class="buyer-dropdown-item" (mousedown)="selectBuyer(buyer)">
+              <div class="buyer-item-info">
+                <span class="buyer-avatar">{{ buyer.name.charAt(0) }}</span>
+                <div class="buyer-item-details">
+                  <span class="buyer-item-name" [innerHTML]="highlightBuyerMatch(buyer.name)"></span>
+                  <span class="buyer-item-phone">{{ buyer.phone }}</span>
+                </div>
+              </div>
+              @if (buyer.balance < 0) {
+              <span class="buyer-balance negative">₺{{ (buyer.balance * -1).toLocaleString('tr-TR') }}</span>
+              } @else {
+              <span class="buyer-balance clear">Temiz</span>
+              }
+            </button>
+            }
+          </div>
+          }
+
+          @if (showBuyerDropdown() && filteredBuyers.length === 0 && buyerSearchTerm) {
+          <div class="buyer-dropdown">
+            <div class="buyer-no-result">
+              <span class="material-icons-outlined">person_off</span>
+              Alıcı bulunamadı
+            </div>
+          </div>
+          }
+        </div>
+        } @else {
+        <!-- Selected buyer card -->
+        <div class="selected-buyer-card">
+          <div class="selected-buyer-info">
+            <span class="selected-buyer-avatar">{{ selectedBuyer()!.name.charAt(0) }}</span>
+            <div class="selected-buyer-details">
+              <span class="selected-buyer-name">{{ selectedBuyer()!.name }}</span>
+              <span class="selected-buyer-phone">{{ selectedBuyer()!.phone }}</span>
+            </div>
+          </div>
+          <div class="selected-buyer-actions">
+            @if (selectedBuyer()!.balance < 0) {
+            <span class="buyer-balance-tag negative">
+              Borç: ₺{{ (selectedBuyer()!.balance * -1).toLocaleString('tr-TR') }}
+            </span>
+            } @else {
+            <span class="buyer-balance-tag clear">Borçsuz</span>
+            }
+            <button class="change-buyer-btn" (click)="clearBuyerSelection()" title="Alıcıyı Değiştir">
+              <span class="material-icons-outlined">swap_horiz</span>
+            </button>
+          </div>
+        </div>
+        }
+      </div>
+      }
+
       <!-- Complete Sale -->
-      <button class="complete-sale-btn" (click)="completeSale()" [disabled]="cart().length === 0">
+      <button class="complete-sale-btn" (click)="completeSale()"
+        [disabled]="cart().length === 0 || (paymentMethod() === 'credit' && !selectedBuyer())">
         <span class="material-icons-outlined">point_of_sale</span>
         Satışı Tamamla
         @if (cart().length > 0) {

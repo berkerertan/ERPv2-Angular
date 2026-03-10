@@ -1,11 +1,20 @@
+/** Company — Backend CompanyDto + CreateCompanyRequest + UpdateCompanyRequest */
+
 export interface Company {
     id: string;
+    code?: string;
     name: string;
     taxNumber?: string;
-    address?: string;
-    phone?: string;
-    email?: string;
-    isActive: boolean;
-    createdAt?: string;
-    updatedAt?: string;
+}
+
+export interface CreateCompanyRequest {
+    code?: string;
+    name: string;
+    taxNumber?: string;
+}
+
+export interface UpdateCompanyRequest {
+    code?: string;
+    name?: string;
+    taxNumber?: string;
 }

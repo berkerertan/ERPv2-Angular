@@ -19,11 +19,11 @@
     <!-- Login Form -->
     <form class="login-form" (ngSubmit)="onSubmit()">
         <div class="form-group">
-            <label class="form-label" for="email">E-posta Adresi</label>
+            <label class="form-label" for="userName">Kullanıcı Adı</label>
             <div class="input-wrapper">
-                <span class="input-icon material-icons-outlined">mail</span>
-                <input id="email" type="email" class="form-input has-icon" placeholder="ornek@sirket.com"
-                    [(ngModel)]="email" name="email" autocomplete="email" [disabled]="isLoading()" />
+                <span class="input-icon material-icons-outlined">person</span>
+                <input id="userName" type="text" class="form-input has-icon" placeholder="admin"
+                    [(ngModel)]="userName" name="userName" autocomplete="username" [disabled]="isLoading()" />
             </div>
         </div>
 

@@ -1,25 +1,10 @@
-/** Shared API query/pagination interfaces */
+/** Shared API query/pagination interfaces — Backend uyumlu */
 
 export interface ApiQueryParams {
+    q?: string;
     page?: number;
     pageSize?: number;
-    search?: string;
     sortBy?: string;
-    sortDirection?: 'asc' | 'desc';
+    sortDir?: 'asc' | 'desc';
     [key: string]: any;
-}
-
-export interface PaginatedResponse<T> {
-    items: T[];
-    totalCount: number;
-    page: number;
-    pageSize: number;
-    totalPages: number;
-}
-
-export interface ApiResponse<T> {
-    data: T;
-    success: boolean;
-    message?: string;
-    errors?: string[];
 }

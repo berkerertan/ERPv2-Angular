@@ -12,7 +12,7 @@ import { AuthService } from '../../../core/services/auth.service';
     styleUrl: './login.component.css'
 })
 export class LoginComponent {
-    email = '';
+    userName = '';
     password = '';
     isLoading = signal(false);
     errorMessage = signal('');
@@ -28,15 +28,15 @@ export class LoginComponent {
     }
 
     onSubmit(): void {
-        if (!this.email || !this.password) {
-            this.errorMessage.set('E-posta ve şifre gereklidir.');
+        if (!this.userName || !this.password) {
+            this.errorMessage.set('Kullanıcı adı ve şifre gereklidir.');
             return;
         }
 
         this.isLoading.set(true);
         this.errorMessage.set('');
 
-        this.authService.login({ email: this.email, password: this.password }).subscribe({
+        this.authService.login({ userName: this.userName, password: this.password }).subscribe({
             next: () => {
                 this.isLoading.set(false);
                 this.router.navigate(['/dashboard']);

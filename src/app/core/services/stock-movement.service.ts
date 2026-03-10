@@ -2,8 +2,16 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { StockMovement, StockBalance } from '../models/stock-movement.model';
-import { ApiQueryParams } from '../models/api.model';
+import {
+    StockMovement,
+    CreateStockMovementRequest,
+    UpdateStockMovementRequest,
+    StockBalance,
+    CriticalStockAlertDto,
+    TransferStockRequest,
+    TransferStockResult,
+    StockMovementType
+} from '../models/stock-movement.model';
 
 @Injectable({ providedIn: 'root' })
 export class StockMovementService {
@@ -11,8 +19,18 @@ export class StockMovementService {
 
     constructor(private http: HttpClient) { }
 
-    /** Stok hareketleri listesi */
-    getAll(params?: ApiQueryParams): Observable<StockMovement[]> {
+    /** Stok hareketleri listesi — gelişmiş filtreleme */
+    getAll(params?: {
+        q?: string;
+        warehouseId?: string;
+        productId?: string;
+        type?: StockMovementType;
+        fromUtc?: string;
+        toUtc?: string;
+        page?: number;
+        pageSize?: number;
+        sortDir?: string;
+    }): Observable<StockMovement[]> {
         return this.http.get<StockMovement[]>(this.apiUrl, {
             params: this.buildParams(params)
         });
@@ -24,28 +42,38 @@ export class StockMovementService {
     }
 
     /** Depo+ürün bazlı stok bakiyeleri */
-    getBalances(warehouseId?: string): Observable<StockBalance[]> {
+    getBalances(): Observable<StockBalance[]> {
+        return this.http.get<StockBalance[]>(`${this.apiUrl}/balances`);
+    }
+
+    /** Kritik stok uyarıları */
+    getCriticalAlerts(warehouseId?: string): Observable<CriticalStockAlertDto[]> {
         let params = new HttpParams();
         if (warehouseId) params = params.set('warehouseId', warehouseId);
-        return this.http.get<StockBalance[]>(`${this.apiUrl}/balances`, { params });
+        return this.http.get<CriticalStockAlertDto[]>(`${this.apiUrl}/critical-alerts`, { params });
     }
 
-    /** Yeni stok hareketi ekle (In/Out) */
-    create(movement: Partial<StockMovement>): Observable<StockMovement> {
-        return this.http.post<StockMovement>(this.apiUrl, movement);
+    /** Yeni stok hareketi — 201 Created: uuid döner */
+    create(movement: CreateStockMovementRequest): Observable<string> {
+        return this.http.post<string>(this.apiUrl, movement);
     }
 
-    /** Stok hareketi güncelle */
-    update(id: string, movement: Partial<StockMovement>): Observable<StockMovement> {
-        return this.http.put<StockMovement>(`${this.apiUrl}/${id}`, movement);
+    /** Stok hareketi güncelle — 204 No Content */
+    update(id: string, movement: UpdateStockMovementRequest): Observable<void> {
+        return this.http.put<void>(`${this.apiUrl}/${id}`, movement);
     }
 
-    /** Stok hareketi sil */
+    /** Stok hareketi sil — 204 No Content */
     delete(id: string): Observable<void> {
         return this.http.delete<void>(`${this.apiUrl}/${id}`);
     }
 
-    private buildParams(params?: ApiQueryParams): HttpParams {
+    /** Depolar arası stok transferi */
+    transfer(request: TransferStockRequest): Observable<TransferStockResult> {
+        return this.http.post<TransferStockResult>(`${this.apiUrl}/transfer`, request);
+    }
+
+    private buildParams(params?: Record<string, any>): HttpParams {
         let httpParams = new HttpParams();
         if (!params) return httpParams;
         Object.keys(params).forEach(key => {

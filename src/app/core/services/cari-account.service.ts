@@ -1,8 +1,18 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { CariAccount, DebtItem } from '../models/cari-account.model';
+import {
+    CariAccount,
+    CreateCariAccountRequest,
+    UpdateCariAccountRequest,
+    CariAccountSuggestionDto,
+    CariDebtItem,
+    CreateCariDebtItemRequest,
+    UpdateCariDebtItemRequest,
+    CariAccountDetailsResponse,
+    CariDebtItemImportResult
+} from '../models/cari-account.model';
 
 @Injectable({ providedIn: 'root' })
 export class CariAccountService {
@@ -10,62 +20,119 @@ export class CariAccountService {
 
     constructor(private http: HttpClient) { }
 
-    getAll(): Observable<CariAccount[]> {
-        return this.http.get<CariAccount[]>(this.apiUrl);
+    /** Tüm cari hesaplar — arama, sayfalama, sıralama */
+    getAll(params?: { q?: string; page?: number; pageSize?: number; sortBy?: string; sortDir?: string }): Observable<CariAccount[]> {
+        return this.http.get<CariAccount[]>(this.apiUrl, {
+            params: this.buildParams(params)
+        });
     }
 
-    getSuppliers(): Observable<CariAccount[]> {
-        return this.http.get<CariAccount[]>(`${this.apiUrl}/suppliers`);
+    /** Sadece tedarikçiler */
+    getSuppliers(params?: { q?: string; page?: number; pageSize?: number; sortBy?: string; sortDir?: string }): Observable<CariAccount[]> {
+        return this.http.get<CariAccount[]>(`${this.apiUrl}/suppliers`, {
+            params: this.buildParams(params)
+        });
     }
 
-    getBuyers(): Observable<CariAccount[]> {
-        return this.http.get<CariAccount[]>(`${this.apiUrl}/buyers`);
+    /** Sadece alıcılar */
+    getBuyers(params?: { q?: string; page?: number; pageSize?: number; sortBy?: string; sortDir?: string }): Observable<CariAccount[]> {
+        return this.http.get<CariAccount[]>(`${this.apiUrl}/buyers`, {
+            params: this.buildParams(params)
+        });
     }
 
+    /** Tüm cari suggest (hızlı öneri) */
+    suggest(q: string, limit: number = 8): Observable<CariAccountSuggestionDto[]> {
+        return this.http.get<CariAccountSuggestionDto[]>(`${this.apiUrl}/suggest`, {
+            params: { q, limit: limit.toString() }
+        });
+    }
+
+    /** Alıcı suggest */
+    suggestBuyers(q: string, limit: number = 8): Observable<CariAccountSuggestionDto[]> {
+        return this.http.get<CariAccountSuggestionDto[]>(`${this.apiUrl}/buyers/suggest`, {
+            params: { q, limit: limit.toString() }
+        });
+    }
+
+    /** Tedarikçi suggest */
+    suggestSuppliers(q: string, limit: number = 8): Observable<CariAccountSuggestionDto[]> {
+        return this.http.get<CariAccountSuggestionDto[]>(`${this.apiUrl}/suppliers/suggest`, {
+            params: { q, limit: limit.toString() }
+        });
+    }
+
+    /** Tek cari hesap detayı */
     getById(id: string): Observable<CariAccount> {
         return this.http.get<CariAccount>(`${this.apiUrl}/${id}`);
     }
 
-    getDetails(id: string): Observable<any> {
-        return this.http.get<any>(`${this.apiUrl}/${id}/details`);
+    /** Cari hesap detay sayfası (account + debt items) */
+    getDetails(id: string): Observable<CariAccountDetailsResponse> {
+        return this.http.get<CariAccountDetailsResponse>(`${this.apiUrl}/${id}/details`);
     }
 
-    create(account: Partial<CariAccount>): Observable<CariAccount> {
-        return this.http.post<CariAccount>(this.apiUrl, account);
+    /** Yeni cari hesap oluştur — 201 Created: uuid döner */
+    create(account: CreateCariAccountRequest): Observable<string> {
+        return this.http.post<string>(this.apiUrl, account);
     }
 
-    update(id: string, account: Partial<CariAccount>): Observable<CariAccount> {
-        return this.http.put<CariAccount>(`${this.apiUrl}/${id}`, account);
+    /** Cari hesap güncelle — 204 No Content */
+    update(id: string, account: UpdateCariAccountRequest): Observable<void> {
+        return this.http.put<void>(`${this.apiUrl}/${id}`, account);
     }
 
+    /** Cari hesap sil — 204 No Content */
     delete(id: string): Observable<void> {
         return this.http.delete<void>(`${this.apiUrl}/${id}`);
     }
 
-    // Debt Items
-    getDebtItems(cariAccountId: string): Observable<DebtItem[]> {
-        return this.http.get<DebtItem[]>(`${this.apiUrl}/${cariAccountId}/debt-items`);
+    // ═══════════ Debt Items ═══════════
+
+    /** Cari hesabın borç kalemleri */
+    getDebtItems(cariAccountId: string): Observable<CariDebtItem[]> {
+        return this.http.get<CariDebtItem[]>(`${this.apiUrl}/${cariAccountId}/debt-items`);
     }
 
-    getDebtItem(cariAccountId: string, debtItemId: string): Observable<DebtItem> {
-        return this.http.get<DebtItem>(`${this.apiUrl}/${cariAccountId}/debt-items/${debtItemId}`);
+    /** Tek borç kalemi */
+    getDebtItem(cariAccountId: string, debtItemId: string): Observable<CariDebtItem> {
+        return this.http.get<CariDebtItem>(`${this.apiUrl}/${cariAccountId}/debt-items/${debtItemId}`);
     }
 
-    createDebtItem(cariAccountId: string, item: Partial<DebtItem>): Observable<DebtItem> {
-        return this.http.post<DebtItem>(`${this.apiUrl}/${cariAccountId}/debt-items`, item);
+    /** Yeni borç kalemi ekle — 201 Created: uuid döner */
+    createDebtItem(cariAccountId: string, item: CreateCariDebtItemRequest): Observable<string> {
+        return this.http.post<string>(`${this.apiUrl}/${cariAccountId}/debt-items`, item);
     }
 
-    updateDebtItem(cariAccountId: string, debtItemId: string, item: Partial<DebtItem>): Observable<DebtItem> {
-        return this.http.put<DebtItem>(`${this.apiUrl}/${cariAccountId}/debt-items/${debtItemId}`, item);
+    /** Borç kalemi güncelle — 204 No Content */
+    updateDebtItem(cariAccountId: string, debtItemId: string, item: UpdateCariDebtItemRequest): Observable<void> {
+        return this.http.put<void>(`${this.apiUrl}/${cariAccountId}/debt-items/${debtItemId}`, item);
     }
 
+    /** Borç kalemi sil — 204 No Content */
     deleteDebtItem(cariAccountId: string, debtItemId: string): Observable<void> {
         return this.http.delete<void>(`${this.apiUrl}/${cariAccountId}/debt-items/${debtItemId}`);
     }
 
-    importExcel(cariAccountId: string, file: File): Observable<any> {
-        const formData = new FormData();
-        formData.append('file', file);
-        return this.http.post<any>(`${this.apiUrl}/${cariAccountId}/debt-items/import-excel`, formData);
+    /** Excel'den toplu borç kalemi import */
+    importExcel(cariAccountId: string, formData: FormData): Observable<CariDebtItemImportResult> {
+        return this.http.post<CariDebtItemImportResult>(
+            `${this.apiUrl}/${cariAccountId}/debt-items/import-excel`,
+            formData
+        );
+    }
+
+    /** HTTP query param builder */
+    private buildParams(params?: Record<string, any>): HttpParams {
+        let httpParams = new HttpParams();
+        if (!params) return httpParams;
+
+        Object.keys(params).forEach(key => {
+            const value = params[key];
+            if (value !== undefined && value !== null && value !== '') {
+                httpParams = httpParams.set(key, value.toString());
+            }
+        });
+        return httpParams;
     }
 }

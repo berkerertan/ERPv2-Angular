@@ -1,24 +1,40 @@
+/** Auth — Backend API DTO eşleştirmesi */
+
 export interface LoginRequest {
-    email: string;
+    userName: string;
     password: string;
 }
 
 export interface RegisterRequest {
+    userName: string;
     email: string;
     password: string;
-    firstName: string;
-    lastName: string;
+    role?: string;
+}
+
+export interface BootstrapAdminRequest {
+    userName: string;
+    email: string;
+    password: string;
 }
 
 export interface AuthResponse {
-    token: string;
-    user: User;
+    accessToken: string;
+    refreshToken: string;
+    accessTokenExpiresAtUtc: string;
+    role: string;
+    userName: string;
 }
 
-export interface User {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
+export interface UserRegistrationResponse {
+    userId: string;
+    userName: string;
     role: string;
+}
+
+/** UI tarafında kullanılacak kullanıcı bilgisi (localStorage'dan) */
+export interface User {
+    userName: string;
+    role: string;
+    accessTokenExpiresAtUtc?: string;
 }

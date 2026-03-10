@@ -3,13 +3,20 @@ import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap, catchError, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { LoginRequest, RegisterRequest, AuthResponse, User } from '../models/user.model';
+import {
+    LoginRequest,
+    RegisterRequest,
+    BootstrapAdminRequest,
+    AuthResponse,
+    UserRegistrationResponse,
+    User
+} from '../models/user.model';
 
 @Injectable({
     providedIn: 'root'
 })
 export class AuthService {
-    private readonly apiUrl = `${environment.apiUrl}/api/auth`;
+    private readonly apiUrl = `${environment.apiUrl}/api/Auth`;
 
     // Signals for reactive state
     private currentUserSignal = signal<User | null>(null);
@@ -20,7 +27,7 @@ export class AuthService {
     readonly isAuthenticated = computed(() => !!this.tokenSignal());
     readonly userFullName = computed(() => {
         const user = this.currentUserSignal();
-        return user ? `${user.firstName} ${user.lastName}` : '';
+        return user ? user.userName : '';
     });
 
     constructor(private http: HttpClient, private router: Router) {
@@ -37,9 +44,8 @@ export class AuthService {
         );
     }
 
-    register(request: RegisterRequest): Observable<AuthResponse> {
-        return this.http.post<AuthResponse>(`${this.apiUrl}/register`, request).pipe(
-            tap(response => this.handleAuthResponse(response)),
+    register(request: RegisterRequest): Observable<UserRegistrationResponse> {
+        return this.http.post<UserRegistrationResponse>(`${this.apiUrl}/register`, request).pipe(
             catchError(error => {
                 console.error('Registration failed:', error);
                 return throwError(() => error);
@@ -47,7 +53,7 @@ export class AuthService {
         );
     }
 
-    bootstrapAdmin(request: RegisterRequest): Observable<AuthResponse> {
+    bootstrapAdmin(request: BootstrapAdminRequest): Observable<AuthResponse> {
         return this.http.post<AuthResponse>(`${this.apiUrl}/bootstrap-admin`, request).pipe(
             tap(response => this.handleAuthResponse(response)),
             catchError(error => {
@@ -61,14 +67,14 @@ export class AuthService {
     devLogin(): void {
         if (environment.production) return;
         const mockUser: User = {
-            id: 'dev-001',
-            email: 'admin@erp.dev',
-            firstName: 'Admin',
-            lastName: 'Geliştirici',
+            userName: 'Admin Geliştirici',
             role: 'Admin'
         };
         const mockToken = 'dev-mock-jwt-token';
-        this.handleAuthResponse({ token: mockToken, user: mockUser });
+        this.tokenSignal.set(mockToken);
+        this.currentUserSignal.set(mockUser);
+        localStorage.setItem('erp_token', mockToken);
+        localStorage.setItem('erp_user', JSON.stringify(mockUser));
         this.router.navigate(['/dashboard']);
     }
 
@@ -85,10 +91,16 @@ export class AuthService {
     }
 
     private handleAuthResponse(response: AuthResponse): void {
-        this.tokenSignal.set(response.token);
-        this.currentUserSignal.set(response.user);
-        localStorage.setItem('erp_token', response.token);
-        localStorage.setItem('erp_user', JSON.stringify(response.user));
+        this.tokenSignal.set(response.accessToken);
+        const user: User = {
+            userName: response.userName,
+            role: response.role,
+            accessTokenExpiresAtUtc: response.accessTokenExpiresAtUtc
+        };
+        this.currentUserSignal.set(user);
+        localStorage.setItem('erp_token', response.accessToken);
+        localStorage.setItem('erp_refresh_token', response.refreshToken);
+        localStorage.setItem('erp_user', JSON.stringify(user));
     }
 
     private loadFromStorage(): void {
