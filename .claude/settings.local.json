@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc --noEmit --strict --target ES2022 --experimentalDecorators --emitDecoratorMetadata --moduleResolution node --lib ES2022,dom src/app/core/services/revenue.service.ts src/app/core/models/revenue.model.ts)",
+      "Bash(npx ng build --configuration=development)"
+    ]
+  }
+}

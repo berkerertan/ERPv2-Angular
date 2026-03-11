@@ -1,0 +1,614 @@
+<div class="subscribers-page page-container">
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       TOAST NOTIFICATION
+  ════════════════════════════════════════════════════════════════════════ -->
+  @if (toastMessage()) {
+    <div class="toast-container">
+      <div class="toast-item" [class.toast-success]="toastType() === 'success'"
+           [class.toast-error]="toastType() === 'error'"
+           [class.toast-info]="toastType() === 'info'">
+        <span class="material-icons-outlined toast-icon">
+          @if (toastType() === 'success') { check_circle }
+          @else if (toastType() === 'error') { error }
+          @else { info }
+        </span>
+        <span class="toast-text">{{ toastMessage() }}</span>
+        <button class="toast-close" (click)="dismissToast()">
+          <span class="material-icons-outlined" style="font-size:16px">close</span>
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       PAGE HEADER
+  ════════════════════════════════════════════════════════════════════════ -->
+  <div class="page-header">
+    <div>
+      <div class="flex items-center gap-3">
+        <h1 class="page-title">Aboneler</h1>
+        <span class="badge badge-primary total-badge">{{ total() }} abone</span>
+      </div>
+      <p class="page-subtitle">Tüm SaaS abonelerini ve tenant hesaplarını yönetin</p>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       FILTER BAR
+  ════════════════════════════════════════════════════════════════════════ -->
+  <div class="filter-bar">
+    <!-- Search -->
+    <div class="search-wrap">
+      <span class="material-icons-outlined search-icon">search</span>
+      <input
+        type="text"
+        class="form-input search-input"
+        placeholder="İşletme, e-posta veya yetkili adı ara..."
+        [(ngModel)]="filter.search"
+        (ngModelChange)="onSearchChange()"
+      />
+    </div>
+
+    <!-- Status filter -->
+    <select class="form-input filter-select toolbar-filter" [(ngModel)]="filter.status" (ngModelChange)="onFilterChange()">
+      <option value="all">Tüm Durumlar</option>
+      <option value="trial">Deneme</option>
+      <option value="active">Aktif</option>
+      <option value="suspended">Askıya Alındı</option>
+      <option value="cancelled">İptal</option>
+    </select>
+
+    <!-- Plan filter -->
+    <select class="form-input filter-select toolbar-filter" [(ngModel)]="filter.plan" (ngModelChange)="onFilterChange()">
+      <option value="all">Tüm Planlar</option>
+      <option value="starter">Başlangıç</option>
+      <option value="pro">Profesyonel</option>
+      <option value="enterprise">Kurumsal</option>
+    </select>
+
+    <!-- Results summary -->
+    <div class="results-text">
+      @if (!isLoading()) {
+        <span>
+          Toplam <strong>{{ total() }}</strong> abone
+          @if (filter.search || filter.status !== 'all' || filter.plan !== 'all') {
+            &nbsp;· Sayfa {{ filter.page }}/{{ totalPages }}
+          }
+        </span>
+      } @else {
+        <span class="text-muted">Yükleniyor...</span>
+      }
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       TABLE WRAP
+  ════════════════════════════════════════════════════════════════════════ -->
+  <div class="table-wrap card">
+
+    <!-- Loading state -->
+    @if (isLoading()) {
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <span>Aboneler yükleniyor...</span>
+      </div>
+    }
+
+    <!-- Error state -->
+    @else if (error()) {
+      <div class="empty-state">
+        <span class="material-icons-outlined" style="color: var(--danger)">error_outline</span>
+        <h3>Hata Oluştu</h3>
+        <p>{{ error() }}</p>
+        <button class="btn btn-primary btn-sm" (click)="loadTenants()">
+          <span class="material-icons-outlined">refresh</span>
+          Tekrar Dene
+        </button>
+      </div>
+    }
+
+    <!-- Empty state -->
+    @else if (tenants().length === 0) {
+      <div class="empty-state">
+        <span class="material-icons-outlined">people_outline</span>
+        <h3>Abone Bulunamadı</h3>
+        <p>Arama kriterlerinize uygun abone kaydı yok.</p>
+        @if (filter.search || filter.status !== 'all' || filter.plan !== 'all') {
+          <button class="btn btn-secondary btn-sm" (click)="filter.search=''; filter.status='all'; filter.plan='all'; onFilterChange()">
+            <span class="material-icons-outlined">clear</span>
+            Filtreleri Temizle
+          </button>
+        }
+      </div>
+    }
+
+    <!-- Table -->
+    @else {
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>İşletme</th>
+              <th>E-posta</th>
+              <th>Plan</th>
+              <th>Durum</th>
+              <th>Fatura</th>
+              <th class="text-right">Aylık Gelir</th>
+              <th>Son Aktif</th>
+              <th class="text-center">İşlemler</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (tenant of tenants(); track trackByTenant($index, tenant)) {
+              <tr>
+                <!-- İşletme -->
+                <td>
+                  <div class="tenant-name">{{ tenant.companyName }}</div>
+                  <div class="tenant-owner">
+                    <span class="material-icons-outlined" style="font-size:13px">person</span>
+                    {{ tenant.ownerName }}
+                  </div>
+                  @if (tenant.city) {
+                    <div class="tenant-city">
+                      <span class="material-icons-outlined" style="font-size:12px">location_on</span>
+                      {{ tenant.city }}
+                    </div>
+                  }
+                </td>
+
+                <!-- E-posta -->
+                <td>
+                  <div class="tenant-email">{{ tenant.email }}</div>
+                  <div class="tenant-phone">{{ tenant.phone }}</div>
+                </td>
+
+                <!-- Plan badge -->
+                <td>
+                  <span [class]="getPlanClass(tenant.plan)">{{ getPlanLabel(tenant.plan) }}</span>
+                </td>
+
+                <!-- Durum badge -->
+                <td>
+                  <span [class]="getStatusClass(tenant.status)">{{ getStatusLabel(tenant.status) }}</span>
+                  @if (tenant.status === 'trial' && tenant.trialEndsAt) {
+                    <div class="trial-ends">
+                      <span class="material-icons-outlined" style="font-size:11px">schedule</span>
+                      {{ formatDate(tenant.trialEndsAt) }}'e kadar
+                    </div>
+                  }
+                </td>
+
+                <!-- Fatura -->
+                <td>
+                  <span class="billing-cycle">{{ getBillingLabel(tenant.billingCycle) }}</span>
+                </td>
+
+                <!-- Aylık Gelir -->
+                <td class="text-right">
+                  <span class="revenue-amount" [class.zero-revenue]="tenant.monthlyRevenue === 0">
+                    {{ formatCurrency(tenant.monthlyRevenue) }}
+                  </span>
+                </td>
+
+                <!-- Son Aktif -->
+                <td>
+                  <span class="date-text">{{ formatDate(tenant.lastActiveAt) }}</span>
+                </td>
+
+                <!-- İşlemler -->
+                <td>
+                  <div class="actions-cell">
+                    <button class="action-btn view" title="Detay" (click)="openDetail(tenant)">
+                      <span class="material-icons-outlined">visibility</span>
+                    </button>
+                    <button class="action-btn edit" title="Durum Değiştir" (click)="openStatusModal(tenant)">
+                      <span class="material-icons-outlined">manage_accounts</span>
+                    </button>
+                    <button class="action-btn delete" title="Sil" (click)="deleteTenant(tenant.id)">
+                      <span class="material-icons-outlined">delete_outline</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ─── Pagination ──────────────────────────────────────────────────── -->
+      @if (totalPages > 1) {
+        <div class="pagination">
+          <div class="pagination-info">
+            Sayfa {{ filter.page }} / {{ totalPages }} &nbsp;·&nbsp; {{ total() }} kayıt
+          </div>
+          <div class="pagination-controls">
+            <!-- Prev -->
+            <button class="page-btn" [disabled]="!hasPrevPage" (click)="changePage(filter.page - 1)">
+              <span class="material-icons-outlined" style="font-size:16px">chevron_left</span>
+            </button>
+
+            <!-- First page if not visible -->
+            @if (pages[0] > 1) {
+              <button class="page-btn" (click)="changePage(1)">1</button>
+              @if (pages[0] > 2) {
+                <span class="page-ellipsis">…</span>
+              }
+            }
+
+            <!-- Page numbers -->
+            @for (p of pages; track p) {
+              <button class="page-btn" [class.active]="p === filter.page" (click)="changePage(p)">
+                {{ p }}
+              </button>
+            }
+
+            <!-- Last page if not visible -->
+            @if (pages[pages.length - 1] < totalPages) {
+              @if (pages[pages.length - 1] < totalPages - 1) {
+                <span class="page-ellipsis">…</span>
+              }
+              <button class="page-btn" (click)="changePage(totalPages)">{{ totalPages }}</button>
+            }
+
+            <!-- Next -->
+            <button class="page-btn" [disabled]="!hasNextPage" (click)="changePage(filter.page + 1)">
+              <span class="material-icons-outlined" style="font-size:16px">chevron_right</span>
+            </button>
+          </div>
+        </div>
+      }
+    }
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     DETAIL MODAL
+════════════════════════════════════════════════════════════════════════════ -->
+@if (showDetailModal() && selectedTenant()) {
+  <div class="overlay" (click)="closeDetail()"></div>
+  <div class="modal detail-modal" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="modal-header">
+      <div>
+        <h2 class="modal-title">{{ selectedTenant()!.companyName }}</h2>
+        <div class="modal-subtitle">
+          <span [class]="getStatusClass(selectedTenant()!.status)">{{ getStatusLabel(selectedTenant()!.status) }}</span>
+          <span [class]="getPlanClass(selectedTenant()!.plan)" style="margin-left:6px">{{ getPlanLabel(selectedTenant()!.plan) }}</span>
+          <span class="text-muted" style="margin-left:8px;font-size:0.8125rem;">ID: {{ selectedTenant()!.id }}</span>
+        </div>
+      </div>
+      <button class="modal-close" (click)="closeDetail()">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+
+    <!-- Info Grid -->
+    <div class="detail-grid">
+      <div class="detail-section">
+        <h4 class="section-title">
+          <span class="material-icons-outlined">business</span>
+          İşletme Bilgileri
+        </h4>
+        <div class="info-list">
+          <div class="info-row">
+            <span class="info-label">Yetkili</span>
+            <span class="info-value">{{ selectedTenant()!.ownerName }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">E-posta</span>
+            <span class="info-value">{{ selectedTenant()!.email }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Telefon</span>
+            <span class="info-value">{{ selectedTenant()!.phone }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Şehir</span>
+            <span class="info-value">{{ selectedTenant()!.city || '—' }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Abonelik Başlangıç</span>
+            <span class="info-value">{{ formatDate(selectedTenant()!.subscribedAt) }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Son Aktif</span>
+            <span class="info-value">{{ formatDate(selectedTenant()!.lastActiveAt) }}</span>
+          </div>
+          @if (selectedTenant()!.trialEndsAt) {
+            <div class="info-row">
+              <span class="info-label">Deneme Bitiş</span>
+              <span class="info-value" style="color:var(--warning)">{{ formatDate(selectedTenant()!.trialEndsAt) }}</span>
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <h4 class="section-title">
+          <span class="material-icons-outlined">receipt_long</span>
+          Faturalama
+        </h4>
+        <div class="info-list">
+          <div class="info-row">
+            <span class="info-label">Plan</span>
+            <span class="info-value">
+              <span [class]="getPlanClass(selectedTenant()!.plan)">{{ getPlanLabel(selectedTenant()!.plan) }}</span>
+            </span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Dönem</span>
+            <span class="info-value">{{ getBillingLabel(selectedTenant()!.billingCycle) }}</span>
+          </div>
+          <div class="info-row">
+            <span class="info-label">Aylık Gelir</span>
+            <span class="info-value revenue-highlight">{{ formatCurrency(selectedTenant()!.monthlyRevenue) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <div class="stat-mini">
+        <span class="stat-mini-icon" style="background:rgba(116,192,252,0.12);color:var(--info)">
+          <span class="material-icons-outlined">store</span>
+        </span>
+        <div>
+          <div class="stat-mini-value">{{ formatNumber(selectedTenant()!.branchCount) }}</div>
+          <div class="stat-mini-label">Şube</div>
+        </div>
+      </div>
+      <div class="stat-mini">
+        <span class="stat-mini-icon" style="background:rgba(92,124,250,0.12);color:var(--primary-400)">
+          <span class="material-icons-outlined">group</span>
+        </span>
+        <div>
+          <div class="stat-mini-value">{{ formatNumber(selectedTenant()!.userCount) }}</div>
+          <div class="stat-mini-label">Kullanıcı</div>
+        </div>
+      </div>
+      <div class="stat-mini">
+        <span class="stat-mini-icon" style="background:rgba(81,207,102,0.12);color:var(--success)">
+          <span class="material-icons-outlined">inventory_2</span>
+        </span>
+        <div>
+          <div class="stat-mini-value">{{ formatNumber(selectedTenant()!.productCount) }}</div>
+          <div class="stat-mini-label">Ürün</div>
+        </div>
+      </div>
+      <div class="stat-mini">
+        <span class="stat-mini-icon" style="background:rgba(252,196,25,0.12);color:var(--warning)">
+          <span class="material-icons-outlined">swap_horiz</span>
+        </span>
+        <div>
+          <div class="stat-mini-value">{{ formatNumber(selectedTenant()!.transactionCount) }}</div>
+          <div class="stat-mini-label">İşlem</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Plan Picker -->
+    <div class="modal-section">
+      <h4 class="section-title">
+        <span class="material-icons-outlined">upgrade</span>
+        Plan Değiştir
+      </h4>
+      <div class="plan-picker-modal">
+        <button class="plan-btn" [class.plan-btn-active]="pendingPlan === 'starter'" (click)="pendingPlan = 'starter'">
+          <span class="material-icons-outlined plan-btn-icon">rocket_launch</span>
+          <span class="plan-btn-name">Başlangıç</span>
+          <span class="plan-btn-price">₺299/ay</span>
+        </button>
+        <button class="plan-btn" [class.plan-btn-active]="pendingPlan === 'pro'" (click)="pendingPlan = 'pro'">
+          <span class="material-icons-outlined plan-btn-icon">workspace_premium</span>
+          <span class="plan-btn-name">Profesyonel</span>
+          <span class="plan-btn-price">₺699/ay</span>
+        </button>
+        <button class="plan-btn" [class.plan-btn-active]="pendingPlan === 'enterprise'" (click)="pendingPlan = 'enterprise'">
+          <span class="material-icons-outlined plan-btn-icon">apartment</span>
+          <span class="plan-btn-name">Kurumsal</span>
+          <span class="plan-btn-price">₺1.499/ay</span>
+        </button>
+      </div>
+      <div class="billing-toggle">
+        <label class="billing-label">Fatura Dönemi:</label>
+        <div class="billing-opts">
+          <button class="billing-btn" [class.active]="pendingBillingCycle === 'monthly'" (click)="pendingBillingCycle = 'monthly'">Aylık</button>
+          <button class="billing-btn" [class.active]="pendingBillingCycle === 'annual'" (click)="pendingBillingCycle = 'annual'">
+            Yıllık <span class="discount-chip">%17 İndirim</span>
+          </button>
+        </div>
+      </div>
+      @if (pendingPlan !== selectedTenant()!.plan || pendingBillingCycle !== selectedTenant()!.billingCycle) {
+        <button class="btn btn-primary btn-sm" (click)="applyPlanChange()">
+          <span class="material-icons-outlined">save</span>
+          Planı Güncelle
+        </button>
+      }
+    </div>
+
+    <!-- Status Picker -->
+    <div class="modal-section">
+      <h4 class="section-title">
+        <span class="material-icons-outlined">tune</span>
+        Durum Değiştir
+      </h4>
+      <div class="status-picker">
+        <button class="status-btn status-trial"
+                [class.active]="pendingStatus === 'trial'"
+                (click)="pendingStatus = 'trial'">
+          <span class="material-icons-outlined">hourglass_empty</span>
+          Deneme
+        </button>
+        <button class="status-btn status-active"
+                [class.active]="pendingStatus === 'active'"
+                (click)="pendingStatus = 'active'">
+          <span class="material-icons-outlined">check_circle</span>
+          Aktif
+        </button>
+        <button class="status-btn status-suspended"
+                [class.active]="pendingStatus === 'suspended'"
+                (click)="pendingStatus = 'suspended'">
+          <span class="material-icons-outlined">pause_circle</span>
+          Askıya Al
+        </button>
+        <button class="status-btn status-cancelled"
+                [class.active]="pendingStatus === 'cancelled'"
+                (click)="pendingStatus = 'cancelled'">
+          <span class="material-icons-outlined">cancel</span>
+          İptal Et
+        </button>
+      </div>
+      @if (pendingStatus !== selectedTenant()!.status) {
+        <div class="reason-group form-group" style="margin-top:12px">
+          <label class="form-label">Açıklama (isteğe bağlı)</label>
+          <input type="text" class="form-input" placeholder="Durum değişikliği sebebi..." [(ngModel)]="pendingStatusReason" />
+        </div>
+        <button class="btn btn-primary btn-sm" style="margin-top:10px" (click)="applyStatusChange()">
+          <span class="material-icons-outlined">save</span>
+          Durumu Güncelle
+        </button>
+      }
+    </div>
+
+    <!-- Notes -->
+    <div class="modal-section">
+      <h4 class="section-title">
+        <span class="material-icons-outlined">sticky_note_2</span>
+        Notlar
+      </h4>
+      <div class="notes-content">
+        {{ selectedTenant()!.notes || 'Not girilmemiş.' }}
+      </div>
+    </div>
+
+    <!-- Footer actions -->
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" (click)="deleteTenant(selectedTenant()!.id)">
+        <span class="material-icons-outlined">delete_outline</span>
+        Abonenyi Sil
+      </button>
+      <button class="btn btn-secondary" (click)="closeDetail()">Kapat</button>
+    </div>
+  </div>
+}
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     QUICK STATUS CHANGE MODAL
+════════════════════════════════════════════════════════════════════════════ -->
+@if (showStatusModal() && selectedTenant()) {
+  <div class="overlay" (click)="closeStatusModal()"></div>
+  <div class="modal status-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <h3 class="modal-title">Durum Değiştir</h3>
+        <p class="modal-subtitle-plain">{{ selectedTenant()!.companyName }}</p>
+      </div>
+      <button class="modal-close" (click)="closeStatusModal()">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+
+    <div class="current-status-row">
+      <span class="text-muted" style="font-size:0.875rem">Mevcut durum:</span>
+      <span [class]="getStatusClass(selectedTenant()!.status)">{{ getStatusLabel(selectedTenant()!.status) }}</span>
+    </div>
+
+    <div class="status-picker">
+      <button class="status-btn status-trial" [class.active]="pendingStatus === 'trial'" (click)="pendingStatus = 'trial'">
+        <span class="material-icons-outlined">hourglass_empty</span>
+        Deneme
+      </button>
+      <button class="status-btn status-active" [class.active]="pendingStatus === 'active'" (click)="pendingStatus = 'active'">
+        <span class="material-icons-outlined">check_circle</span>
+        Aktif
+      </button>
+      <button class="status-btn status-suspended" [class.active]="pendingStatus === 'suspended'" (click)="pendingStatus = 'suspended'">
+        <span class="material-icons-outlined">pause_circle</span>
+        Askıya Al
+      </button>
+      <button class="status-btn status-cancelled" [class.active]="pendingStatus === 'cancelled'" (click)="pendingStatus = 'cancelled'">
+        <span class="material-icons-outlined">cancel</span>
+        İptal Et
+      </button>
+    </div>
+
+    <div class="form-group" style="margin-top:16px">
+      <label class="form-label">Açıklama (isteğe bağlı)</label>
+      <input type="text" class="form-input" placeholder="Durum değişikliği sebebi..."
+             [(ngModel)]="pendingStatusReason" />
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeStatusModal()">İptal</button>
+      <button class="btn btn-primary" [disabled]="pendingStatus === selectedTenant()!.status"
+              (click)="applyStatusChange()">
+        <span class="material-icons-outlined">save</span>
+        Kaydet
+      </button>
+    </div>
+  </div>
+}
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     QUICK PLAN CHANGE MODAL
+════════════════════════════════════════════════════════════════════════════ -->
+@if (showPlanModal() && selectedTenant()) {
+  <div class="overlay" (click)="closePlanModal()"></div>
+  <div class="modal plan-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <h3 class="modal-title">Plan Değiştir</h3>
+        <p class="modal-subtitle-plain">{{ selectedTenant()!.companyName }}</p>
+      </div>
+      <button class="modal-close" (click)="closePlanModal()">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+
+    <div class="current-status-row">
+      <span class="text-muted" style="font-size:0.875rem">Mevcut plan:</span>
+      <span [class]="getPlanClass(selectedTenant()!.plan)">{{ getPlanLabel(selectedTenant()!.plan) }}</span>
+    </div>
+
+    <div class="plan-picker-modal" style="margin-top:16px">
+      <button class="plan-btn" [class.plan-btn-active]="pendingPlan === 'starter'" (click)="pendingPlan = 'starter'">
+        <span class="material-icons-outlined plan-btn-icon">rocket_launch</span>
+        <span class="plan-btn-name">Başlangıç</span>
+        <span class="plan-btn-price">₺299/ay</span>
+      </button>
+      <button class="plan-btn" [class.plan-btn-active]="pendingPlan === 'pro'" (click)="pendingPlan = 'pro'">
+        <span class="material-icons-outlined plan-btn-icon">workspace_premium</span>
+        <span class="plan-btn-name">Profesyonel</span>
+        <span class="plan-btn-price">₺699/ay</span>
+      </button>
+      <button class="plan-btn" [class.plan-btn-active]="pendingPlan === 'enterprise'" (click)="pendingPlan = 'enterprise'">
+        <span class="material-icons-outlined plan-btn-icon">apartment</span>
+        <span class="plan-btn-name">Kurumsal</span>
+        <span class="plan-btn-price">₺1.499/ay</span>
+      </button>
+    </div>
+
+    <div class="billing-toggle" style="margin-top:16px">
+      <label class="billing-label">Fatura Dönemi:</label>
+      <div class="billing-opts">
+        <button class="billing-btn" [class.active]="pendingBillingCycle === 'monthly'" (click)="pendingBillingCycle = 'monthly'">Aylık</button>
+        <button class="billing-btn" [class.active]="pendingBillingCycle === 'annual'" (click)="pendingBillingCycle = 'annual'">
+          Yıllık <span class="discount-chip">%17 İndirim</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closePlanModal()">İptal</button>
+      <button class="btn btn-primary"
+              [disabled]="pendingPlan === selectedTenant()!.plan && pendingBillingCycle === selectedTenant()!.billingCycle"
+              (click)="applyPlanChange()">
+        <span class="material-icons-outlined">save</span>
+        Planı Güncelle
+      </button>
+    </div>
+  </div>
+}

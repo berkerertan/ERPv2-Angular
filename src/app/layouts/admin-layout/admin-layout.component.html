@@ -1,0 +1,72 @@
+<div class="admin-shell" [class.collapsed]="sidebarCollapsed()">
+
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-logo">
+                <div class="logo-icon">
+                    <span class="material-icons-outlined">hub</span>
+                </div>
+                <div class="logo-text">
+                    <span class="logo-name">ERP<span class="logo-accent">v2</span></span>
+                    <span class="logo-tag">Admin Panel</span>
+                </div>
+            </div>
+            <button class="collapse-btn" (click)="toggleSidebar()">
+                <span class="material-icons-outlined">
+                    {{ sidebarCollapsed() ? 'chevron_right' : 'chevron_left' }}
+                </span>
+            </button>
+        </div>
+
+        <nav class="sidebar-nav">
+            @for (item of navItems; track item.route) {
+            <a class="nav-item" [routerLink]="item.route" routerLinkActive="active"
+                [title]="sidebarCollapsed() ? item.label : ''">
+                <span class="material-icons-outlined nav-icon">{{ item.icon }}</span>
+                <span class="nav-label">{{ item.label }}</span>
+                @if (item.badge) {
+                <span class="nav-badge">{{ item.badge }}</span>
+                }
+            </a>
+            }
+        </nav>
+
+        <div class="sidebar-footer">
+            <button class="footer-btn" (click)="goToApp()" title="Uygulamaya Git">
+                <span class="material-icons-outlined">open_in_new</span>
+                <span class="nav-label">Uygulamaya Git</span>
+            </button>
+            <button class="footer-btn danger" (click)="logout()" title="Çıkış Yap">
+                <span class="material-icons-outlined">logout</span>
+                <span class="nav-label">Çıkış Yap</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main content -->
+    <div class="admin-main">
+        <!-- Top bar -->
+        <header class="admin-topbar">
+            <button class="topbar-toggle" (click)="toggleSidebar()">
+                <span class="material-icons-outlined">menu</span>
+            </button>
+            <div class="topbar-right">
+                <div class="topbar-user">
+                    <div class="user-avatar">
+                        <span class="material-icons-outlined">admin_panel_settings</span>
+                    </div>
+                    <div class="user-info">
+                        <span class="user-name">{{ authService.currentUser()?.userName }}</span>
+                        <span class="user-role">Super Admin</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Page content -->
+        <main class="admin-content">
+            <router-outlet></router-outlet>
+        </main>
+    </div>
+</div>

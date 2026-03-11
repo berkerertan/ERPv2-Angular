@@ -1,12 +1,21 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard } from './core/guards/auth.guard';
+import { adminGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
+    // Public landing page
     {
         path: '',
-        redirectTo: 'dashboard',
+        loadComponent: () => import('./features/landing/landing.component').then(m => m.LandingComponent),
         pathMatch: 'full'
     },
+    // Register — standalone (kendi full-width layout'u var)
+    {
+        path: 'auth/register',
+        loadComponent: () => import('./features/auth/register/register.component').then(m => m.RegisterComponent),
+        canActivate: [guestGuard]
+    },
+    // Auth layout (login vb.)
     {
         path: 'auth',
         loadComponent: () => import('./layouts/auth-layout/auth-layout.component').then(m => m.AuthLayoutComponent),
@@ -23,6 +32,40 @@ export const routes: Routes = [
             }
         ]
     },
+    // Admin panel routes — SuperAdmin/Admin only
+    {
+        path: 'admin',
+        loadComponent: () => import('./layouts/admin-layout/admin-layout.component').then(m => m.AdminLayoutComponent),
+        canActivate: [adminGuard],
+        children: [
+            {
+                path: 'dashboard',
+                loadComponent: () => import('./features/admin/admin-dashboard/admin-dashboard.component').then(m => m.AdminDashboardComponent)
+            },
+            {
+                path: 'subscribers',
+                loadComponent: () => import('./features/admin/subscribers/subscribers.component').then(m => m.SubscribersComponent)
+            },
+            {
+                path: 'plans',
+                loadComponent: () => import('./features/admin/plans/plans.component').then(m => m.PlansComponent)
+            },
+            {
+                path: 'revenue',
+                loadComponent: () => import('./features/admin/revenue/revenue.component').then(m => m.RevenueComponent)
+            },
+            {
+                path: 'content',
+                loadComponent: () => import('./features/admin/content/landing-content.component').then(m => m.LandingContentComponent)
+            },
+            {
+                path: '',
+                redirectTo: 'dashboard',
+                pathMatch: 'full'
+            }
+        ]
+    },
+    // Protected app routes
     {
         path: '',
         loadComponent: () => import('./layouts/main-layout/main-layout.component').then(m => m.MainLayoutComponent),

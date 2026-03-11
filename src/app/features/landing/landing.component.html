@@ -1,0 +1,369 @@
+<!-- ============================================
+     NAVBAR
+     ============================================ -->
+<nav class="navbar" [class.scrolled]="isScrolled()">
+    <div class="nav-container">
+        <a class="nav-logo" routerLink="/">
+            <div class="logo-icon">
+                <span class="material-icons-outlined">hub</span>
+            </div>
+            <span class="logo-text">ERP<span class="logo-accent">v2</span></span>
+        </a>
+
+        <div class="nav-links">
+            <button class="nav-link" (click)="scrollTo('features')">Özellikler</button>
+            <button class="nav-link" (click)="scrollTo('pricing')">Fiyatlar</button>
+            <button class="nav-link" (click)="scrollTo('testimonials')">Referanslar</button>
+        </div>
+
+        <div class="nav-actions">
+            <a routerLink="/auth/login" class="btn btn-ghost btn-sm">Giriş Yap</a>
+            <a routerLink="/auth/register" class="btn btn-primary btn-sm">
+                <span class="material-icons-outlined">rocket_launch</span>
+                Ücretsiz Başla
+            </a>
+        </div>
+    </div>
+</nav>
+
+<!-- ============================================
+     HERO SECTION
+     ============================================ -->
+<section class="hero">
+    <!-- Background effects -->
+    <div class="hero-bg">
+        <div class="hero-orb orb-1"></div>
+        <div class="hero-orb orb-2"></div>
+        <div class="hero-orb orb-3"></div>
+        <div class="hero-grid"></div>
+    </div>
+
+    <div class="hero-container">
+        <div class="hero-badge">
+            <span class="material-icons-outlined">verified</span>
+            Türkiye'nin En Hızlı Büyüyen ERP Platformu
+        </div>
+
+        <h1 class="hero-title">
+            Perakende İşletmenizi<br>
+            <span class="hero-gradient">Dijitalleştirin.</span>
+        </h1>
+
+        <p class="hero-desc">
+            POS, stok, cari hesap, e-fatura ve daha fazlası tek platformda.
+            Dakikalar içinde kurulum, işletmenize özel abonelik planı.
+        </p>
+
+        <div class="hero-actions">
+            <a routerLink="/auth/register" class="btn btn-primary btn-xl">
+                <span class="material-icons-outlined">rocket_launch</span>
+                14 Gün Ücretsiz Deneyin
+            </a>
+            <button class="btn btn-outline btn-xl" (click)="scrollTo('features')">
+                <span class="material-icons-outlined">play_circle</span>
+                Nasıl Çalışır?
+            </button>
+        </div>
+
+        <div class="hero-trust">
+            <div class="trust-item">
+                <span class="material-icons-outlined">verified_user</span>
+                Kredi kartı gerektirmez
+            </div>
+            <div class="trust-item">
+                <span class="material-icons-outlined">cancel</span>
+                İstediğin zaman iptal
+            </div>
+            <div class="trust-item">
+                <span class="material-icons-outlined">support_agent</span>
+                7/24 Türkçe destek
+            </div>
+        </div>
+    </div>
+
+    <!-- Hero visual - floating dashboard cards -->
+    <div class="hero-visual">
+        <div class="dashboard-preview">
+            <div class="preview-header">
+                <div class="preview-dots">
+                    <span></span><span></span><span></span>
+                </div>
+                <span class="preview-title">ERPv2 Dashboard</span>
+            </div>
+            <div class="preview-stats">
+                <div class="preview-stat">
+                    <span class="stat-label">Bugünkü Satış</span>
+                    <span class="stat-val green">₺24.850</span>
+                    <span class="stat-change">+12.4%</span>
+                </div>
+                <div class="preview-stat">
+                    <span class="stat-label">Aktif Ürün</span>
+                    <span class="stat-val blue">1.247</span>
+                    <span class="stat-change">+23</span>
+                </div>
+                <div class="preview-stat">
+                    <span class="stat-label">Bekleyen Sipariş</span>
+                    <span class="stat-val yellow">18</span>
+                    <span class="stat-change">-3</span>
+                </div>
+            </div>
+            <div class="preview-chart">
+                <div class="chart-bar" style="height:40%"></div>
+                <div class="chart-bar" style="height:65%"></div>
+                <div class="chart-bar" style="height:45%"></div>
+                <div class="chart-bar" style="height:80%"></div>
+                <div class="chart-bar" style="height:55%"></div>
+                <div class="chart-bar" style="height:90%"></div>
+                <div class="chart-bar active" style="height:75%"></div>
+            </div>
+            <div class="preview-list">
+                <div class="list-row">
+                    <span class="list-icon" style="background:rgba(81,207,102,0.15);color:#51cf66">✓</span>
+                    <span>Kırtasiye Kalemi x5</span>
+                    <span class="list-price">₺75,00</span>
+                </div>
+                <div class="list-row">
+                    <span class="list-icon" style="background:rgba(116,192,252,0.15);color:#74c0fc">✓</span>
+                    <span>A4 Kağıt 500'lü</span>
+                    <span class="list-price">₺320,00</span>
+                </div>
+                <div class="list-row">
+                    <span class="list-icon" style="background:rgba(252,196,25,0.15);color:#fcc419">⏳</span>
+                    <span>Zımba Teli x10</span>
+                    <span class="list-price">₺48,00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Floating badges -->
+        <div class="float-badge badge-pos">
+            <span class="material-icons-outlined">point_of_sale</span>
+            POS Aktif
+        </div>
+        <div class="float-badge badge-stock">
+            <span class="material-icons-outlined">inventory_2</span>
+            Stok: 1.247 ürün
+        </div>
+        <div class="float-badge badge-invoice">
+            <span class="material-icons-outlined">receipt_long</span>
+            E-Fatura Gönderildi
+        </div>
+    </div>
+</section>
+
+<!-- ============================================
+     STATS BAR
+     ============================================ -->
+<section class="stats-bar">
+    <div class="stats-container">
+        @for (stat of stats; track stat.label) {
+        <div class="stat-item">
+            <span class="stat-number">{{ stat.value }}</span>
+            <span class="stat-label">{{ stat.label }}</span>
+        </div>
+        }
+    </div>
+</section>
+
+<!-- ============================================
+     FEATURES SECTION
+     ============================================ -->
+<section class="features" id="features">
+    <div class="section-container">
+        <div class="section-header">
+            <div class="section-badge">
+                <span class="material-icons-outlined">auto_awesome</span>
+                Özellikler
+            </div>
+            <h2 class="section-title">İşletmenizin İhtiyacı Olan Her Şey</h2>
+            <p class="section-desc">Perakende satıştan muhasebe entegrasyonuna, stok takibinden çoklu şubeye kadar tüm ihtiyaçlarınız tek çatı altında.</p>
+        </div>
+
+        <div class="features-grid">
+            @for (feature of features; track feature.title; let i = $index) {
+            <div class="feature-card" [class.active]="activeFeature() === i" (mouseenter)="activeFeature.set(i)">
+                <div class="feature-icon-wrap">
+                    <span class="material-icons-outlined feature-icon">{{ feature.icon }}</span>
+                </div>
+                <div class="feature-body">
+                    <h3 class="feature-title">{{ feature.title }}</h3>
+                    <p class="feature-desc">{{ feature.description }}</p>
+                </div>
+                <div class="feature-stat">
+                    <span class="stat-big">{{ feature.stat }}</span>
+                    <span class="stat-small">{{ feature.statLabel }}</span>
+                </div>
+            </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- ============================================
+     PRICING SECTION
+     ============================================ -->
+<section class="pricing" id="pricing">
+    <div class="section-container">
+        <div class="section-header">
+            <div class="section-badge">
+                <span class="material-icons-outlined">payments</span>
+                Fiyatlandırma
+            </div>
+            <h2 class="section-title">İşletmenize Uygun Plan</h2>
+            <p class="section-desc">Tüm planlarda 14 gün ücretsiz deneme. Kredi kartı bilgisi gerekmez.</p>
+
+            <!-- Billing toggle -->
+            <div class="billing-toggle">
+                <span [class.active]="!billingAnnual()">Aylık</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" [checked]="billingAnnual()" (change)="billingAnnual.update(v => !v)" />
+                    <span class="toggle-slider"></span>
+                </label>
+                <span [class.active]="billingAnnual()">
+                    Yıllık
+                    <span class="save-badge">%17 Tasarruf</span>
+                </span>
+            </div>
+        </div>
+
+        <div class="pricing-grid">
+            @for (plan of plans; track plan.id) {
+            <div class="pricing-card" [class.popular]="plan.popular" [attr.data-color]="plan.color">
+                @if (plan.popular) {
+                <div class="popular-badge">
+                    <span class="material-icons-outlined">star</span>
+                    En Popüler
+                </div>
+                }
+
+                <div class="plan-header">
+                    <div class="plan-icon-wrap">
+                        <span class="material-icons-outlined plan-icon">{{ plan.icon }}</span>
+                    </div>
+                    <h3 class="plan-name">{{ plan.name }}</h3>
+                    <p class="plan-desc">{{ plan.description }}</p>
+                </div>
+
+                <div class="plan-price">
+                    <span class="price-currency">₺</span>
+                    <span class="price-amount">{{ getPrice(plan) }}</span>
+                    <span class="price-period">/ay</span>
+                </div>
+
+                @if (billingAnnual()) {
+                <div class="price-savings">
+                    Yıllık ödemede aylık ₺{{ plan.monthlyPrice - plan.annualPrice }} tasarruf
+                </div>
+                }
+
+                <a [routerLink]="['/auth/register']" [queryParams]="{plan: plan.id}"
+                    class="btn plan-btn" [class.btn-primary]="plan.popular" [class.btn-secondary]="!plan.popular">
+                    {{ plan.popular ? 'Hemen Başla' : '14 Gün Ücretsiz Dene' }}
+                    <span class="material-icons-outlined">arrow_forward</span>
+                </a>
+
+                <ul class="plan-features">
+                    @for (feature of plan.features; track feature.text) {
+                    <li class="plan-feature" [class.disabled]="!feature.included">
+                        <span class="material-icons-outlined feature-check">
+                            {{ feature.included ? 'check_circle' : 'cancel' }}
+                        </span>
+                        {{ feature.text }}
+                    </li>
+                    }
+                </ul>
+            </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- ============================================
+     TESTIMONIALS
+     ============================================ -->
+<section class="testimonials" id="testimonials">
+    <div class="section-container">
+        <div class="section-header">
+            <div class="section-badge">
+                <span class="material-icons-outlined">format_quote</span>
+                Referanslar
+            </div>
+            <h2 class="section-title">Müşterilerimiz Ne Diyor?</h2>
+        </div>
+
+        <div class="testimonials-grid">
+            @for (t of testimonials; track t.name) {
+            <div class="testimonial-card card-glass">
+                <div class="testimonial-stars">
+                    @for (s of [1,2,3,4,5]; track s) {
+                    <span class="material-icons-outlined star">star</span>
+                    }
+                </div>
+                <p class="testimonial-text">"{{ t.text }}"</p>
+                <div class="testimonial-author">
+                    <div class="author-avatar">{{ t.avatar }}</div>
+                    <div>
+                        <div class="author-name">{{ t.name }}</div>
+                        <div class="author-role">{{ t.role }}</div>
+                    </div>
+                </div>
+            </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- ============================================
+     CTA SECTION
+     ============================================ -->
+<section class="cta-section">
+    <div class="cta-container">
+        <div class="cta-orb"></div>
+        <h2 class="cta-title">Bugün Başlayın, Farkı Hissedin</h2>
+        <p class="cta-desc">14 gün boyunca tüm özellikleri ücretsiz kullanın. Kurulum gerektirmez, dakikalar içinde hazır.</p>
+        <div class="cta-actions">
+            <a routerLink="/auth/register" class="btn btn-primary btn-xl cta-btn">
+                <span class="material-icons-outlined">rocket_launch</span>
+                Ücretsiz Hesap Oluştur
+            </a>
+            <a routerLink="/auth/login" class="btn btn-outline btn-xl">
+                Zaten hesabın var mı? Giriş Yap
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================
+     FOOTER
+     ============================================ -->
+<footer class="footer">
+    <div class="footer-container">
+        <div class="footer-brand">
+            <div class="footer-logo">
+                <div class="logo-icon logo-icon-sm">
+                    <span class="material-icons-outlined">hub</span>
+                </div>
+                <span class="logo-text">ERP<span class="logo-accent">v2</span></span>
+            </div>
+            <p class="footer-tagline">Perakende işletmeler için modern kurumsal yönetim sistemi.</p>
+        </div>
+
+        <div class="footer-links">
+            <div class="footer-col">
+                <span class="footer-col-title">Ürün</span>
+                <button class="footer-link" (click)="scrollTo('features')">Özellikler</button>
+                <button class="footer-link" (click)="scrollTo('pricing')">Fiyatlar</button>
+                <button class="footer-link" (click)="scrollTo('testimonials')">Referanslar</button>
+            </div>
+            <div class="footer-col">
+                <span class="footer-col-title">Hesap</span>
+                <a routerLink="/auth/login" class="footer-link">Giriş Yap</a>
+                <a routerLink="/auth/register" class="footer-link">Kayıt Ol</a>
+            </div>
+        </div>
+    </div>
+    <div class="footer-bottom">
+        <span>© 2025 ERPv2. Tüm hakları saklıdır.</span>
+        <span>Türkiye'de geliştirildi 🇹🇷</span>
+    </div>
+</footer>

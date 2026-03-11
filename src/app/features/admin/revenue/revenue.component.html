@@ -1,0 +1,336 @@
+<div class="revenue-page">
+
+  <!-- ══════════════════════════════════════════
+       LOADING STATE
+  ══════════════════════════════════════════ -->
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <span class="loading-text">Gelir verileri yükleniyor…</span>
+    </div>
+  }
+
+  @if (!isLoading() && analytics()) {
+    <!-- ══════════════════════════════════════════
+         PAGE HEADER
+    ══════════════════════════════════════════ -->
+    <div class="page-header">
+      <div class="page-title-group">
+        <h1 class="page-title">
+          <span class="material-icons-outlined title-icon">bar_chart</span>
+          Gelir &amp; Analitik
+        </h1>
+        <p class="page-subtitle">Abonelik gelirleri, plan dağılımı ve büyüme metrikleri</p>
+      </div>
+
+      <div class="period-selector">
+        <button
+          class="period-btn"
+          [class.active]="selectedPeriod() === '6m'"
+          (click)="changePeriod('6m')"
+        >
+          6 Ay
+        </button>
+        <button
+          class="period-btn"
+          [class.active]="selectedPeriod() === '12m'"
+          (click)="changePeriod('12m')"
+        >
+          12 Ay
+        </button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         KPI CARDS ROW
+    ══════════════════════════════════════════ -->
+    <div class="kpi-grid">
+
+      <!-- MRR -->
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap kpi-icon-primary">
+          <span class="material-icons-outlined">payments</span>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-label">MRR</div>
+          <div class="kpi-value">{{ formatCurrency(analytics()!.stats.mrr) }}</div>
+          <div class="kpi-change" [class]="changeClass(analytics()!.stats.mrrChange)">
+            <span class="material-icons-outlined change-icon">{{ changeIcon(analytics()!.stats.mrrChange) }}</span>
+            {{ formatPercent(analytics()!.stats.mrrChange) }} geçen aya göre
+          </div>
+        </div>
+      </div>
+
+      <!-- ARR -->
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap kpi-icon-success">
+          <span class="material-icons-outlined">show_chart</span>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-label">ARR</div>
+          <div class="kpi-value">{{ formatK(analytics()!.stats.arr) }}</div>
+          <div class="kpi-change change-positive">
+            <span class="material-icons-outlined change-icon">trending_up</span>
+            Yıllık bazda
+          </div>
+        </div>
+      </div>
+
+      <!-- ARPU -->
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap kpi-icon-info">
+          <span class="material-icons-outlined">person_outline</span>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-label">ARPU</div>
+          <div class="kpi-value">{{ formatCurrency(analytics()!.stats.arpu) }}</div>
+          <div class="kpi-change change-neutral">
+            <span class="material-icons-outlined change-icon">trending_flat</span>
+            Kullanıcı başına gelir
+          </div>
+        </div>
+      </div>
+
+      <!-- Churn Rate -->
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap kpi-icon-warning">
+          <span class="material-icons-outlined">person_remove</span>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-label">Churn Rate</div>
+          <div class="kpi-value kpi-value-pct">%{{ analytics()!.stats.churnRate.toFixed(1) }}</div>
+          <div class="kpi-change" [class]="analytics()!.stats.churnRate > 3 ? 'change-negative' : (analytics()!.stats.churnRate < 2 ? 'change-positive' : 'change-neutral')">
+            <span class="material-icons-outlined change-icon">{{ analytics()!.stats.churnRate > 3 ? 'trending_up' : 'trending_down' }}</span>
+            {{ analytics()!.stats.churnRate > 3 ? 'Yüksek risk' : (analytics()!.stats.churnRate < 2 ? 'Sağlıklı seviye' : 'Normal seviye') }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Growth Rate -->
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap kpi-icon-purple">
+          <span class="material-icons-outlined">rocket_launch</span>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-label">Büyüme Oranı</div>
+          <div class="kpi-value kpi-value-pct">%{{ analytics()!.stats.growthRate.toFixed(1) }}</div>
+          <div class="kpi-change" [class]="changeClass(analytics()!.stats.growthRate)">
+            <span class="material-icons-outlined change-icon">{{ changeIcon(analytics()!.stats.growthRate) }}</span>
+            Aylık MoM büyüme
+          </div>
+        </div>
+      </div>
+
+      <!-- LTV -->
+      <div class="kpi-card">
+        <div class="kpi-icon-wrap kpi-icon-teal">
+          <span class="material-icons-outlined">loyalty</span>
+        </div>
+        <div class="kpi-body">
+          <div class="kpi-label">LTV</div>
+          <div class="kpi-value">{{ formatCurrency(analytics()!.stats.ltv) }}</div>
+          <div class="kpi-change change-positive">
+            <span class="material-icons-outlined change-icon">trending_up</span>
+            Tahmini yaşam boyu değer
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         REVENUE TREND CHART
+    ══════════════════════════════════════════ -->
+    <div class="chart-section card">
+      <div class="chart-header">
+        <div>
+          <h2 class="section-title">Gelir Trendi</h2>
+          <p class="section-subtitle">
+            Son {{ selectedPeriod() === '6m' ? '6' : '12' }} aylık aylık yinelenen gelir
+          </p>
+        </div>
+        <div class="chart-legend">
+          <span class="legend-dot legend-dot-primary"></span>
+          <span class="legend-label">Aylık Gelir (MRR)</span>
+        </div>
+      </div>
+
+      <div class="chart-area">
+        <!-- Y-axis labels -->
+        <div class="chart-y-axis">
+          <span>{{ formatK(maxRevenue) }}</span>
+          <span>{{ formatK(maxRevenue * 0.75) }}</span>
+          <span>{{ formatK(maxRevenue * 0.5) }}</span>
+          <span>{{ formatK(maxRevenue * 0.25) }}</span>
+          <span>₺0</span>
+        </div>
+
+        <!-- Chart bars -->
+        <div class="chart-bars-container">
+          <!-- Horizontal grid lines -->
+          <div class="grid-lines">
+            <div class="grid-line"></div>
+            <div class="grid-line"></div>
+            <div class="grid-line"></div>
+            <div class="grid-line"></div>
+            <div class="grid-line"></div>
+          </div>
+
+          <!-- Bars -->
+          <div class="chart-bars">
+            @for (m of filteredTrend; track m.month) {
+              <div class="chart-bar-wrap">
+                <div class="bar-tooltip-container">
+                  <div
+                    class="chart-bar"
+                    [style.height.%]="barHeight(m.revenue)"
+                  ></div>
+                  <div class="bar-tooltip">
+                    <div class="tooltip-month">{{ m.month }}</div>
+                    <div class="tooltip-revenue">{{ formatCurrency(m.revenue) }}</div>
+                    <div class="tooltip-subs">
+                      <span class="material-icons-outlined tooltip-icon">people</span>
+                      {{ formatNumber(m.subscribers) }} abone
+                    </div>
+                    <div class="tooltip-new">
+                      <span class="material-icons-outlined tooltip-icon">person_add</span>
+                      +{{ m.newSubscribers }} yeni
+                    </div>
+                    <div class="tooltip-churned">
+                      <span class="material-icons-outlined tooltip-icon">person_remove</span>
+                      -{{ m.churned }} ayrılan
+                    </div>
+                  </div>
+                </div>
+                <div class="bar-label">{{ m.month.split(' ')[0] }}</div>
+                <div class="bar-year">{{ m.month.split(' ')[1]?.slice(2) }}</div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         PLAN BREAKDOWN
+    ══════════════════════════════════════════ -->
+    <div class="section-header">
+      <h2 class="section-title">Plan Dağılımı</h2>
+      <p class="section-subtitle">Planlara göre MRR ve abone sayısı</p>
+    </div>
+
+    <div class="plan-breakdown-grid">
+      @for (plan of analytics()!.byPlan; track plan.planId) {
+        <div class="plan-breakdown-card card">
+          <div class="plan-card-top">
+            <div class="plan-name-wrap">
+              <div class="plan-color-dot" [style.background]="plan.color"></div>
+              <h3 class="plan-name">{{ plan.planName }}</h3>
+            </div>
+            <div class="plan-badge" [style.background]="plan.color + '22'" [style.color]="plan.color">
+              %{{ plan.percentage.toFixed(1) }}
+            </div>
+          </div>
+
+          <div class="plan-ring-row">
+            <!-- CSS percentage ring -->
+            <div
+              class="percentage-ring"
+              [style.background]="planRingGradient(plan.planId, plan.percentage)"
+            >
+              <div class="ring-inner">
+                <span class="ring-pct">%{{ plan.percentage.toFixed(0) }}</span>
+              </div>
+            </div>
+
+            <div class="plan-stats">
+              <div class="plan-stat">
+                <span class="plan-stat-label">MRR</span>
+                <span class="plan-stat-value">{{ formatCurrency(plan.mrr) }}</span>
+              </div>
+              <div class="plan-stat">
+                <span class="plan-stat-label">Abone</span>
+                <span class="plan-stat-value">{{ formatNumber(plan.subscriberCount) }}</span>
+              </div>
+              <div class="plan-stat">
+                <span class="plan-stat-label">Ort. Gelir</span>
+                <span class="plan-stat-value">{{ formatCurrency(Math.round(plan.mrr / plan.subscriberCount)) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Progress bar -->
+          <div class="plan-progress-wrap">
+            <div class="plan-progress-bar">
+              <div
+                class="plan-progress-fill"
+                [style.width.%]="plan.percentage"
+                [style.background]="plan.color"
+              ></div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <!-- ══════════════════════════════════════════
+         SUBSCRIBER STATS ROW
+    ══════════════════════════════════════════ -->
+    <div class="section-header">
+      <h2 class="section-title">Abone İstatistikleri</h2>
+      <p class="section-subtitle">Güncel abone durumu ve bu ayki hareketler</p>
+    </div>
+
+    <div class="subscriber-stats-grid">
+
+      <div class="sub-stat-card card">
+        <div class="sub-stat-icon sub-icon-total">
+          <span class="material-icons-outlined">groups</span>
+        </div>
+        <div class="sub-stat-body">
+          <div class="sub-stat-value">{{ formatNumber(analytics()!.stats.totalSubscribers) }}</div>
+          <div class="sub-stat-label">Toplam Abone</div>
+          <div class="sub-stat-change change-positive">
+            <span class="material-icons-outlined">trending_up</span>
+            {{ formatPercent(analytics()!.stats.subscriberChange) }} büyüme
+          </div>
+        </div>
+      </div>
+
+      <div class="sub-stat-card card">
+        <div class="sub-stat-icon sub-icon-active">
+          <span class="material-icons-outlined">check_circle_outline</span>
+        </div>
+        <div class="sub-stat-body">
+          <div class="sub-stat-value">{{ formatNumber(analytics()!.stats.activeSubscribers) }}</div>
+          <div class="sub-stat-label">Aktif Abone</div>
+          <div class="sub-stat-note">Ödeme yapan kullanıcılar</div>
+        </div>
+      </div>
+
+      <div class="sub-stat-card card">
+        <div class="sub-stat-icon sub-icon-trial">
+          <span class="material-icons-outlined">hourglass_empty</span>
+        </div>
+        <div class="sub-stat-body">
+          <div class="sub-stat-value">{{ formatNumber(analytics()!.stats.activeTrials) }}</div>
+          <div class="sub-stat-label">Deneme Süresi</div>
+          <div class="sub-stat-note">14 günlük ücretsiz deneme</div>
+        </div>
+      </div>
+
+      <div class="sub-stat-card card">
+        <div class="sub-stat-icon sub-icon-cancelled">
+          <span class="material-icons-outlined">cancel</span>
+        </div>
+        <div class="sub-stat-body">
+          <div class="sub-stat-value">{{ analytics()!.stats.cancelledThisMonth }}</div>
+          <div class="sub-stat-label">Bu Ay İptal</div>
+          <div class="sub-stat-note">Churn: %{{ analytics()!.stats.churnRate.toFixed(1) }}</div>
+        </div>
+      </div>
+
+    </div>
+  }
+
+</div>

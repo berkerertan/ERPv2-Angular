@@ -1,0 +1,257 @@
+<div class="register-wrap">
+    <!-- Left panel - branding -->
+    <div class="register-side">
+        <a routerLink="/" class="side-logo">
+            <div class="logo-icon">
+                <span class="material-icons-outlined">hub</span>
+            </div>
+            <span class="logo-text">ERP<span class="logo-accent">v2</span></span>
+        </a>
+
+        <div class="side-content">
+            <h2 class="side-title">Perakende İşletmenizi Dijitalleştirin</h2>
+            <p class="side-desc">Binlerce işletmenin güvendiği kurumsal yönetim sistemi.</p>
+
+            <div class="side-features">
+                <div class="side-feature">
+                    <span class="material-icons-outlined">check_circle</span>
+                    14 gün ücretsiz, kredi kartı gerekmez
+                </div>
+                <div class="side-feature">
+                    <span class="material-icons-outlined">check_circle</span>
+                    Dakikalar içinde kurulum
+                </div>
+                <div class="side-feature">
+                    <span class="material-icons-outlined">check_circle</span>
+                    7/24 Türkçe destek
+                </div>
+                <div class="side-feature">
+                    <span class="material-icons-outlined">check_circle</span>
+                    İstediğin zaman iptal
+                </div>
+            </div>
+        </div>
+
+        <div class="side-stats">
+            <div class="side-stat">
+                <span class="side-stat-num">1.200+</span>
+                <span class="side-stat-label">Aktif İşletme</span>
+            </div>
+            <div class="side-stat">
+                <span class="side-stat-num">4.8/5</span>
+                <span class="side-stat-label">Müşteri Puanı</span>
+            </div>
+        </div>
+
+        <div class="side-bg-orb"></div>
+    </div>
+
+    <!-- Right panel - form -->
+    <div class="register-main">
+        <!-- Step indicator -->
+        <div class="step-indicator">
+            @for (step of [1, 2, 3]; track step) {
+            <div class="step-item" [class.active]="currentStep() === step" [class.done]="currentStep() > step">
+                <div class="step-circle">
+                    @if (currentStep() > step) {
+                    <span class="material-icons-outlined">check</span>
+                    } @else {
+                    <span>{{ step }}</span>
+                    }
+                </div>
+                <span class="step-label">{{ getStepLabel(step) }}</span>
+            </div>
+            @if (step < 3) {
+            <div class="step-line" [class.done]="currentStep() > step"></div>
+            }
+            }
+        </div>
+
+        <!-- Card -->
+        <div class="register-card card-glass">
+            <!-- Error -->
+            @if (errorMessage()) {
+            <div class="alert-error">
+                <span class="material-icons-outlined">error_outline</span>
+                {{ errorMessage() }}
+            </div>
+            }
+
+            <!-- STEP 1: Kişisel Bilgiler -->
+            @if (currentStep() === 1) {
+            <div class="form-step animate-fadeInUp">
+                <div class="step-header">
+                    <h2 class="step-title">Hesabınızı Oluşturun</h2>
+                    <p class="step-subtitle">Kişisel bilgilerinizi girin</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Ad Soyad</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon material-icons-outlined">person</span>
+                        <input type="text" class="form-input has-icon" placeholder="Ahmet Yılmaz"
+                            [(ngModel)]="form.fullName" name="fullName" autocomplete="name" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">E-posta Adresi</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon material-icons-outlined">email</span>
+                        <input type="email" class="form-input has-icon" placeholder="ornek@isletme.com"
+                            [(ngModel)]="form.email" name="email" autocomplete="email" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Telefon Numarası</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon material-icons-outlined">phone</span>
+                        <input type="tel" class="form-input has-icon" placeholder="05XX XXX XX XX"
+                            [(ngModel)]="form.phone" name="phone" autocomplete="tel" />
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-primary btn-lg step-btn" (click)="nextStep()">
+                    Devam Et
+                    <span class="material-icons-outlined">arrow_forward</span>
+                </button>
+            </div>
+            }
+
+            <!-- STEP 2: İşletme & Şifre -->
+            @if (currentStep() === 2) {
+            <div class="form-step animate-fadeInUp">
+                <div class="step-header">
+                    <h2 class="step-title">İşletme Bilgileri</h2>
+                    <p class="step-subtitle">İşletmeniz ve güvenlik bilgilerini girin</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">İşletme / Şirket Adı</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon material-icons-outlined">store</span>
+                        <input type="text" class="form-input has-icon" placeholder="Yılmaz Market"
+                            [(ngModel)]="form.companyName" name="companyName" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Şifre</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon material-icons-outlined">lock</span>
+                        <input [type]="showPassword() ? 'text' : 'password'"
+                            class="form-input has-icon has-toggle" placeholder="En az 6 karakter"
+                            [(ngModel)]="form.password" name="password" autocomplete="new-password" />
+                        <button type="button" class="password-toggle" (click)="showPassword.update(v => !v)">
+                            <span class="material-icons-outlined">{{ showPassword() ? 'visibility_off' : 'visibility' }}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Şifre Tekrar</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon material-icons-outlined">lock</span>
+                        <input [type]="showPasswordConfirm() ? 'text' : 'password'"
+                            class="form-input has-icon has-toggle" placeholder="Şifreyi tekrar girin"
+                            [(ngModel)]="form.passwordConfirm" name="passwordConfirm" autocomplete="new-password" />
+                        <button type="button" class="password-toggle" (click)="showPasswordConfirm.update(v => !v)">
+                            <span class="material-icons-outlined">{{ showPasswordConfirm() ? 'visibility_off' : 'visibility' }}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="step-actions">
+                    <button type="button" class="btn btn-secondary step-btn-back" (click)="prevStep()">
+                        <span class="material-icons-outlined">arrow_back</span>
+                        Geri
+                    </button>
+                    <button type="button" class="btn btn-primary step-btn" (click)="nextStep()">
+                        Devam Et
+                        <span class="material-icons-outlined">arrow_forward</span>
+                    </button>
+                </div>
+            </div>
+            }
+
+            <!-- STEP 3: Plan Seçimi -->
+            @if (currentStep() === 3) {
+            <div class="form-step animate-fadeInUp">
+                <div class="step-header">
+                    <h2 class="step-title">Abonelik Planı Seçin</h2>
+                    <p class="step-subtitle">14 gün ücretsiz deneyin, istediğiniz zaman değiştirin</p>
+                </div>
+
+                <div class="plan-picker">
+                    @for (plan of plans; track plan.id) {
+                    <label class="plan-option" [class.selected]="form.selectedPlan === plan.id"
+                        [attr.data-color]="plan.color">
+                        <input type="radio" name="plan" [value]="plan.id" [(ngModel)]="form.selectedPlan" />
+
+                        @if (plan.popular) {
+                        <span class="plan-popular-tag">
+                            <span class="material-icons-outlined">star</span>
+                            Popüler
+                        </span>
+                        }
+
+                        <div class="plan-opt-icon">
+                            <span class="material-icons-outlined">{{ plan.icon }}</span>
+                        </div>
+                        <div class="plan-opt-info">
+                            <span class="plan-opt-name">{{ plan.name }}</span>
+                            <span class="plan-opt-desc">{{ plan.description }}</span>
+                        </div>
+                        <div class="plan-opt-price">
+                            <span class="plan-opt-amount">₺{{ plan.price }}</span>
+                            <span class="plan-opt-period">/ay</span>
+                        </div>
+                        <div class="plan-opt-check">
+                            <span class="material-icons-outlined">check_circle</span>
+                        </div>
+                    </label>
+                    }
+                </div>
+
+                <div class="trial-note">
+                    <span class="material-icons-outlined">info</span>
+                    14 gün boyunca ücretsiz kullanın. Süre sonunda ödeme başlar veya istediğiniz zaman iptal edin.
+                </div>
+
+                <div class="form-group terms-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" [(ngModel)]="form.agreeTerms" name="agreeTerms" />
+                        <span class="checkbox-custom"></span>
+                        <span class="terms-text">
+                            <a href="#" class="link">Kullanım Şartları</a>'nı ve
+                            <a href="#" class="link">Gizlilik Politikası</a>'nı okudum, kabul ediyorum.
+                        </span>
+                    </label>
+                </div>
+
+                <div class="step-actions">
+                    <button type="button" class="btn btn-secondary step-btn-back" (click)="prevStep()">
+                        <span class="material-icons-outlined">arrow_back</span>
+                        Geri
+                    </button>
+                    <button type="button" class="btn btn-primary step-btn" (click)="onSubmit()" [disabled]="isLoading()">
+                        @if (isLoading()) {
+                        <div class="spinner spinner-sm"></div>
+                        Hesap Oluşturuluyor...
+                        } @else {
+                        <span class="material-icons-outlined">rocket_launch</span>
+                        Ücretsiz Başla
+                        }
+                    </button>
+                </div>
+            </div>
+            }
+        </div>
+
+        <p class="login-link">
+            Zaten hesabın var mı?
+            <a routerLink="/auth/login" class="link">Giriş Yap</a>
+        </p>
+    </div>
+</div>

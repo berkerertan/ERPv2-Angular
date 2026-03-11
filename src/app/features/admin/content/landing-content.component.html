@@ -1,0 +1,741 @@
+<div class="content-page">
+
+  <!-- ══════════════════════════════════════════════════
+       SAVE TOAST
+  ══════════════════════════════════════════════════ -->
+  @if (savedToast()) {
+    <div class="save-toast">
+      <span class="material-icons-outlined toast-icon">check_circle</span>
+      {{ savedToast() }}
+    </div>
+  }
+
+  <!-- ══════════════════════════════════════════════════
+       LOADING STATE
+  ══════════════════════════════════════════════════ -->
+  @if (isLoading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <span>İçerik yükleniyor…</span>
+    </div>
+  }
+
+  @if (!isLoading() && content()) {
+
+    <!-- ══════════════════════════════════════════════════
+         PAGE HEADER
+    ══════════════════════════════════════════════════ -->
+    <div class="content-page-header">
+      <div class="header-left">
+        <h1 class="page-title">
+          <span class="material-icons-outlined title-icon">web</span>
+          Sayfa İçeriği
+        </h1>
+        <p class="page-subtitle">
+          Landing page içeriklerini buradan yönetin
+        </p>
+      </div>
+      <div class="header-right">
+        <div class="last-updated">
+          <span class="material-icons-outlined lu-icon">update</span>
+          <span class="lu-label">Son güncelleme:</span>
+          <span class="lu-value">{{ formatDate(content()!.lastUpdatedAt) }}</span>
+        </div>
+        <div class="lu-by">
+          <span class="material-icons-outlined">person_outline</span>
+          {{ content()!.updatedBy }}
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════
+         TAB BAR
+    ══════════════════════════════════════════════════ -->
+    <div class="tab-bar">
+      <button
+        class="tab-btn"
+        [class.active]="activeTab() === 'hero'"
+        (click)="setTab('hero')"
+      >
+        <span class="material-icons-outlined tab-icon">title</span>
+        Hero
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab() === 'stats'"
+        (click)="setTab('stats')"
+      >
+        <span class="material-icons-outlined tab-icon">bar_chart</span>
+        İstatistikler
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab() === 'features'"
+        (click)="setTab('features')"
+      >
+        <span class="material-icons-outlined tab-icon">widgets</span>
+        Özellikler
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab() === 'testimonials'"
+        (click)="setTab('testimonials')"
+      >
+        <span class="material-icons-outlined tab-icon">format_quote</span>
+        Referanslar
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab() === 'cta'"
+        (click)="setTab('cta')"
+      >
+        <span class="material-icons-outlined tab-icon">ads_click</span>
+        CTA
+      </button>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════
+         TAB CONTENT
+    ══════════════════════════════════════════════════ -->
+    <div class="tab-content">
+
+      @switch (activeTab()) {
+
+        <!-- ══════════════════
+             HERO TAB
+        ══════════════════ -->
+        @case ('hero') {
+          <div class="tab-panel animate-fadeInUp">
+            <div class="two-col-layout">
+
+              <!-- Form column -->
+              <div class="form-col card">
+                <h2 class="panel-title">
+                  <span class="material-icons-outlined">edit</span>
+                  Hero Düzenle
+                </h2>
+
+                <div class="form-group">
+                  <label class="form-label">Rozet Metni</label>
+                  <input
+                    class="form-input"
+                    type="text"
+                    [ngModel]="editingHero().badge"
+                    (ngModelChange)="updateHeroField('badge', $event)"
+                    placeholder="Türkiye'nin En Hızlı Büyüyen ERP Platformu"
+                  />
+                  <span class="form-hint">Başlığın üzerinde küçük rozet</span>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Başlık</label>
+                  <input
+                    class="form-input"
+                    type="text"
+                    [ngModel]="editingHero().title"
+                    (ngModelChange)="updateHeroField('title', $event)"
+                    placeholder="Perakende İşletmenizi"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">
+                    Başlık Vurgu
+                    <span class="form-label-hint">(gradient renk)</span>
+                  </label>
+                  <input
+                    class="form-input"
+                    type="text"
+                    [ngModel]="editingHero().titleAccent"
+                    (ngModelChange)="updateHeroField('titleAccent', $event)"
+                    placeholder="Dijitalleştirin."
+                  />
+                  <span class="form-hint">Başlık metninin gradient vurgulu kısmı</span>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Açıklama</label>
+                  <textarea
+                    class="form-input form-textarea"
+                    rows="3"
+                    [ngModel]="editingHero().description"
+                    (ngModelChange)="updateHeroField('description', $event)"
+                    placeholder="Kısa açıklama metni…"
+                  ></textarea>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Birincil CTA</label>
+                    <input
+                      class="form-input"
+                      type="text"
+                      [ngModel]="editingHero().primaryCtaText"
+                      (ngModelChange)="updateHeroField('primaryCtaText', $event)"
+                      placeholder="14 Gün Ücretsiz Deneyin"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">İkincil CTA</label>
+                    <input
+                      class="form-input"
+                      type="text"
+                      [ngModel]="editingHero().secondaryCtaText"
+                      (ngModelChange)="updateHeroField('secondaryCtaText', $event)"
+                      placeholder="Nasıl Çalışır?"
+                    />
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button class="btn btn-primary" (click)="saveHero()" [disabled]="isSaving()">
+                    @if (isSaving()) {
+                      <div class="spinner spinner-sm"></div>
+                      Kaydediliyor…
+                    } @else {
+                      <span class="material-icons-outlined">save</span>
+                      Kaydet
+                    }
+                  </button>
+                </div>
+              </div>
+
+              <!-- Preview column -->
+              <div class="preview-col">
+                <div class="preview-label">
+                  <span class="material-icons-outlined">visibility</span>
+                  Önizleme
+                </div>
+                <div class="hero-preview">
+                  <div class="preview-badge">{{ editingHero().badge || 'Rozet metni' }}</div>
+                  <h1 class="preview-title">
+                    {{ editingHero().title || 'Başlık' }}
+                    <br />
+                    <span class="preview-title-accent">{{ editingHero().titleAccent || 'Vurgu' }}</span>
+                  </h1>
+                  <p class="preview-desc">{{ editingHero().description || 'Açıklama metni burada görünür.' }}</p>
+                  <div class="preview-ctas">
+                    <div class="preview-cta-primary">{{ editingHero().primaryCtaText || 'Birincil CTA' }}</div>
+                    <div class="preview-cta-secondary">{{ editingHero().secondaryCtaText || 'İkincil CTA' }}</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        }
+
+        <!-- ══════════════════
+             STATS TAB
+        ══════════════════ -->
+        @case ('stats') {
+          <div class="tab-panel animate-fadeInUp">
+            <div class="card">
+              <h2 class="panel-title">
+                <span class="material-icons-outlined">bar_chart</span>
+                İstatistik Kartları
+              </h2>
+              <p class="panel-desc">Landing page'deki 4 istatistik kartını düzenleyin.</p>
+
+              <div class="stats-list">
+                @for (stat of editingStats(); track $index; let i = $index) {
+                  <div class="stat-editor-row">
+                    <div class="stat-number">{{ i + 1 }}</div>
+                    <div class="stat-fields">
+                      <div class="form-group">
+                        <label class="form-label">Değer</label>
+                        <input
+                          class="form-input"
+                          type="text"
+                          [ngModel]="stat.value"
+                          (ngModelChange)="updateStatField(i, 'value', $event)"
+                          placeholder="1.200+"
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label class="form-label">Etiket</label>
+                        <input
+                          class="form-input"
+                          type="text"
+                          [ngModel]="stat.label"
+                          (ngModelChange)="updateStatField(i, 'label', $event)"
+                          placeholder="Aktif İşletme"
+                        />
+                      </div>
+                    </div>
+                    <div class="stat-preview-chip">
+                      <span class="stat-prev-value">{{ stat.value }}</span>
+                      <span class="stat-prev-label">{{ stat.label }}</span>
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <div class="form-actions">
+                <button class="btn btn-primary" (click)="saveStats()" [disabled]="isSaving()">
+                  @if (isSaving()) {
+                    <div class="spinner spinner-sm"></div>
+                    Kaydediliyor…
+                  } @else {
+                    <span class="material-icons-outlined">save</span>
+                    Kaydet
+                  }
+                </button>
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- ══════════════════
+             FEATURES TAB
+        ══════════════════ -->
+        @case ('features') {
+          <div class="tab-panel animate-fadeInUp">
+            <div class="card">
+              <div class="list-header">
+                <div>
+                  <h2 class="panel-title">
+                    <span class="material-icons-outlined">widgets</span>
+                    Özellikler
+                  </h2>
+                  <p class="panel-desc">
+                    {{ content()!.features.length }} özellik tanımlı
+                  </p>
+                </div>
+                <button class="btn btn-primary btn-sm" (click)="openFeatureEdit()">
+                  <span class="material-icons-outlined">add</span>
+                  Yeni Özellik Ekle
+                </button>
+              </div>
+
+              <div class="features-list">
+                @for (f of content()!.features; track f.id) {
+                  <div class="feature-item-row">
+                    <div class="feat-icon-chip">
+                      <span class="material-icons-outlined">{{ f.icon }}</span>
+                    </div>
+                    <div class="feat-info">
+                      <div class="feat-title">{{ f.title }}</div>
+                      <div class="feat-desc">{{ f.description }}</div>
+                    </div>
+                    <div class="feat-stat">
+                      <span class="feat-stat-value">{{ f.stat }}</span>
+                      <span class="feat-stat-label">{{ f.statLabel }}</span>
+                    </div>
+                    <div class="feat-badges">
+                      @if (f.isActive) {
+                        <span class="badge badge-success">Aktif</span>
+                      } @else {
+                        <span class="badge badge-warning">Pasif</span>
+                      }
+                      <span class="feat-order">#{{ f.sortOrder }}</span>
+                    </div>
+                    <div class="feat-actions">
+                      <button class="btn btn-ghost btn-icon btn-sm" (click)="openFeatureEdit(f)" title="Düzenle">
+                        <span class="material-icons-outlined">edit</span>
+                      </button>
+                      <button class="btn btn-ghost btn-icon btn-sm action-delete" (click)="deleteFeature(f.id)" title="Sil">
+                        <span class="material-icons-outlined">delete_outline</span>
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- ══════════════════
+             TESTIMONIALS TAB
+        ══════════════════ -->
+        @case ('testimonials') {
+          <div class="tab-panel animate-fadeInUp">
+            <div class="card">
+              <div class="list-header">
+                <div>
+                  <h2 class="panel-title">
+                    <span class="material-icons-outlined">format_quote</span>
+                    Referanslar
+                  </h2>
+                  <p class="panel-desc">
+                    {{ content()!.testimonials.length }} referans tanımlı
+                  </p>
+                </div>
+                <button class="btn btn-primary btn-sm" (click)="openTestimonialEdit()">
+                  <span class="material-icons-outlined">add</span>
+                  Yeni Referans Ekle
+                </button>
+              </div>
+
+              <div class="testimonials-list">
+                @for (t of content()!.testimonials; track t.id) {
+                  <div class="testimonial-item-row">
+                    <div class="testi-avatar">{{ t.avatar }}</div>
+                    <div class="testi-info">
+                      <div class="testi-name">{{ t.name }}</div>
+                      <div class="testi-role">{{ t.role }}</div>
+                      <div class="testi-text">{{ t.text }}</div>
+                    </div>
+                    <div class="testi-right">
+                      <div class="testi-stars">
+                        @for (star of starsArray(5); track star) {
+                          <span
+                            class="material-icons-outlined testi-star"
+                            [class.filled]="star <= t.rating"
+                          >star</span>
+                        }
+                      </div>
+                      <div class="testi-status">
+                        @if (t.isActive) {
+                          <span class="badge badge-success">Aktif</span>
+                        } @else {
+                          <span class="badge badge-warning">Pasif</span>
+                        }
+                      </div>
+                      <div class="testi-actions">
+                        <button class="btn btn-ghost btn-icon btn-sm" (click)="openTestimonialEdit(t)" title="Düzenle">
+                          <span class="material-icons-outlined">edit</span>
+                        </button>
+                        <button class="btn btn-ghost btn-icon btn-sm action-delete" (click)="deleteTestimonial(t.id)" title="Sil">
+                          <span class="material-icons-outlined">delete_outline</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- ══════════════════
+             CTA TAB
+        ══════════════════ -->
+        @case ('cta') {
+          <div class="tab-panel animate-fadeInUp">
+            <div class="two-col-layout">
+
+              <div class="form-col card">
+                <h2 class="panel-title">
+                  <span class="material-icons-outlined">ads_click</span>
+                  CTA Bölümü Düzenle
+                </h2>
+
+                <div class="form-group">
+                  <label class="form-label">Başlık</label>
+                  <input
+                    class="form-input"
+                    type="text"
+                    [ngModel]="editingCta().title"
+                    (ngModelChange)="updateCtaField('title', $event)"
+                    placeholder="Bugün Başlayın, Farkı Hissedin"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Açıklama</label>
+                  <textarea
+                    class="form-input form-textarea"
+                    rows="3"
+                    [ngModel]="editingCta().description"
+                    (ngModelChange)="updateCtaField('description', $event)"
+                    placeholder="CTA açıklaması…"
+                  ></textarea>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">Birincil CTA</label>
+                    <input
+                      class="form-input"
+                      type="text"
+                      [ngModel]="editingCta().primaryCtaText"
+                      (ngModelChange)="updateCtaField('primaryCtaText', $event)"
+                      placeholder="14 Gün Ücretsiz Başla"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">İkincil CTA</label>
+                    <input
+                      class="form-input"
+                      type="text"
+                      [ngModel]="editingCta().secondaryCtaText"
+                      (ngModelChange)="updateCtaField('secondaryCtaText', $event)"
+                      placeholder="Fiyatları Gör"
+                    />
+                  </div>
+                </div>
+
+                <div class="form-actions">
+                  <button class="btn btn-primary" (click)="saveCta()" [disabled]="isSaving()">
+                    @if (isSaving()) {
+                      <div class="spinner spinner-sm"></div>
+                      Kaydediliyor…
+                    } @else {
+                      <span class="material-icons-outlined">save</span>
+                      Kaydet
+                    }
+                  </button>
+                </div>
+              </div>
+
+              <!-- CTA Preview -->
+              <div class="preview-col">
+                <div class="preview-label">
+                  <span class="material-icons-outlined">visibility</span>
+                  Önizleme
+                </div>
+                <div class="cta-preview">
+                  <h2 class="cta-prev-title">{{ editingCta().title || 'CTA Başlığı' }}</h2>
+                  <p class="cta-prev-desc">{{ editingCta().description || 'Açıklama metni…' }}</p>
+                  <div class="cta-prev-buttons">
+                    <div class="cta-prev-btn-primary">{{ editingCta().primaryCtaText || 'Birincil CTA' }}</div>
+                    <div class="cta-prev-btn-secondary">{{ editingCta().secondaryCtaText || 'İkincil CTA' }}</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        }
+
+      }<!-- end @switch -->
+
+    </div><!-- tab-content -->
+
+  }<!-- end @if content -->
+
+
+  <!-- ══════════════════════════════════════════════════
+       FEATURE EDIT MODAL
+  ══════════════════════════════════════════════════ -->
+  @if (showFeatureModal()) {
+    <div class="cms-modal-overlay" (click)="closeFeatureModal()"></div>
+    <div class="cms-modal">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <span class="material-icons-outlined">widgets</span>
+          {{ editingFeature() ? 'Özelliği Düzenle' : 'Yeni Özellik Ekle' }}
+        </h3>
+        <button class="btn btn-ghost btn-icon btn-sm" (click)="closeFeatureModal()">
+          <span class="material-icons-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">İkon (Material Icon adı)</label>
+            <div class="icon-input-wrap">
+              <span class="material-icons-outlined icon-preview">{{ featureForm().icon || 'star' }}</span>
+              <input
+                class="form-input"
+                type="text"
+                [ngModel]="featureForm().icon"
+                (ngModelChange)="updateFeatureField('icon', $event)"
+                placeholder="point_of_sale"
+              />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Başlık</label>
+            <input
+              class="form-input"
+              type="text"
+              [ngModel]="featureForm().title"
+              (ngModelChange)="updateFeatureField('title', $event)"
+              placeholder="Hızlı POS Sistemi"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Açıklama</label>
+          <textarea
+            class="form-input form-textarea"
+            rows="3"
+            [ngModel]="featureForm().description"
+            (ngModelChange)="updateFeatureField('description', $event)"
+            placeholder="Özellik açıklaması…"
+          ></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">İstatistik Değeri</label>
+            <input
+              class="form-input"
+              type="text"
+              [ngModel]="featureForm().stat"
+              (ngModelChange)="updateFeatureField('stat', $event)"
+              placeholder="3 sn"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">İstatistik Etiketi</label>
+            <input
+              class="form-input"
+              type="text"
+              [ngModel]="featureForm().statLabel"
+              (ngModelChange)="updateFeatureField('statLabel', $event)"
+              placeholder="Ortalama İşlem Süresi"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Sıralama</label>
+            <input
+              class="form-input"
+              type="number"
+              [ngModel]="featureForm().sortOrder"
+              (ngModelChange)="updateFeatureField('sortOrder', +$event)"
+              placeholder="1"
+            />
+          </div>
+          <div class="form-group form-group-toggle">
+            <label class="form-label">Durum</label>
+            <div class="toggle-row">
+              <button
+                class="toggle-btn"
+                [class.active]="featureForm().isActive"
+                (click)="updateFeatureField('isActive', !featureForm().isActive)"
+              >
+                <span class="toggle-knob"></span>
+              </button>
+              <span class="toggle-label">{{ featureForm().isActive ? 'Aktif' : 'Pasif' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeFeatureModal()">İptal</button>
+        <button class="btn btn-primary" (click)="saveFeature()" [disabled]="isSaving()">
+          @if (isSaving()) {
+            <div class="spinner spinner-sm"></div>
+            Kaydediliyor…
+          } @else {
+            <span class="material-icons-outlined">save</span>
+            Kaydet
+          }
+        </button>
+      </div>
+    </div>
+  }
+
+
+  <!-- ══════════════════════════════════════════════════
+       TESTIMONIAL EDIT MODAL
+  ══════════════════════════════════════════════════ -->
+  @if (showTestimonialModal()) {
+    <div class="cms-modal-overlay" (click)="closeTestimonialModal()"></div>
+    <div class="cms-modal">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <span class="material-icons-outlined">format_quote</span>
+          {{ editingTestimonial() ? 'Referansı Düzenle' : 'Yeni Referans Ekle' }}
+        </h3>
+        <button class="btn btn-ghost btn-icon btn-sm" (click)="closeTestimonialModal()">
+          <span class="material-icons-outlined">close</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Ad Soyad</label>
+            <input
+              class="form-input"
+              type="text"
+              [ngModel]="testimonialForm().name"
+              (ngModelChange)="updateTestimonialField('name', $event)"
+              placeholder="Mehmet Yılmaz"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Unvan / Şirket</label>
+            <input
+              class="form-input"
+              type="text"
+              [ngModel]="testimonialForm().role"
+              (ngModelChange)="updateTestimonialField('role', $event)"
+              placeholder="Kurucu, Yılmaz Market"
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">
+              Avatar Baş Harfleri
+              <span class="form-label-hint">(örn. MY)</span>
+            </label>
+            <input
+              class="form-input"
+              type="text"
+              maxlength="3"
+              [ngModel]="testimonialForm().avatar"
+              (ngModelChange)="updateTestimonialField('avatar', $event)"
+              placeholder="MY"
+            />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Puan (1-5)</label>
+            <div class="star-picker">
+              @for (star of starsArray(5); track star) {
+                <button
+                  class="star-pick-btn"
+                  [class.active]="star <= (testimonialForm().rating ?? 5)"
+                  (click)="updateTestimonialField('rating', star)"
+                >
+                  <span class="material-icons-outlined">star</span>
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Referans Metni</label>
+          <textarea
+            class="form-input form-textarea"
+            rows="4"
+            [ngModel]="testimonialForm().text"
+            (ngModelChange)="updateTestimonialField('text', $event)"
+            placeholder="Müşteri yorumu…"
+          ></textarea>
+        </div>
+
+        <div class="form-group form-group-toggle">
+          <label class="form-label">Durum</label>
+          <div class="toggle-row">
+            <button
+              class="toggle-btn"
+              [class.active]="testimonialForm().isActive"
+              (click)="updateTestimonialField('isActive', !testimonialForm().isActive)"
+            >
+              <span class="toggle-knob"></span>
+            </button>
+            <span class="toggle-label">{{ testimonialForm().isActive ? 'Aktif' : 'Pasif' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeTestimonialModal()">İptal</button>
+        <button class="btn btn-primary" (click)="saveTestimonial()" [disabled]="isSaving()">
+          @if (isSaving()) {
+            <div class="spinner spinner-sm"></div>
+            Kaydediliyor…
+          } @else {
+            <span class="material-icons-outlined">save</span>
+            Kaydet
+          }
+        </button>
+      </div>
+    </div>
+  }
+
+</div>
