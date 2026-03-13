@@ -2,6 +2,13 @@ import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
+interface ExcelUploadResult {
+    totalRows: number;
+    createdCount: number;
+    failedCount: number;
+    errors?: string[];
+}
+
 @Component({
     selector: 'app-suppliers',
     standalone: true,
@@ -16,6 +23,13 @@ export class SuppliersComponent {
     showDetailModal = signal(false);
     editingAccount = signal<any>(null);
     selectedAccount = signal<any>(null);
+
+    // Excel upload state
+    showExcelModal = signal(false);
+    excelFile = signal<File | null>(null);
+    excelUploading = signal(false);
+    excelResult = signal<ExcelUploadResult | null>(null);
+    isDragOver = signal(false);
 
     formData = {
         name: '', phone: '', email: '', address: '',
@@ -99,4 +113,54 @@ export class SuppliersComponent {
     deleteAccount(id: string): void {
         this.accounts.update(items => items.filter(a => a.id !== id));
     }
+
+    // ═══════════ Excel Upload ═══════════
+
+    openExcelModal(): void {
+        this.excelFile.set(null);
+        this.excelResult.set(null);
+        this.excelUploading.set(false);
+        this.isDragOver.set(false);
+        this.showExcelModal.set(true);
+    }
+
+    closeExcelModal(): void { this.showExcelModal.set(false); }
+
+    onFileSelected(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        if (input.files && input.files.length > 0) this.setFile(input.files[0]);
+    }
+
+    onDragOver(event: DragEvent): void { event.preventDefault(); event.stopPropagation(); this.isDragOver.set(true); }
+    onDragLeave(event: DragEvent): void { event.preventDefault(); event.stopPropagation(); this.isDragOver.set(false); }
+
+    onDrop(event: DragEvent): void {
+        event.preventDefault(); event.stopPropagation(); this.isDragOver.set(false);
+        if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) this.setFile(event.dataTransfer.files[0]);
+    }
+
+    private setFile(file: File): void {
+        const ext = file.name.split('.').pop()?.toLowerCase();
+        if (!['xlsx', 'xls', 'csv'].includes(ext || '') || file.size > 5 * 1024 * 1024) return;
+        this.excelFile.set(file);
+        this.excelResult.set(null);
+    }
+
+    removeExcelFile(): void { this.excelFile.set(null); this.excelResult.set(null); }
+
+    uploadExcel(): void {
+        if (!this.excelFile()) return;
+        this.excelUploading.set(true);
+        setTimeout(() => {
+            this.excelResult.set({ totalRows: 12, createdCount: 10, failedCount: 2, errors: ['Satır 5: "Firma Adı" boş bırakılamaz.', 'Satır 11: VKN formatı geçersiz.'] });
+            this.excelUploading.set(false);
+        }, 2000);
+    }
+
+    formatFileSize(bytes: number): string {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
 }
+

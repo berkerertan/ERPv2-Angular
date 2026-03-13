@@ -2,7 +2,16 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Product, CreateProductRequest, UpdateProductRequest, ProductSuggestionDto } from '../models/product.model';
+import {
+    Product,
+    CreateProductRequest,
+    UpdateProductRequest,
+    ProductSuggestionDto,
+    BulkProductPriceUpdateRequest,
+    BulkProductPriceUpdateResponse,
+    BulkProductStockUpdateRequest,
+    BulkProductStockUpdateResponse
+} from '../models/product.model';
 
 @Injectable({ providedIn: 'root' })
 export class ProductService {
@@ -42,6 +51,16 @@ export class ProductService {
     /** Ürünü soft delete — 204 No Content */
     delete(id: string): Observable<void> {
         return this.http.delete<void>(`${this.apiUrl}/${id}`);
+    }
+
+    /** Toplu fiyat güncelleme */
+    bulkPriceUpdate(request: BulkProductPriceUpdateRequest): Observable<BulkProductPriceUpdateResponse> {
+        return this.http.post<BulkProductPriceUpdateResponse>(`${this.apiUrl}/bulk-price-update`, request);
+    }
+
+    /** Toplu stok güncelleme */
+    bulkStockUpdate(request: BulkProductStockUpdateRequest): Observable<BulkProductStockUpdateResponse> {
+        return this.http.post<BulkProductStockUpdateResponse>(`${this.apiUrl}/bulk-stock-update`, request);
     }
 
     /** HTTP query param builder */

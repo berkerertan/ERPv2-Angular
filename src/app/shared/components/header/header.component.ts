@@ -1,7 +1,8 @@
-import { Component, signal, Output, EventEmitter } from '@angular/core';
+import { Component, signal, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { NotificationService } from '../../../core/services/notification.service';
 
 @Component({
     selector: 'app-header',
@@ -16,7 +17,8 @@ export class HeaderComponent {
     showProfileMenu = signal(false);
     showNotifications = signal(false);
 
-    constructor(public authService: AuthService) { }
+    public authService = inject(AuthService);
+    public notificationService = inject(NotificationService);
 
     toggleProfileMenu(): void {
         this.showProfileMenu.update(v => !v);
@@ -35,6 +37,14 @@ export class HeaderComponent {
 
     onMenuToggle(): void {
         this.toggleSidebar.emit();
+    }
+
+    markAsRead(id: string): void {
+        this.notificationService.markAsRead(id);
+    }
+
+    markAllAsRead(): void {
+        this.notificationService.markAllAsRead();
     }
 
     logout(): void {

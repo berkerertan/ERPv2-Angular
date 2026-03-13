@@ -137,6 +137,83 @@
                 </tr>
             </thead>
             <tbody>
+                <!-- ─── Quick Add Rows (at top for easy access) ────────── -->
+                <tr class="quick-add-separator">
+                    <td colspan="13">
+                        <div class="separator-line">
+                            <span class="separator-label">
+                                <span class="material-icons-outlined">add_circle</span>
+                                Hızlı Ekleme — Ürün adını yazıp Enter'a basın
+                            </span>
+                        </div>
+                    </td>
+                </tr>
+
+                @for (row of quickAddRows(); track $index; let i = $index) {
+                <tr class="quick-add-row" [class.quick-row-filled]="row.productName.trim()">
+                    <td class="col-checkbox row-number">{{ i + 1 }}</td>
+                    <td>
+                        <input class="cell-input quick-input" type="date" [(ngModel)]="row.date" />
+                    </td>
+                    <td>
+                        <input class="cell-input quick-input" [(ngModel)]="row.productName" placeholder="Ürün adı..."
+                            (keydown)="onQuickRowKeydown($event, i)" />
+                    </td>
+                    <td>
+                        <input class="cell-input quick-input font-mono" [(ngModel)]="row.barcode" placeholder="Barkod"
+                            (keydown)="onQuickRowKeydown($event, i)" />
+                    </td>
+                    <td>
+                        <select class="cell-input quick-input" [(ngModel)]="row.category">
+                            <option value="">Kategori</option>
+                            <option>Elektronik</option>
+                            <option>Aksesuar</option>
+                            <option>Mobilya</option>
+                            <option>Kırtasiye</option>
+                            <option>Gıda</option>
+                            <option>Tekstil</option>
+                            <option>Diğer</option>
+                        </select>
+                    </td>
+                    <td>
+                        <input class="cell-input quick-input text-right" type="number" [(ngModel)]="row.quantity"
+                            min="1" (keydown)="onQuickRowKeydown($event, i)" />
+                    </td>
+                    <td>
+                        <input class="cell-input quick-input text-right" type="number" [(ngModel)]="row.listPrice"
+                            min="0" step="0.01" placeholder="0" (keydown)="onQuickRowKeydown($event, i)" />
+                    </td>
+                    <td>
+                        <input class="cell-input quick-input text-right" type="number" [(ngModel)]="row.unitPrice"
+                            min="0" step="0.01" placeholder="0" (keydown)="onQuickRowKeydown($event, i)" />
+                    </td>
+                    <td class="col-number">
+                        <span class="amount quick-total">₺{{ (row.quantity * row.unitPrice).toLocaleString('tr-TR')
+                            }}</span>
+                    </td>
+                    <td class="col-number text-muted">—</td>
+                    <td class="col-number text-muted">—</td>
+                    <td>
+                        <select class="cell-input quick-input" [(ngModel)]="row.status">
+                            <option value="Pending">Beklemede</option>
+                            <option value="Delivered">Teslim Edildi</option>
+                        </select>
+                    </td>
+                    <td>
+                        <div class="actions-cell">
+                            @if (row.productName.trim()) {
+                            <button class="action-btn approve" title="Kaydet (Enter)" (click)="commitQuickRow(i)">
+                                <span class="material-icons-outlined">check</span>
+                            </button>
+                            }
+                            <button class="action-btn delete" title="Satırı Temizle" (click)="removeQuickRow(i)">
+                                <span class="material-icons-outlined">close</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                }
+
                 <!-- ─── Existing Products ─────────────────────── -->
                 @for (p of filteredProducts; track p.id) {
                 <tr [class.row-selected]="p.selected" [class.row-editing]="editingCell()?.id === p.id">
@@ -273,83 +350,6 @@
                             }
                             <button class="action-btn delete" title="Sil" (click)="removeProduct(p.id)">
                                 <span class="material-icons-outlined">delete</span>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-                }
-
-                <!-- ─── Quick Add Rows (always visible) ────────── -->
-                <tr class="quick-add-separator">
-                    <td colspan="13">
-                        <div class="separator-line">
-                            <span class="separator-label">
-                                <span class="material-icons-outlined">add_circle</span>
-                                Hızlı Ekleme — Ürün adını yazıp Enter'a basın
-                            </span>
-                        </div>
-                    </td>
-                </tr>
-
-                @for (row of quickAddRows(); track $index; let i = $index) {
-                <tr class="quick-add-row" [class.quick-row-filled]="row.productName.trim()">
-                    <td class="col-checkbox row-number">{{ i + 1 }}</td>
-                    <td>
-                        <input class="cell-input quick-input" type="date" [(ngModel)]="row.date" />
-                    </td>
-                    <td>
-                        <input class="cell-input quick-input" [(ngModel)]="row.productName" placeholder="Ürün adı..."
-                            (keydown)="onQuickRowKeydown($event, i)" />
-                    </td>
-                    <td>
-                        <input class="cell-input quick-input font-mono" [(ngModel)]="row.barcode" placeholder="Barkod"
-                            (keydown)="onQuickRowKeydown($event, i)" />
-                    </td>
-                    <td>
-                        <select class="cell-input quick-input" [(ngModel)]="row.category">
-                            <option value="">Kategori</option>
-                            <option>Elektronik</option>
-                            <option>Aksesuar</option>
-                            <option>Mobilya</option>
-                            <option>Kırtasiye</option>
-                            <option>Gıda</option>
-                            <option>Tekstil</option>
-                            <option>Diğer</option>
-                        </select>
-                    </td>
-                    <td>
-                        <input class="cell-input quick-input text-right" type="number" [(ngModel)]="row.quantity"
-                            min="1" (keydown)="onQuickRowKeydown($event, i)" />
-                    </td>
-                    <td>
-                        <input class="cell-input quick-input text-right" type="number" [(ngModel)]="row.listPrice"
-                            min="0" step="0.01" placeholder="0" (keydown)="onQuickRowKeydown($event, i)" />
-                    </td>
-                    <td>
-                        <input class="cell-input quick-input text-right" type="number" [(ngModel)]="row.unitPrice"
-                            min="0" step="0.01" placeholder="0" (keydown)="onQuickRowKeydown($event, i)" />
-                    </td>
-                    <td class="col-number">
-                        <span class="amount quick-total">₺{{ (row.quantity * row.unitPrice).toLocaleString('tr-TR')
-                            }}</span>
-                    </td>
-                    <td class="col-number text-muted">—</td>
-                    <td class="col-number text-muted">—</td>
-                    <td>
-                        <select class="cell-input quick-input" [(ngModel)]="row.status">
-                            <option value="Pending">Beklemede</option>
-                            <option value="Delivered">Teslim Edildi</option>
-                        </select>
-                    </td>
-                    <td>
-                        <div class="actions-cell">
-                            @if (row.productName.trim()) {
-                            <button class="action-btn approve" title="Kaydet (Enter)" (click)="commitQuickRow(i)">
-                                <span class="material-icons-outlined">check</span>
-                            </button>
-                            }
-                            <button class="action-btn delete" title="Satırı Temizle" (click)="removeQuickRow(i)">
-                                <span class="material-icons-outlined">close</span>
                             </button>
                         </div>
                     </td>

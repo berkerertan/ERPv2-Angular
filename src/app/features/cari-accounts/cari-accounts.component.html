@@ -4,10 +4,16 @@
             <h1 class="page-title">Cari Hesaplar</h1>
             <p class="page-subtitle">Tedarikçi ve alıcı hesaplarını yönetin</p>
         </div>
-        <button class="btn btn-primary" (click)="openAddModal()">
-            <span class="material-icons-outlined">person_add</span>
-            Yeni Cari
-        </button>
+        <div class="page-header-actions">
+            <button class="btn btn-secondary" (click)="openExcelModal()">
+                <span class="material-icons-outlined">upload_file</span>
+                Excel Yükle
+            </button>
+            <button class="btn btn-primary" (click)="openAddModal()">
+                <span class="material-icons-outlined">person_add</span>
+                Yeni Cari
+            </button>
+        </div>
     </div>
 
     <div class="stats-row">
@@ -87,6 +93,7 @@
     </div>
 </div>
 
+<!-- Add/Edit Modal -->
 @if (showModal()) {
 <div class="overlay" (click)="closeModal()"></div>
 <div class="modal" style="width: 520px;">
@@ -119,6 +126,102 @@
         <button class="btn btn-secondary" (click)="closeModal()">İptal</button>
         <button class="btn btn-primary" (click)="save()"><span class="material-icons-outlined">save</span> {{
             editingAccount() ? 'Güncelle' : 'Kaydet' }}</button>
+    </div>
+</div>
+}
+
+<!-- Excel Upload Modal -->
+@if (showExcelModal()) {
+<div class="overlay" (click)="closeExcelModal()"></div>
+<div class="modal excel-modal">
+    <div class="modal-header">
+        <h2>Toplu Cari Yükleme</h2>
+        <button class="modal-close" (click)="closeExcelModal()"><span class="material-icons-outlined">close</span></button>
+    </div>
+
+    <!-- Upload Area -->
+    @if (!excelFile()) {
+    <div class="excel-upload-zone"
+         (dragover)="onDragOver($event)"
+         (dragleave)="onDragLeave($event)"
+         (drop)="onDrop($event)"
+         [class.drag-over]="isDragOver()"
+         (click)="fileInput.click()">
+        <input #fileInput type="file" accept=".xlsx,.xls,.csv" hidden (change)="onFileSelected($event)" />
+        <div class="upload-icon-wrap">
+            <span class="material-icons-outlined">cloud_upload</span>
+        </div>
+        <p class="upload-title">Excel dosyasını sürükleyin veya tıklayın</p>
+        <p class="upload-subtitle">Desteklenen formatlar: .xlsx, .xls, .csv — Maks. 5MB</p>
+    </div>
+    } @else {
+    <!-- File Selected -->
+    <div class="excel-file-info">
+        <div class="file-icon-wrap">
+            <span class="material-icons-outlined">description</span>
+        </div>
+        <div class="file-details">
+            <span class="file-name">{{ excelFile()!.name }}</span>
+            <span class="file-size">{{ formatFileSize(excelFile()!.size) }}</span>
+        </div>
+        <button class="action-btn delete" title="Kaldır" (click)="removeExcelFile()">
+            <span class="material-icons-outlined">close</span>
+        </button>
+    </div>
+    }
+
+    <!-- Template Info -->
+    <div class="excel-template-info">
+        <span class="material-icons-outlined">info</span>
+        <div>
+            <strong>Şablon Formatı:</strong> Excel dosyanız şu sütunları içermelidir:
+            <span class="template-cols">Ad, Tür (Buyer/Supplier), Telefon, E-posta, Vergi No, Adres</span>
+        </div>
+    </div>
+
+    <!-- Upload Result -->
+    @if (excelResult()) {
+    <div class="excel-result" [class.has-errors]="excelResult()!.failedCount > 0">
+        <div class="result-stats">
+            <div class="result-stat success">
+                <span class="material-icons-outlined">check_circle</span>
+                <span>{{ excelResult()!.createdCount }} kayıt başarıyla eklendi</span>
+            </div>
+            @if (excelResult()!.failedCount > 0) {
+            <div class="result-stat error">
+                <span class="material-icons-outlined">error</span>
+                <span>{{ excelResult()!.failedCount }} kayıtta hata oluştu</span>
+            </div>
+            }
+        </div>
+        @if (excelResult()!.errors && excelResult()!.errors!.length > 0) {
+        <div class="result-errors">
+            @for (err of excelResult()!.errors!; track err) {
+            <div class="result-error-item">
+                <span class="material-icons-outlined">warning</span>
+                {{ err }}
+            </div>
+            }
+        </div>
+        }
+    </div>
+    }
+
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeExcelModal()">
+            {{ excelResult() ? 'Kapat' : 'İptal' }}
+        </button>
+        @if (!excelResult()) {
+        <button class="btn btn-primary" [disabled]="!excelFile() || excelUploading()" (click)="uploadExcel()">
+            @if (excelUploading()) {
+            <div class="spinner spinner-sm"></div>
+            Yükleniyor...
+            } @else {
+            <span class="material-icons-outlined">upload</span>
+            Yükle
+            }
+        </button>
+        }
     </div>
 </div>
 }

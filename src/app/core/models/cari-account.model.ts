@@ -88,3 +88,36 @@ export interface CariDebtItemImportResult {
     failedCount: number;
     errors?: string[];
 }
+
+export interface BuyerDebtItemsBatchImportFileResult {
+    fileName?: string;
+    cariAccountId?: string;
+    cariAccountName?: string;
+    cariCreated: boolean;
+    totalRows: number;
+    createdCount: number;
+    failedCount: number;
+    errors?: string[];
+}
+
+export interface BuyerDebtItemsBatchImportResult {
+    totalFiles: number;
+    processedFiles: number;
+    createdCariCount: number;
+    totalRows: number;
+    totalCreatedCount: number;
+    totalFailedCount: number;
+    files?: BuyerDebtItemsBatchImportFileResult[];
+}
+
+export interface BuyerBatchImportOptions {
+    replaceExisting?: boolean;
+    transactionDateColumn?: string;
+    materialDescriptionColumn?: string;
+    quantityColumn?: string;
+    listPriceColumn?: string;
+    salePriceColumn?: string;
+    totalAmountColumn?: string;
+    paymentColumn?: string;
+    remainingBalanceColumn?: string;
+}

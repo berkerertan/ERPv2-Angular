@@ -7,10 +7,16 @@
             </h1>
             <p class="page-subtitle">Müşterilerinizi ve alıcı hesaplarını yönetin</p>
         </div>
-        <button class="btn btn-primary" (click)="openAddModal()">
-            <span class="material-icons-outlined">person_add</span>
-            Yeni Alıcı
-        </button>
+        <div class="page-header-actions">
+            <button class="btn btn-secondary" (click)="openExcelModal()">
+                <span class="material-icons-outlined">receipt_long</span>
+                Veresiye Aktar
+            </button>
+            <button class="btn btn-primary" (click)="openAddModal()">
+                <span class="material-icons-outlined">person_add</span>
+                Yeni Alıcı
+            </button>
+        </div>
     </div>
 
     <!-- Stats -->
@@ -219,6 +225,129 @@
             <span class="material-icons-outlined">save</span>
             {{ editingAccount() ? 'Güncelle' : 'Kaydet' }}
         </button>
+    </div>
+</div>
+}
+
+<!-- Veresiye Excel Aktarma Modal -->
+@if (showExcelModal()) {
+<div class="overlay" (click)="closeExcelModal()"></div>
+<div class="modal excel-modal">
+    <div class="modal-header">
+        <h2>
+            <span class="material-icons-outlined" style="color: var(--primary-400); vertical-align: middle; margin-right: 6px;">receipt_long</span>
+            Veresiye Ürün Aktarma
+        </h2>
+        <button class="modal-close" (click)="closeExcelModal()"><span class="material-icons-outlined">close</span></button>
+    </div>
+
+    <div class="excel-template-info" style="margin-top: 0;">
+        <span class="material-icons-outlined">lightbulb</span>
+        <div>
+            <strong>Nasıl Çalışır:</strong> Her Excel dosyasının adı, alıcı adı olarak eşleştirilir.
+            Örneğin <code>Ali Öztürk.xlsx</code> dosyası <b>Ali Öztürk</b> alıcısına ürün ekler.
+            <span class="template-cols">Dosya İçeriği Sütunları: Ürün Adı, Barkod, Kategori, Adet, Birim Fiyat, Satış Fiyatı</span>
+        </div>
+    </div>
+
+    @if (excelFiles().length === 0) {
+    <div class="excel-upload-zone"
+         (dragover)="onDragOver($event)"
+         (dragleave)="onDragLeave($event)"
+         (drop)="onDrop($event)"
+         [class.drag-over]="isDragOver()"
+         (click)="fileInput.click()">
+        <input #fileInput type="file" accept=".xlsx,.xls,.csv" hidden multiple (change)="onFileSelected($event)" />
+        <div class="upload-icon-wrap">
+            <span class="material-icons-outlined">cloud_upload</span>
+        </div>
+        <p class="upload-title">Excel dosyalarını sürükleyin veya tıklayın</p>
+        <p class="upload-subtitle">Birden fazla dosya seçebilirsiniz — Her dosya adı = Alıcı adı</p>
+        <p class="upload-subtitle">Desteklenen formatlar: .xlsx, .xls, .csv — Maks. 5MB/dosya</p>
+    </div>
+    } @else {
+    <div class="excel-files-list">
+        @for (f of excelFiles(); track f.name; let idx = $index) {
+        <div class="excel-file-info">
+            <div class="file-icon-wrap">
+                <span class="material-icons-outlined">person</span>
+            </div>
+            <div class="file-details">
+                <span class="file-name">{{ extractBuyerName(f.name) }}</span>
+                <span class="file-size">{{ f.name }} — {{ formatFileSize(f.size) }}</span>
+            </div>
+            <button class="action-btn delete" title="Kaldır" (click)="removeExcelFileAt(idx)">
+                <span class="material-icons-outlined">close</span>
+            </button>
+        </div>
+        }
+        <button class="btn btn-ghost btn-sm" style="margin-top: 8px;" (click)="fileInput2.click()">
+            <input #fileInput2 type="file" accept=".xlsx,.xls,.csv" hidden multiple (change)="onFileSelected($event)" />
+            <span class="material-icons-outlined">add</span>
+            Daha Fazla Dosya Ekle
+        </button>
+    </div>
+    }
+
+    @if (excelResult()) {
+    <div class="excel-result" [class.has-errors]="excelResult()!.totalFailedCount > 0">
+        <div class="result-stats">
+            <div class="result-stat success">
+                <span class="material-icons-outlined">check_circle</span>
+                <span>{{ excelResult()!.totalCreatedCount }} veresiye ürün başarıyla eklendi</span>
+            </div>
+            @if (excelResult()!.totalFailedCount > 0) {
+            <div class="result-stat error">
+                <span class="material-icons-outlined">error</span>
+                <span>{{ excelResult()!.totalFailedCount }} kayıtta hata oluştu</span>
+            </div>
+            }
+        </div>
+        @if (excelResult()!.files && excelResult()!.files!.length > 0) {
+            <div class="excel-file-results" style="margin-top: 12px;">
+                @for (fileResult of excelResult()!.files!; track fileResult.fileName) {
+                    <div style="padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,0.03); margin-bottom: 6px; font-size: 13px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-weight: 500;">{{ fileResult.cariAccountName || fileResult.fileName }}</span>
+                            <span>
+                                <span style="color: var(--success);">{{ fileResult.createdCount }} başarılı</span>
+                                @if (fileResult.failedCount > 0) {
+                                    <span style="color: var(--danger); margin-left: 8px;">{{ fileResult.failedCount }} hatalı</span>
+                                }
+                                @if (fileResult.cariCreated) {
+                                    <span class="badge badge-info" style="margin-left: 8px; font-size: 10px;">Yeni alıcı</span>
+                                }
+                            </span>
+                        </div>
+                        @if (fileResult.errors && fileResult.errors.length > 0) {
+                            <ul style="margin: 6px 0 0 0; padding-left: 20px; color: var(--danger); font-size: 12px;">
+                                @for (err of fileResult.errors; track err) {
+                                    <li>{{ err }}</li>
+                                }
+                            </ul>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+    }
+
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeExcelModal()">
+            {{ excelResult() ? 'Kapat' : 'İptal' }}
+        </button>
+        @if (!excelResult()) {
+        <button class="btn btn-primary" [disabled]="excelFiles().length === 0 || excelUploading()" (click)="uploadExcel()">
+            @if (excelUploading()) {
+            <div class="spinner spinner-sm"></div>
+            Yükleniyor...
+            } @else {
+            <span class="material-icons-outlined">upload</span>
+            {{ excelFiles().length }} Dosyayı Aktar
+            }
+        </button>
+        }
     </div>
 </div>
 }

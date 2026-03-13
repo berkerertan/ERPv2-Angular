@@ -12,6 +12,13 @@ import {
     UpdateTenantPlanRequest,
     BillingCycle,
 } from '../../../core/models/tenant.model';
+import { PlatformAdminService } from '../../../core/services/platform-admin.service';
+import {
+    AdminTenantListItemDto,
+    AdminTenantDetailDto,
+    UpdateTenantSubscriptionRequest,
+} from '../../../core/models/platform-admin.model';
+import { SubscriptionPlan, SubscriptionStatus } from '../../../core/models/user.model';
 
 @Component({
     selector: 'app-subscribers',
@@ -56,7 +63,14 @@ export class SubscribersComponent implements OnInit, OnDestroy {
     pendingBillingCycle: BillingCycle = 'monthly';
     notesValue = '';
 
-    constructor(private tenantService: TenantService) {}
+    // Real API data signals
+    apiTenants = signal<AdminTenantListItemDto[]>([]);
+    selectedTenantDetail = signal<AdminTenantDetailDto | null>(null);
+
+    constructor(
+        private tenantService: TenantService,
+        private platformAdminService: PlatformAdminService
+    ) {}
 
     ngOnInit(): void {
         this.loadTenants();
@@ -346,5 +360,61 @@ export class SubscribersComponent implements OnInit, OnDestroy {
 
     trackByTenant(_: number, t: Tenant): string {
         return t.id;
+    }
+
+    // ─── Real API Integration ──────────────────────────────────────────────────
+
+    loadFromApi(): void {
+        this.isLoading.set(true);
+        const plan = this.filter.plan !== 'all' ? this.planToEnum(this.filter.plan) : undefined;
+        const status = this.filter.status !== 'all' ? this.statusToEnum(this.filter.status) : undefined;
+        this.platformAdminService.getSubscribers(
+            this.filter.search || undefined,
+            plan,
+            status,
+            this.filter.page,
+            this.filter.pageSize
+        ).subscribe({
+            next: (data) => {
+                this.apiTenants.set(data);
+                this.isLoading.set(false);
+            },
+            error: () => this.isLoading.set(false)
+        });
+    }
+
+    loadTenantDetail(tenantId: string): void {
+        this.platformAdminService.getSubscriberDetail(tenantId).subscribe({
+            next: (detail) => this.selectedTenantDetail.set(detail),
+            error: () => this.selectedTenantDetail.set(null)
+        });
+    }
+
+    updateSubscriptionViaApi(tenantId: string, req: UpdateTenantSubscriptionRequest): void {
+        this.platformAdminService.updateSubscription(tenantId, req).subscribe({
+            next: () => {
+                this.showToast('Abonelik güncellendi', 'success');
+                this.loadFromApi();
+            },
+            error: () => this.showToast('Güncelleme başarısız', 'error')
+        });
+    }
+
+    private planToEnum(plan: string): SubscriptionPlan | undefined {
+        const map: Record<string, SubscriptionPlan> = {
+            starter: SubscriptionPlan.Starter,
+            pro: SubscriptionPlan.Pro,
+            enterprise: SubscriptionPlan.Enterprise
+        };
+        return map[plan];
+    }
+
+    private statusToEnum(status: string): SubscriptionStatus | undefined {
+        const map: Record<string, SubscriptionStatus> = {
+            trial: SubscriptionStatus.Trial,
+            active: SubscriptionStatus.Active,
+            cancelled: SubscriptionStatus.Cancelled
+        };
+        return map[status];
     }
 }

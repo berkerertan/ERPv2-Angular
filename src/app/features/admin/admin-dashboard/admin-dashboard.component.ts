@@ -8,11 +8,15 @@ import {
   AdminAlert,
   RevenueByPlan,
 } from '../../../core/models/revenue.model';
+import { FormsModule } from '@angular/forms';
+import { NotificationService } from '../../../core/services/notification.service';
+import { PlatformAdminService } from '../../../core/services/platform-admin.service';
+import { AdminOverviewDto, AdminRevenueSummaryDto } from '../../../core/models/platform-admin.model';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './admin-dashboard.component.html',
   styleUrl: './admin-dashboard.component.css',
 })
@@ -21,10 +25,25 @@ export class AdminDashboardComponent implements OnInit {
   stats = signal<AdminDashboardStats | null>(null);
   error = signal<string | null>(null);
 
+  // Real API data signals
+  overview = signal<AdminOverviewDto | null>(null);
+  revenueSummary = signal<AdminRevenueSummaryDto | null>(null);
+
   /** IDs of alerts the user has dismissed locally */
   private dismissedAlerts = signal<Set<string>>(new Set());
 
-  constructor(private revenueService: RevenueService) {}
+  // Quick Action Modal States
+  showNotificationModal = signal<boolean>(false);
+  notificationTitle = signal<string>('');
+  notificationMessage = signal<string>('');
+  notificationType = signal<'info' | 'success' | 'warning' | 'error'>('info');
+  notificationSending = signal<boolean>(false);
+
+  constructor(
+    private revenueService: RevenueService,
+    private notificationService: NotificationService,
+    private platformAdminService: PlatformAdminService
+  ) {}
 
   ngOnInit(): void {
     this.loadStats();
@@ -34,6 +53,7 @@ export class AdminDashboardComponent implements OnInit {
     this.isLoading.set(true);
     this.error.set(null);
 
+    // Load mock data (backward compat — recent activities, alerts, etc.)
     this.revenueService.getDashboardStats().subscribe({
       next: (data) => {
         this.stats.set(data);
@@ -45,10 +65,52 @@ export class AdminDashboardComponent implements OnInit {
         this.isLoading.set(false);
       },
     });
+
+    // Load real API data — KPI overview
+    this.platformAdminService.getOverview().subscribe({
+      next: (data) => this.overview.set(data),
+      error: () => {} // silently fall back to mock data
+    });
+
+    // Load real API data — revenue summary & plan breakdown
+    this.platformAdminService.getRevenueSummary().subscribe({
+      next: (data) => this.revenueSummary.set(data),
+      error: () => {} // silently fall back to mock data
+    });
   }
 
   onRefresh(): void {
     this.loadStats();
+  }
+
+  // ─── Notification Modal Methods ──────────────────────────────────────────────
+
+  openNotificationModal(): void {
+    this.notificationTitle.set('');
+    this.notificationMessage.set('');
+    this.notificationType.set('info');
+    this.showNotificationModal.set(true);
+  }
+
+  closeNotificationModal(): void {
+    this.showNotificationModal.set(false);
+  }
+
+  sendNotification(): void {
+    if (!this.notificationTitle().trim() || !this.notificationMessage().trim()) return;
+
+    this.notificationSending.set(true);
+    
+    // Simulate network delay
+    setTimeout(() => {
+        this.notificationService.broadcastNotification(
+            this.notificationTitle().trim(),
+            this.notificationMessage().trim(),
+            this.notificationType()
+        );
+        this.notificationSending.set(false);
+        this.closeNotificationModal();
+    }, 800);
   }
 
   // ─── Formatting helpers ──────────────────────────────────────────────────────

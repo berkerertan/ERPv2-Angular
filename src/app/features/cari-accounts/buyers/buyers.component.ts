@@ -1,7 +1,9 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { CariAccountService } from '../../../core/services/cari-account.service';
+import { CariAccount, BuyerDebtItemsBatchImportResult, BuyerDebtItemsBatchImportFileResult } from '../../../core/models/cari-account.model';
 
 @Component({
     selector: 'app-buyers',
@@ -11,26 +13,53 @@ import { Router } from '@angular/router';
     templateUrl: './buyers.component.html',
     styleUrls: ['./buyers.component.css', '../../../shared/styles/crud-page.css']
 })
-export class BuyersComponent {
+export class BuyersComponent implements OnInit {
     searchTerm = '';
     statusFilter = signal<'all' | 'active' | 'inactive'>('all');
     showModal = signal(false);
     editingAccount = signal<any>(null);
 
-    constructor(private router: Router) { }
+    // Excel upload state (veresiye ürün aktarma)
+    showExcelModal = signal(false);
+    excelFiles = signal<File[]>([]);
+    excelUploading = signal(false);
+    excelResult = signal<BuyerDebtItemsBatchImportResult | null>(null);
+    isDragOver = signal(false);
+
+    constructor(private router: Router, private cariService: CariAccountService) { }
 
     formData = {
         name: '', phone: '', email: '', address: '',
         taxNumber: '', city: '', notes: ''
     };
 
-    accounts = signal([
-        { id: '1', name: 'Ahmet Yılmaz', phone: '0532 111 22 33', email: 'ahmet@mail.com', address: 'Kadıköy, İstanbul', taxNumber: '12345678901', city: 'İstanbul', balance: 5200, totalSales: 24500, totalPayments: 19300, remainingDebt: 5200, orderCount: 12, lastOrder: '2026-03-08', isActive: true },
-        { id: '2', name: 'Mehmet Kaya', phone: '0543 222 33 44', email: 'mehmet@mail.com', address: 'Çankaya, Ankara', taxNumber: '98765432109', city: 'Ankara', balance: 1800, totalSales: 8900, totalPayments: 7100, remainingDebt: 1800, orderCount: 5, lastOrder: '2026-03-07', isActive: true },
-        { id: '3', name: 'Fatma Çelik', phone: '0555 444 55 66', email: 'fatma@mail.com', address: 'Bornova, İzmir', taxNumber: '11223344556', city: 'İzmir', balance: 0, totalSales: 3200, totalPayments: 3200, remainingDebt: 0, orderCount: 2, lastOrder: '2026-03-05', isActive: false },
-        { id: '4', name: 'Ali Öztürk', phone: '0532 777 88 99', email: 'ali@mail.com', address: 'Nilüfer, Bursa', taxNumber: '55667788990', city: 'Bursa', balance: 12400, totalSales: 67000, totalPayments: 54600, remainingDebt: 12400, orderCount: 28, lastOrder: '2026-03-08', isActive: true },
-        { id: '5', name: 'Zeynep Arslan', phone: '0544 333 22 11', email: 'zeynep@mail.com', address: 'Seyhan, Adana', taxNumber: '99887766554', city: 'Adana', balance: 3600, totalSales: 15200, totalPayments: 11600, remainingDebt: 3600, orderCount: 8, lastOrder: '2026-03-06', isActive: true },
-    ]);
+    accounts = signal<any[]>([]);
+
+    ngOnInit(): void {
+        this.loadAccounts();
+    }
+
+    loadAccounts(): void {
+        this.cariService.getBuyers().subscribe({
+            next: (data) => this.accounts.set(data.map(a => ({
+                id: a.id,
+                name: a.name,
+                phone: '',
+                email: '',
+                address: '',
+                taxNumber: '',
+                city: '',
+                balance: a.currentBalance,
+                totalSales: 0,
+                totalPayments: 0,
+                remainingDebt: a.currentBalance,
+                orderCount: 0,
+                lastOrder: '-',
+                isActive: true
+            }))),
+            error: () => {}
+        });
+    }
 
     get filteredAccounts() {
         let items = this.accounts();
@@ -67,15 +96,27 @@ export class BuyersComponent {
     closeModal(): void { this.showModal.set(false); }
 
     save(): void {
+        if (!this.formData.name.trim()) return;
+
         if (this.editingAccount()) {
-            this.accounts.update(items => items.map(a => a.id === this.editingAccount().id ? { ...a, ...this.formData } : a));
+            this.cariService.update(this.editingAccount().id, {
+                name: this.formData.name,
+                type: 2 // Buyer
+            }).subscribe({
+                next: () => { this.loadAccounts(); this.closeModal(); },
+                error: () => {}
+            });
         } else {
-            this.accounts.update(items => [...items, {
-                id: Date.now().toString(), ...this.formData,
-                balance: 0, totalSales: 0, totalPayments: 0, remainingDebt: 0, orderCount: 0, lastOrder: '-', isActive: true
-            }]);
+            this.cariService.create({
+                name: this.formData.name,
+                type: 2, // Buyer (CariType.Buyer = 2)
+                riskLimit: 0,
+                maturityDays: 0
+            }).subscribe({
+                next: () => { this.loadAccounts(); this.closeModal(); },
+                error: () => {}
+            });
         }
-        this.closeModal();
     }
 
     viewDetail(account: any): void {
@@ -87,6 +128,98 @@ export class BuyersComponent {
     }
 
     deleteAccount(id: string): void {
-        this.accounts.update(items => items.filter(a => a.id !== id));
+        if (!confirm('Bu alıcıyı silmek istediğinize emin misiniz?')) return;
+        this.cariService.delete(id).subscribe({
+            next: () => this.loadAccounts(),
+            error: () => {}
+        });
+    }
+
+    // ═══════════ Veresiye Excel Aktarma ═══════════
+
+    openExcelModal(): void {
+        this.excelFiles.set([]);
+        this.excelResult.set(null);
+        this.excelUploading.set(false);
+        this.isDragOver.set(false);
+        this.showExcelModal.set(true);
+    }
+
+    closeExcelModal(): void { this.showExcelModal.set(false); }
+
+    onFileSelected(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        if (input.files && input.files.length > 0) {
+            this.addFiles(Array.from(input.files));
+        }
+        input.value = ''; // reset for re-select
+    }
+
+    onDragOver(event: DragEvent): void { event.preventDefault(); event.stopPropagation(); this.isDragOver.set(true); }
+    onDragLeave(event: DragEvent): void { event.preventDefault(); event.stopPropagation(); this.isDragOver.set(false); }
+
+    onDrop(event: DragEvent): void {
+        event.preventDefault(); event.stopPropagation(); this.isDragOver.set(false);
+        if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
+            this.addFiles(Array.from(event.dataTransfer.files));
+        }
+    }
+
+    private addFiles(files: File[]): void {
+        const valid = files.filter(f => {
+            const ext = f.name.split('.').pop()?.toLowerCase();
+            return ['xlsx', 'xls', 'csv'].includes(ext || '') && f.size <= 5 * 1024 * 1024;
+        });
+        if (valid.length > 0) {
+            this.excelFiles.update(existing => [...existing, ...valid]);
+            this.excelResult.set(null);
+        }
+    }
+
+    removeExcelFileAt(index: number): void {
+        this.excelFiles.update(files => files.filter((_, i) => i !== index));
+    }
+
+    removeExcelFile(): void { this.excelFiles.set([]); this.excelResult.set(null); }
+
+    extractBuyerName(fileName: string): string {
+        // Remove extension to get buyer name: "Ali Öztürk.xlsx" -> "Ali Öztürk"
+        return fileName.replace(/\.[^/.]+$/, '');
+    }
+
+    uploadExcel(): void {
+        if (this.excelFiles().length === 0) return;
+        this.excelUploading.set(true);
+        this.excelResult.set(null);
+
+        this.cariService.importBuyersBatch(this.excelFiles()).subscribe({
+            next: (result) => {
+                this.excelResult.set(result);
+                this.excelUploading.set(false);
+                // Refresh accounts list after successful import
+                if (result.totalCreatedCount > 0) {
+                    this.loadAccounts();
+                }
+            },
+            error: (err) => {
+                this.excelResult.set({
+                    totalFiles: this.excelFiles().length,
+                    processedFiles: 0,
+                    createdCariCount: 0,
+                    totalRows: 0,
+                    totalCreatedCount: 0,
+                    totalFailedCount: 0,
+                    files: []
+                });
+                this.excelUploading.set(false);
+            }
+        });
+    }
+
+    formatFileSize(bytes: number): string {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     }
 }
+

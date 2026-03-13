@@ -1,0 +1,236 @@
+<div class="page-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">
+                <span class="material-icons-outlined" style="font-size: 28px; vertical-align: middle; margin-right: 8px;">shield</span>
+                Denetim Kayıtları
+            </h1>
+            <p class="page-subtitle">Sistem aktivitelerini ve kullanıcı işlemlerini takip edin</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" (click)="onFilterChange()">
+                <span class="material-icons-outlined">refresh</span>
+                Yenile
+            </button>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    @if (summary()) {
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon-wrapper primary">
+                    <span class="material-icons-outlined">receipt_long</span>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ summary()!.totalCount | number }}</span>
+                    <span class="stat-label">Toplam Kayıt</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon-wrapper warning">
+                    <span class="material-icons-outlined">error_outline</span>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ summary()!.errorCount | number }}</span>
+                    <span class="stat-label">Hata Sayısı</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon-wrapper success">
+                    <span class="material-icons-outlined">today</span>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ summary()!.todayCount | number }}</span>
+                    <span class="stat-label">Bugün</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon-wrapper info">
+                    <span class="material-icons-outlined">people</span>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ summary()!.uniqueUsers }}</span>
+                    <span class="stat-label">Aktif Kullanıcı</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon-wrapper purple">
+                    <span class="material-icons-outlined">business</span>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ summary()!.uniqueTenants }}</span>
+                    <span class="stat-label">Aktif Tenant</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon-wrapper gold">
+                    <span class="material-icons-outlined">speed</span>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ summary()!.averageDurationMs | number:'1.0-0' }}ms</span>
+                    <span class="stat-label">Ort. Yanıt Süresi</span>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Filters -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <div class="search-wrapper">
+                <span class="material-icons-outlined search-icon">search</span>
+                <input type="text" class="form-input search-input" placeholder="Kullanıcı, path, IP ara..."
+                    [(ngModel)]="searchTerm" (input)="onFilterChange()">
+            </div>
+            <input type="date" class="form-input date-input" [(ngModel)]="fromDate" (change)="onFilterChange()" placeholder="Başlangıç">
+            <input type="date" class="form-input date-input" [(ngModel)]="toDate" (change)="onFilterChange()" placeholder="Bitiş">
+            <select class="form-input select-input" [(ngModel)]="statusCodeFilter" (change)="onFilterChange()">
+                <option value="">Tüm Kodlar</option>
+                <option value="200">200 OK</option>
+                <option value="201">201 Created</option>
+                <option value="204">204 No Content</option>
+                <option value="400">400 Bad Request</option>
+                <option value="401">401 Unauthorized</option>
+                <option value="403">403 Forbidden</option>
+                <option value="404">404 Not Found</option>
+                <option value="500">500 Server Error</option>
+            </select>
+            <button class="btn btn-sm" [class.btn-danger]="onlyErrors" [class.btn-secondary]="!onlyErrors" (click)="toggleErrors()">
+                <span class="material-icons-outlined" style="font-size: 16px;">error</span>
+                {{ onlyErrors ? 'Tüm Kayıtlar' : 'Sadece Hatalar' }}
+            </button>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrapper">
+        @if (isLoading()) {
+            <div class="loading-state">
+                <span class="material-icons-outlined spin">sync</span>
+                <span>Yükleniyor...</span>
+            </div>
+        } @else if (logs().length === 0) {
+            <div class="empty-state">
+                <span class="material-icons-outlined" style="font-size: 48px; opacity: 0.3;">shield</span>
+                <p>Kayıt bulunamadı</p>
+            </div>
+        } @else {
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width: 160px;">Tarih</th>
+                        <th style="width: 140px;">Kullanıcı</th>
+                        <th style="width: 70px;">Metod</th>
+                        <th>Path</th>
+                        <th style="width: 70px;">Kod</th>
+                        <th style="width: 80px;">Süre</th>
+                        <th style="width: 120px;">IP Adres</th>
+                        <th style="width: 60px;">Detay</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (log of logs(); track log.id) {
+                        <tr [class.error-row]="log.statusCode >= 400">
+                            <td class="date-cell">{{ log.occurredAtUtc | date:'dd.MM.yyyy HH:mm:ss' }}</td>
+                            <td class="user-cell">
+                                <span class="user-name">{{ log.userName || '-' }}</span>
+                            </td>
+                            <td>
+                                <span class="method-badge" [ngClass]="getMethodClass(log.httpMethod)">
+                                    {{ log.httpMethod }}
+                                </span>
+                            </td>
+                            <td class="path-cell">
+                                <span class="path-text" [title]="log.path || ''">{{ log.path }}</span>
+                            </td>
+                            <td>
+                                <span class="status-badge" [ngClass]="getStatusClass(log.statusCode)">
+                                    {{ log.statusCode }}
+                                </span>
+                            </td>
+                            <td class="duration-cell">{{ formatDuration(log.durationMs) }}</td>
+                            <td class="ip-cell">{{ log.ipAddress || '-' }}</td>
+                            <td>
+                                <button class="btn-icon" (click)="viewDetail(log)" title="Detay">
+                                    <span class="material-icons-outlined">visibility</span>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+
+    <!-- Pagination -->
+    @if (logs().length >= pageSize) {
+        <div class="pagination">
+            <button class="btn btn-sm btn-secondary" [disabled]="currentPage <= 1" (click)="onPageChange(currentPage - 1)">
+                <span class="material-icons-outlined">chevron_left</span>
+            </button>
+            <span class="page-info">Sayfa {{ currentPage }}</span>
+            <button class="btn btn-sm btn-secondary" (click)="onPageChange(currentPage + 1)">
+                <span class="material-icons-outlined">chevron_right</span>
+            </button>
+        </div>
+    }
+
+    <!-- Detail Modal -->
+    @if (showDetailModal() && selectedLog()) {
+        <div class="modal-overlay" (click)="closeDetail()">
+            <div class="modal" (click)="$event.stopPropagation()" style="max-width: 600px;">
+                <div class="modal-header">
+                    <h3>Kayıt Detayı</h3>
+                    <button class="btn-icon" (click)="closeDetail()">
+                        <span class="material-icons-outlined">close</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <label>Tarih</label>
+                            <span>{{ selectedLog()!.occurredAtUtc | date:'dd.MM.yyyy HH:mm:ss' }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Kullanıcı</label>
+                            <span>{{ selectedLog()!.userName || 'Bilinmiyor' }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Tenant ID</label>
+                            <span class="mono">{{ selectedLog()!.tenantId || '-' }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>User ID</label>
+                            <span class="mono">{{ selectedLog()!.userId || '-' }}</span>
+                        </div>
+                        <div class="detail-item full-width">
+                            <label>İstek</label>
+                            <div class="request-info">
+                                <span class="method-badge" [ngClass]="getMethodClass(selectedLog()!.httpMethod)">{{ selectedLog()!.httpMethod }}</span>
+                                <code>{{ selectedLog()!.path }}</code>
+                            </div>
+                        </div>
+                        <div class="detail-item">
+                            <label>Durum Kodu</label>
+                            <span class="status-badge" [ngClass]="getStatusClass(selectedLog()!.statusCode)">{{ selectedLog()!.statusCode }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Süre</label>
+                            <span>{{ formatDuration(selectedLog()!.durationMs) }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>IP Adresi</label>
+                            <span class="mono">{{ selectedLog()!.ipAddress || '-' }}</span>
+                        </div>
+                        <div class="detail-item full-width">
+                            <label>User Agent</label>
+                            <span class="ua-text">{{ selectedLog()!.userAgent || '-' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

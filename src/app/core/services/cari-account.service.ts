@@ -11,7 +11,9 @@ import {
     CreateCariDebtItemRequest,
     UpdateCariDebtItemRequest,
     CariAccountDetailsResponse,
-    CariDebtItemImportResult
+    CariDebtItemImportResult,
+    BuyerDebtItemsBatchImportResult,
+    BuyerBatchImportOptions
 } from '../models/cari-account.model';
 
 @Injectable({ providedIn: 'root' })
@@ -120,6 +122,22 @@ export class CariAccountService {
             `${this.apiUrl}/${cariAccountId}/debt-items/import-excel`,
             formData
         );
+    }
+
+    /** Toplu alıcı import — birden fazla Excel dosyasını yükler, alıcı adını dosya isminden çıkarır */
+    importBuyersBatch(files: File[], options?: BuyerBatchImportOptions): Observable<BuyerDebtItemsBatchImportResult> {
+        const formData = new FormData();
+        files.forEach(f => formData.append('Files', f));
+        if (options?.replaceExisting !== undefined) formData.append('ReplaceExisting', options.replaceExisting.toString());
+        if (options?.transactionDateColumn) formData.append('TransactionDateColumn', options.transactionDateColumn);
+        if (options?.materialDescriptionColumn) formData.append('MaterialDescriptionColumn', options.materialDescriptionColumn);
+        if (options?.quantityColumn) formData.append('QuantityColumn', options.quantityColumn);
+        if (options?.listPriceColumn) formData.append('ListPriceColumn', options.listPriceColumn);
+        if (options?.salePriceColumn) formData.append('SalePriceColumn', options.salePriceColumn);
+        if (options?.totalAmountColumn) formData.append('TotalAmountColumn', options.totalAmountColumn);
+        if (options?.paymentColumn) formData.append('PaymentColumn', options.paymentColumn);
+        if (options?.remainingBalanceColumn) formData.append('RemainingBalanceColumn', options.remainingBalanceColumn);
+        return this.http.post<BuyerDebtItemsBatchImportResult>(`${this.apiUrl}/buyers/import-excel`, formData);
     }
 
     /** HTTP query param builder */

@@ -6,9 +6,14 @@ import { environment } from '../../../environments/environment';
 import {
     LoginRequest,
     RegisterRequest,
+    RegisterSaasRequest,
     BootstrapAdminRequest,
+    RefreshTokenRequest,
+    LogoutRequest,
     AuthResponse,
     UserRegistrationResponse,
+    CurrentUserDto,
+    SubscriptionPlanOptionDto,
     User
 } from '../models/user.model';
 
@@ -18,13 +23,16 @@ import {
 export class AuthService {
     private readonly apiUrl = `${environment.apiUrl}/api/Auth`;
 
-    // Signals for reactive state
     private currentUserSignal = signal<User | null>(null);
     private tokenSignal = signal<string | null>(null);
 
     readonly currentUser = this.currentUserSignal.asReadonly();
     readonly token = this.tokenSignal.asReadonly();
     readonly isAuthenticated = computed(() => !!this.tokenSignal());
+    readonly isPlatformAdmin = computed(() => {
+        const user = this.currentUserSignal();
+        return user?.role === 'SuperAdmin' || user?.role === 'Admin';
+    });
     readonly userFullName = computed(() => {
         const user = this.currentUserSignal();
         return user ? user.userName : '';
@@ -53,6 +61,17 @@ export class AuthService {
         );
     }
 
+    /** SaaS kayıt — tenant oluşturur ve giriş yapar */
+    registerSaas(request: RegisterSaasRequest): Observable<AuthResponse> {
+        return this.http.post<AuthResponse>(`${this.apiUrl}/register-saas`, request).pipe(
+            tap(response => this.handleAuthResponse(response)),
+            catchError(error => {
+                console.error('SaaS registration failed:', error);
+                return throwError(() => error);
+            })
+        );
+    }
+
     bootstrapAdmin(request: BootstrapAdminRequest): Observable<AuthResponse> {
         return this.http.post<AuthResponse>(`${this.apiUrl}/bootstrap-admin`, request).pipe(
             tap(response => this.handleAuthResponse(response)),
@@ -63,27 +82,69 @@ export class AuthService {
         );
     }
 
-    /** Development-only login — simulates auth without backend */
+    /** Access token yenile */
+    refreshToken(): Observable<AuthResponse> {
+        const refreshToken = localStorage.getItem('erp_refresh_token');
+        if (!refreshToken) {
+            return throwError(() => new Error('No refresh token'));
+        }
+        return this.http.post<AuthResponse>(`${this.apiUrl}/refresh`, { refreshToken } as RefreshTokenRequest).pipe(
+            tap(response => this.handleAuthResponse(response)),
+            catchError(error => {
+                this.clearStorage();
+                return throwError(() => error);
+            })
+        );
+    }
+
+    /** Mevcut kullanıcı bilgisi */
+    getMe(): Observable<CurrentUserDto> {
+        return this.http.get<CurrentUserDto>(`${this.apiUrl}/me`);
+    }
+
+    /** Abonelik planı seçenekleri */
+    getSubscriptionPlans(): Observable<SubscriptionPlanOptionDto[]> {
+        return this.http.get<SubscriptionPlanOptionDto[]>(`${this.apiUrl}/subscription-plans`);
+    }
+
+    logout(): void {
+        const refreshToken = localStorage.getItem('erp_refresh_token');
+        if (refreshToken) {
+            this.http.post(`${this.apiUrl}/logout`, { refreshToken } as LogoutRequest)
+                .subscribe({ error: () => {} });
+        }
+        this.clearStorage();
+        this.router.navigate(['/auth/login']);
+    }
+
     devLogin(): void {
+        this.devLoginAs('Admin');
+    }
+
+    devLoginAs(role: string): void {
         if (environment.production) return;
+        const roleLabels: Record<string, string> = {
+            'SuperAdmin': 'Süper Admin',
+            'Admin': 'Admin Geliştirici',
+            'Manager': 'Şube Müdürü',
+            'Cashier': 'Kasiyer',
+            'Viewer': 'İzleyici'
+        };
         const mockUser: User = {
-            userName: 'Admin Geliştirici',
-            role: 'Admin'
+            userName: roleLabels[role] || role,
+            role: role,
+            isPlatformAdmin: role === 'SuperAdmin' || role === 'Admin'
         };
         const mockToken = 'dev-mock-jwt-token';
         this.tokenSignal.set(mockToken);
         this.currentUserSignal.set(mockUser);
         localStorage.setItem('erp_token', mockToken);
         localStorage.setItem('erp_user', JSON.stringify(mockUser));
-        this.router.navigate(['/dashboard']);
-    }
-
-    logout(): void {
-        this.tokenSignal.set(null);
-        this.currentUserSignal.set(null);
-        localStorage.removeItem('erp_token');
-        localStorage.removeItem('erp_user');
-        this.router.navigate(['/auth/login']);
+        if (role === 'SuperAdmin' || role === 'Admin') {
+            this.router.navigate(['/admin/dashboard']);
+        } else {
+            this.router.navigate(['/dashboard']);
+        }
     }
 
     getToken(): string | null {
@@ -95,12 +156,26 @@ export class AuthService {
         const user: User = {
             userName: response.userName,
             role: response.role,
+            tenantId: response.tenantId,
+            tenantName: response.tenantName,
+            subscriptionPlan: response.subscriptionPlan,
+            subscriptionStatus: response.subscriptionStatus,
+            features: response.features,
+            isPlatformAdmin: response.role === 'SuperAdmin' || response.role === 'Admin',
             accessTokenExpiresAtUtc: response.accessTokenExpiresAtUtc
         };
         this.currentUserSignal.set(user);
         localStorage.setItem('erp_token', response.accessToken);
         localStorage.setItem('erp_refresh_token', response.refreshToken);
         localStorage.setItem('erp_user', JSON.stringify(user));
+    }
+
+    private clearStorage(): void {
+        this.tokenSignal.set(null);
+        this.currentUserSignal.set(null);
+        localStorage.removeItem('erp_token');
+        localStorage.removeItem('erp_refresh_token');
+        localStorage.removeItem('erp_user');
     }
 
     private loadFromStorage(): void {
@@ -111,7 +186,7 @@ export class AuthService {
                 this.tokenSignal.set(token);
                 this.currentUserSignal.set(JSON.parse(userStr));
             } catch {
-                this.logout();
+                this.clearStorage();
             }
         }
     }

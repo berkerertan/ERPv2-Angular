@@ -60,10 +60,14 @@
 
     <!-- Dev Login -->
     <div class="dev-login">
-        <div class="dev-divider"><span>veya</span></div>
-        <button type="button" class="btn btn-secondary btn-lg login-btn dev-login-btn" (click)="devLogin()">
-            <span class="material-icons-outlined">code</span>
-            <span>Geliştirici Girişi (Backend Yok)</span>
-        </button>
+        <div class="dev-divider"><span>Geliştirici Girişi (Backend Yok)</span></div>
+        <div class="dev-roles-grid">
+            @for (r of devRoles; track r.role) {
+            <button type="button" class="dev-role-btn" (click)="devLoginAs(r.role)" [style.--role-color]="r.color">
+                <span class="material-icons-outlined">{{ r.icon }}</span>
+                <span>{{ r.label }}</span>
+            </button>
+            }
+        </div>
     </div>
 </div>

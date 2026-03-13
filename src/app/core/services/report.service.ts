@@ -58,6 +58,60 @@ export interface CariAgingReport {
     total: number;
 }
 
+export interface PurchaseReportItem {
+    date: string;
+    orderCount: number;
+    totalAmount: number;
+    topSupplier: string;
+}
+
+export interface CashFlowForecastDto {
+    date: string;
+    expectedIn: number;
+    expectedOut: number;
+    net: number;
+}
+
+export interface DueListItemDto {
+    cariAccountId: string;
+    cariCode?: string;
+    cariName?: string;
+    dueDate: string;
+    openAmount: number;
+    overdueDays: number;
+}
+
+export interface ProductProfitabilityDto {
+    productId: string;
+    productCode?: string;
+    productName?: string;
+    quantity: number;
+    revenue: number;
+    cost: number;
+    profit: number;
+    marginPercent: number;
+}
+
+export interface CustomerProfitabilityDto {
+    cariAccountId: string;
+    cariCode?: string;
+    cariName?: string;
+    revenue: number;
+    cost: number;
+    profit: number;
+    marginPercent: number;
+}
+
+export interface BranchProfitabilityDto {
+    branchId: string;
+    branchCode?: string;
+    branchName?: string;
+    revenue: number;
+    cost: number;
+    profit: number;
+    marginPercent: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ReportService {
     private readonly apiUrl = `${environment.apiUrl}/api/reports`;
@@ -79,8 +133,8 @@ export class ReportService {
     }
 
     /** Satın alma raporu — tedarikçi bazlı */
-    getPurchasesReport(filter?: ReportFilter): Observable<any> {
-        return this.http.get<any>(`${this.apiUrl}/purchases`, {
+    getPurchasesReport(filter?: ReportFilter): Observable<PurchaseReportItem[]> {
+        return this.http.get<PurchaseReportItem[]>(`${this.apiUrl}/purchases`, {
             params: this.buildParams(filter)
         });
     }
@@ -106,11 +160,46 @@ export class ReportService {
         });
     }
 
-    private buildParams(filter?: ReportFilter): HttpParams {
+    /** Nakit akışı tahmini */
+    getCashFlowForecast(days?: number): Observable<CashFlowForecastDto[]> {
+        let params = new HttpParams();
+        if (days) params = params.set('days', days.toString());
+        return this.http.get<CashFlowForecastDto[]>(`${this.apiUrl}/finance/cash-flow-forecast`, { params });
+    }
+
+    /** Vade listesi */
+    getDueList(days?: number): Observable<DueListItemDto[]> {
+        let params = new HttpParams();
+        if (days) params = params.set('days', days.toString());
+        return this.http.get<DueListItemDto[]>(`${this.apiUrl}/finance/due-list`, { params });
+    }
+
+    /** Ürün kârlılık analizi */
+    getProductProfitability(startDateUtc?: string, endDateUtc?: string): Observable<ProductProfitabilityDto[]> {
+        return this.http.get<ProductProfitabilityDto[]>(`${this.apiUrl}/finance/profitability/products`, {
+            params: this.buildParams({ startDateUtc, endDateUtc })
+        });
+    }
+
+    /** Müşteri kârlılık analizi */
+    getCustomerProfitability(startDateUtc?: string, endDateUtc?: string): Observable<CustomerProfitabilityDto[]> {
+        return this.http.get<CustomerProfitabilityDto[]>(`${this.apiUrl}/finance/profitability/customers`, {
+            params: this.buildParams({ startDateUtc, endDateUtc })
+        });
+    }
+
+    /** Şube kârlılık analizi */
+    getBranchProfitability(startDateUtc?: string, endDateUtc?: string): Observable<BranchProfitabilityDto[]> {
+        return this.http.get<BranchProfitabilityDto[]>(`${this.apiUrl}/finance/profitability/branches`, {
+            params: this.buildParams({ startDateUtc, endDateUtc })
+        });
+    }
+
+    private buildParams(filter?: Record<string, any>): HttpParams {
         let params = new HttpParams();
         if (!filter) return params;
         Object.keys(filter).forEach(key => {
-            const value = (filter as any)[key];
+            const value = filter[key];
             if (value !== undefined && value !== null && value !== '') {
                 params = params.set(key, value.toString());
             }

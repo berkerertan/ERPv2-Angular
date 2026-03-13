@@ -12,6 +12,11 @@ interface RegisterForm {
     passwordConfirm: string;
     selectedPlan: string;
     agreeTerms: boolean;
+    // Payment fields
+    cardName: string;
+    cardNumber: string;
+    cardExpiry: string;
+    cardCvc: string;
 }
 
 @Component({
@@ -36,7 +41,11 @@ export class RegisterComponent implements OnInit {
         password: '',
         passwordConfirm: '',
         selectedPlan: 'pro',
-        agreeTerms: false
+        agreeTerms: false,
+        cardName: '',
+        cardNumber: '',
+        cardExpiry: '',
+        cardCvc: ''
     };
 
     plans = [
@@ -66,6 +75,8 @@ export class RegisterComponent implements OnInit {
             color: 'gold'
         }
     ];
+
+    readonly totalSteps = 4;
 
     constructor(
         private router: Router,
@@ -110,12 +121,23 @@ export class RegisterComponent implements OnInit {
                 return;
             }
         }
+        // Step 3 (Ödeme) has no mandatory validation — skip is allowed
         this.currentStep.update(s => s + 1);
     }
 
     prevStep() {
         this.errorMessage.set('');
         this.currentStep.update(s => s - 1);
+    }
+
+    /** Skip payment step entirely */
+    skipPayment(): void {
+        this.errorMessage.set('');
+        this.form.cardName = '';
+        this.form.cardNumber = '';
+        this.form.cardExpiry = '';
+        this.form.cardCvc = '';
+        this.currentStep.update(s => s + 1);
     }
 
     onSubmit() {
@@ -141,7 +163,30 @@ export class RegisterComponent implements OnInit {
     }
 
     getStepLabel(step: number): string {
-        const labels = ['Kişisel Bilgiler', 'İşletme & Şifre', 'Plan Seçimi'];
+        const labels = ['Kişisel Bilgiler', 'İşletme & Şifre', 'Ödeme', 'Plan Seçimi'];
         return labels[step - 1];
+    }
+
+    getStepIcon(step: number): string {
+        const icons = ['person', 'business', 'credit_card', 'verified'];
+        return icons[step - 1];
+    }
+
+    /** Format card number with spaces every 4 digits */
+    formatCardNumber(): void {
+        let val = this.form.cardNumber.replace(/\D/g, '');
+        if (val.length > 16) val = val.substring(0, 16);
+        this.form.cardNumber = val.replace(/(\d{4})(?=\d)/g, '$1 ');
+    }
+
+    /** Format expiry as MM/YY */
+    formatExpiry(): void {
+        let val = this.form.cardExpiry.replace(/\D/g, '');
+        if (val.length > 4) val = val.substring(0, 4);
+        if (val.length >= 2) {
+            this.form.cardExpiry = val.substring(0, 2) + '/' + val.substring(2);
+        } else {
+            this.form.cardExpiry = val;
+        }
     }
 }

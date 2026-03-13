@@ -194,3 +194,37 @@
 .dev-login-btn:hover {
     opacity: 1;
 }
+
+/* Dev Roles Grid */
+.dev-roles-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.dev-role-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    background: color-mix(in srgb, var(--role-color, #4c6ef5) 12%, transparent);
+    color: var(--role-color, var(--text-secondary));
+    border: 1px solid color-mix(in srgb, var(--role-color, #4c6ef5) 25%, transparent);
+}
+
+.dev-role-btn:hover {
+    background: color-mix(in srgb, var(--role-color, #4c6ef5) 22%, transparent);
+    border-color: color-mix(in srgb, var(--role-color, #4c6ef5) 45%, transparent);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--role-color, #4c6ef5) 20%, transparent);
+}
+
+.dev-role-btn .material-icons-outlined {
+    font-size: 16px;
+}

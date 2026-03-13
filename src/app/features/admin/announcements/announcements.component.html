@@ -1,0 +1,190 @@
+<div class="page-container animate-fadeInUp">
+  <div class="page-header">
+      <div class="header-left">
+          <h1 class="page-title">
+              <span class="material-icons-outlined title-icon">campaign</span>
+              Duyurular
+          </h1>
+          <p class="page-subtitle">Sistem içerisindeki tüm genel duyuru ve bildirimleri yönetin.</p>
+      </div>
+      <div class="page-actions">
+          <button class="btn btn-primary" (click)="openModal()">
+              <span class="material-icons-outlined">add</span>
+              Yeni Duyuru
+          </button>
+      </div>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="stats-grid animate-fadeInUp" style="animation-delay: 0.1s;">
+      <div class="stat-card">
+          <div class="stat-icon-wrap primary">
+              <span class="material-icons-outlined">send</span>
+          </div>
+          <div class="stat-content">
+              <span class="stat-value">{{ totalPublished }}</span>
+              <span class="stat-label">Yayında Olanlar</span>
+          </div>
+      </div>
+      <div class="stat-card">
+          <div class="stat-icon-wrap warning">
+              <span class="material-icons-outlined">schedule</span>
+          </div>
+          <div class="stat-content">
+              <span class="stat-value">{{ totalScheduled }}</span>
+              <span class="stat-label">Bekleyen (Zamanlanmış)</span>
+          </div>
+      </div>
+      <div class="stat-card">
+          <div class="stat-icon-wrap secondary">
+              <span class="material-icons-outlined">drafts</span>
+          </div>
+          <div class="stat-content">
+              <span class="stat-value">{{ totalDraft }}</span>
+              <span class="stat-label">Taslak</span>
+          </div>
+      </div>
+  </div>
+
+  <!-- Announcements List -->
+  <div class="card mt-6 animate-fadeInUp" style="animation-delay: 0.2s;">
+      <div class="table-responsive">
+          <table class="table">
+              <thead>
+                  <tr>
+                      <th>DUYURU BAŞLIĞI</th>
+                      <th>ÖNCELİK</th>
+                      <th>TARİH</th>
+                      <th>DURUM</th>
+                      <th>İŞLEMLER</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  @for (item of announcements(); track item.id) {
+                  <tr>
+                      <td>
+                          <div class="announcement-title-cell">
+                              <span class="notif-title">{{ item.title }}</span>
+                              <span class="notif-excerpt" [title]="item.content">{{ item.content }}</span>
+                          </div>
+                      </td>
+                      <td>
+                          <div class="type-badge" [class]="getPriorityClass(item.priority)">
+                              <span class="material-icons-outlined">{{ getPriorityIcon(item.priority) }}</span>
+                              {{ getPriorityLabel(item.priority) }}
+                          </div>
+                      </td>
+                      <td>
+                          <div class="date-cell">
+                              <span class="main-date">{{ item.createdAtUtc | date:'dd.MM.yyyy' }}</span>
+                              @if (getStatus(item) === 'scheduled' && item.startsAtUtc) {
+                                  <span class="sub-date text-warning">Zaman: {{ item.startsAtUtc | date:'dd.MM.yyyy HH:mm' }}</span>
+                              }
+                          </div>
+                      </td>
+                      <td>
+                          <span class="badge" [class]="getStatusClass(item)">{{ getStatusLabel(item) }}</span>
+                      </td>
+                      <td class="actions-cell">
+                          @if (getStatus(item) !== 'published') {
+                              <button class="btn-icon text-success" title="Hemen Yayınla" (click)="publishNow(item)">
+                                  <span class="material-icons-outlined">flight_takeoff</span>
+                              </button>
+                          }
+                          @if (getStatus(item) === 'published') {
+                              <button class="btn-icon text-warning" title="Yayından Kaldır" (click)="unpublish(item)">
+                                  <span class="material-icons-outlined">unpublished</span>
+                              </button>
+                          }
+                          <button class="btn-icon" title="Düzenle" (click)="openModal(item)">
+                              <span class="material-icons-outlined">edit</span>
+                          </button>
+                          <button class="btn-icon text-danger" title="Sil" (click)="deleteAnnouncement(item.id)">
+                              <span class="material-icons-outlined">delete</span>
+                          </button>
+                      </td>
+                  </tr>
+                  } @empty {
+                  <tr>
+                      <td colspan="5" class="empty-state-cell">
+                          <div class="empty-state">
+                              <span class="material-icons-outlined">campaign</span>
+                              <p>Henüz hiçbir duyuru oluşturulmamış.</p>
+                          </div>
+                      </td>
+                  </tr>
+                  }
+              </tbody>
+          </table>
+      </div>
+  </div>
+</div>
+
+<!-- Add/Edit Modal -->
+@if (showModal()) {
+<div class="modal overlay">
+  <div class="modal-dialog" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+          <div class="modal-title-group">
+              <span class="material-icons-outlined" style="color: var(--primary-500); margin-right: 8px;">campaign</span>
+              <h3>{{ editingItem() ? 'Duyuruyu Düzenle' : 'Yeni Duyuru Oluştur' }}</h3>
+          </div>
+          <button class="btn-icon" (click)="closeModal()"><span class="material-icons-outlined">close</span></button>
+      </div>
+
+      <div class="modal-body">
+          <div class="form-row">
+              <div class="form-group flex-1">
+                  <label for="annTitle">Duyuru Başlığı</label>
+                  <input type="text" id="annTitle" class="form-control" [ngModel]="formTitle()" (ngModelChange)="formTitle.set($event)" placeholder="Örn: Sistem Bakımı Bildirimi" />
+              </div>
+          </div>
+
+          <div class="form-row mt-4">
+              <div class="form-group flex-1">
+                  <label for="annPriority">Öncelik</label>
+                  <select id="annPriority" class="form-control" [ngModel]="formPriority()" (ngModelChange)="formPriority.set(+$event)">
+                      <option [value]="0">Düşük (Bilgi)</option>
+                      <option [value]="1">Normal (Başarı)</option>
+                      <option [value]="2">Yüksek (Uyarı)</option>
+                      <option [value]="3">Kritik (Hata)</option>
+                  </select>
+              </div>
+              <div class="form-group flex-1">
+                  <label for="annPublished">Yayın Durumu</label>
+                  <div class="checkbox-group" style="margin-top: 8px;">
+                      <label class="checkbox-label">
+                          <input type="checkbox" [ngModel]="formIsPublished()" (ngModelChange)="formIsPublished.set($event)" />
+                          Hemen yayınla
+                      </label>
+                  </div>
+              </div>
+          </div>
+
+          <div class="form-row mt-4">
+              <div class="form-group flex-1">
+                  <label for="annStartsAt">Başlangıç Zamanı (Opsiyonel)</label>
+                  <input type="datetime-local" id="annStartsAt" class="form-control" [ngModel]="formStartsAt()" (ngModelChange)="formStartsAt.set($event)" />
+              </div>
+              <div class="form-group flex-1">
+                  <label for="annEndsAt">Bitiş Zamanı (Opsiyonel)</label>
+                  <input type="datetime-local" id="annEndsAt" class="form-control" [ngModel]="formEndsAt()" (ngModelChange)="formEndsAt.set($event)" />
+              </div>
+          </div>
+
+          <div class="form-group mt-4">
+              <label for="annContent">Mesaj İçeriği</label>
+              <textarea id="annContent" class="form-control" rows="5" [ngModel]="formContent()" (ngModelChange)="formContent.set($event)" placeholder="Kullanıcılara iletilecek detaylı mesaj..."></textarea>
+          </div>
+      </div>
+
+      <div class="modal-footer">
+          <button class="btn btn-secondary" (click)="closeModal()">İptal</button>
+          <button class="btn btn-primary" [disabled]="!formTitle().trim() || !formContent().trim()" (click)="saveAnnouncement()">
+              <span class="material-icons-outlined">save</span>
+              {{ formIsPublished() ? 'Kaydet ve Yayınla' : 'Kaydet' }}
+          </button>
+      </div>
+  </div>
+</div>
+}

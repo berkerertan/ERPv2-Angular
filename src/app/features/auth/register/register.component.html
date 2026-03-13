@@ -50,7 +50,7 @@
     <div class="register-main">
         <!-- Step indicator -->
         <div class="step-indicator">
-            @for (step of [1, 2, 3]; track step) {
+            @for (step of [1, 2, 3, 4]; track step) {
             <div class="step-item" [class.active]="currentStep() === step" [class.done]="currentStep() > step">
                 <div class="step-circle">
                     @if (currentStep() > step) {
@@ -61,7 +61,7 @@
                 </div>
                 <span class="step-label">{{ getStepLabel(step) }}</span>
             </div>
-            @if (step < 3) {
+            @if (step < 4) {
             <div class="step-line" [class.done]="currentStep() > step"></div>
             }
             }
@@ -175,8 +175,93 @@
             </div>
             }
 
-            <!-- STEP 3: Plan Seçimi -->
+            <!-- STEP 3: Ödeme Bilgileri -->
             @if (currentStep() === 3) {
+            <div class="form-step animate-fadeInUp">
+                <div class="step-header">
+                    <h2 class="step-title">Ödeme Bilgileri</h2>
+                    <p class="step-subtitle">Kart bilgilerinizi girin veya bu adımı atlayabilirsiniz</p>
+                </div>
+
+                <div class="payment-card-preview">
+                    <div class="card-chip"></div>
+                    <div class="card-number">{{ form.cardNumber || '•••• •••• •••• ••••' }}</div>
+                    <div class="card-bottom">
+                        <div class="card-holder">
+                            <span class="card-label-small">KART SAHİBİ</span>
+                            <span class="card-value-small">{{ form.cardName || 'AD SOYAD' }}</span>
+                        </div>
+                        <div class="card-expiry-preview">
+                            <span class="card-label-small">SON KUL.</span>
+                            <span class="card-value-small">{{ form.cardExpiry || 'MM/YY' }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Kart Üzerindeki İsim</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon material-icons-outlined">person</span>
+                        <input type="text" class="form-input has-icon" placeholder="AHMET YILMAZ"
+                            [(ngModel)]="form.cardName" name="cardName" autocomplete="cc-name" />
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Kart Numarası</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon material-icons-outlined">credit_card</span>
+                        <input type="text" class="form-input has-icon" placeholder="1234 5678 9012 3456"
+                            [(ngModel)]="form.cardNumber" name="cardNumber" autocomplete="cc-number"
+                            (input)="formatCardNumber()" maxlength="19" />
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Son Kullanma Tarihi</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon material-icons-outlined">date_range</span>
+                            <input type="text" class="form-input has-icon" placeholder="MM/YY"
+                                [(ngModel)]="form.cardExpiry" name="cardExpiry" autocomplete="cc-exp"
+                                (input)="formatExpiry()" maxlength="5" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">CVC</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon material-icons-outlined">lock</span>
+                            <input type="text" class="form-input has-icon" placeholder="123"
+                                [(ngModel)]="form.cardCvc" name="cardCvc" autocomplete="cc-csc"
+                                maxlength="4" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="payment-secure-note">
+                    <span class="material-icons-outlined">verified_user</span>
+                    Ödemeleriniz 256-bit SSL ile şifrelenmektedir.
+                </div>
+
+                <div class="step-actions">
+                    <button type="button" class="btn btn-secondary step-btn-back" (click)="prevStep()">
+                        <span class="material-icons-outlined">arrow_back</span>
+                        Geri
+                    </button>
+                    <button type="button" class="btn btn-outline step-btn-skip" (click)="skipPayment()">
+                        <span class="material-icons-outlined">skip_next</span>
+                        Atla
+                    </button>
+                    <button type="button" class="btn btn-primary step-btn" (click)="nextStep()">
+                        Devam Et
+                        <span class="material-icons-outlined">arrow_forward</span>
+                    </button>
+                </div>
+            </div>
+            }
+
+            <!-- STEP 4: Plan Seçimi -->
+            @if (currentStep() === 4) {
             <div class="form-step animate-fadeInUp">
                 <div class="step-header">
                     <h2 class="step-title">Abonelik Planı Seçin</h2>

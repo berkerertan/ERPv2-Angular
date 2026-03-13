@@ -18,6 +18,13 @@ export class LoginComponent {
     errorMessage = signal('');
     showPassword = signal(false);
 
+    devRoles = [
+        { role: 'Admin', label: 'Admin', icon: 'admin_panel_settings', color: '#4c6ef5' },
+        { role: 'Manager', label: 'Şube Müdürü', icon: 'supervisor_account', color: '#7950f2' },
+        { role: 'Cashier', label: 'Kasiyer', icon: 'point_of_sale', color: '#20c997' },
+        { role: 'Viewer', label: 'İzleyici', icon: 'visibility', color: '#fab005' },
+    ];
+
     constructor(
         private authService: AuthService,
         private router: Router
@@ -39,7 +46,12 @@ export class LoginComponent {
         this.authService.login({ userName: this.userName, password: this.password }).subscribe({
             next: () => {
                 this.isLoading.set(false);
-                this.router.navigate(['/dashboard']);
+                const role = this.authService.currentUser()?.role;
+                if (role === 'SuperAdmin' || role === 'Admin') {
+                    this.router.navigate(['/admin/dashboard']);
+                } else {
+                    this.router.navigate(['/dashboard']);
+                }
             },
             error: (err: any) => {
                 this.isLoading.set(false);
@@ -52,5 +64,9 @@ export class LoginComponent {
 
     devLogin(): void {
         this.authService.devLogin();
+    }
+
+    devLoginAs(role: string): void {
+        this.authService.devLoginAs(role);
     }
 }

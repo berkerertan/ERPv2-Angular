@@ -738,9 +738,7 @@
 }
 
 /* ── Alerts Section ────────────────────────────────────────── */
-.alerts-section {
-  /* full-width below the content grid */
-}
+/* .alerts-section is full-width below the content grid */
 
 .alerts-list {
   display: flex;

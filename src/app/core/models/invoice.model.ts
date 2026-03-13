@@ -1,14 +1,27 @@
 /** Fatura modeli — E-Fatura ve E-Arşiv ortak yapısı */
 
+/** InvoiceType enum: 1=EFatura, 2=EArsiv */
+export enum InvoiceType { EFatura = 1, EArsiv = 2 }
+
+/** InvoiceCategory enum: 1=Satis, 2=Iade, 3=Tevkifat */
+export enum InvoiceCategory { Satis = 1, Iade = 2, Tevkifat = 3 }
+
+/** InvoiceStatus enum: 1=Draft, 2=Sent, 3=Approved, 4=Rejected, 5=Cancelled */
+export enum InvoiceStatus { Draft = 1, Sent = 2, Approved = 3, Rejected = 4, Cancelled = 5 }
+
 export interface Invoice {
     id: string;
     invoiceNumber: string;
-    invoiceType: 'EFatura' | 'EArsiv';
-    invoiceCategory: 'Satis' | 'Iade';    // Satış / İade
-    status: 'Draft' | 'Sent' | 'Approved' | 'Rejected' | 'Cancelled';
+    invoiceType: InvoiceType;
+    invoiceCategory: InvoiceCategory;
+    status: InvoiceStatus;
     cariAccountId: string;
     cariAccountName: string;
     taxNumber: string;
+
+    // İlişkili siparişler
+    salesOrderId?: string;
+    purchaseOrderId?: string;
 
     // Tarihler
     issueDate: string;
@@ -30,8 +43,6 @@ export interface Invoice {
     // Genel
     notes?: string;
     createdAt: string;
-    updatedAt?: string;
-    isActive: boolean;
 }
 
 export interface InvoiceItem {
@@ -50,15 +61,45 @@ export interface InvoiceItem {
     lineTotal: number;
 }
 
-export interface InvoiceCreateRequest {
-    invoiceType: 'EFatura' | 'EArsiv';
-    invoiceCategory: 'Satis' | 'Iade';
+export interface CreateInvoiceItemRequest {
+    productId: string;
+    quantity: number;
+    unitPrice: number;
+    taxRate: number;
+    discountRate: number;
+}
+
+export interface CreateInvoiceRequest {
+    invoiceType: InvoiceType;
+    invoiceCategory: InvoiceCategory;
     cariAccountId: string;
     issueDate: string;
     dueDate?: string;
     currency?: string;
     notes?: string;
-    items: Partial<InvoiceItem>[];
+    items: CreateInvoiceItemRequest[];
+}
+
+export interface UpdateInvoiceRequest {
+    invoiceType: InvoiceType;
+    invoiceCategory: InvoiceCategory;
+    issueDate: string;
+    dueDate?: string;
+    currency?: string;
+    notes?: string;
+    items: CreateInvoiceItemRequest[];
+}
+
+export interface CreateInvoiceFromOrderRequest {
+    invoiceType: InvoiceType;
+    issueDate?: string;
+    dueDate?: string;
+    currency?: string;
+    notes?: string;
+}
+
+export interface CancelInvoiceRequest {
+    reason: string;
 }
 
 export interface InvoiceSummary {

@@ -59,6 +59,10 @@ export const routes: Routes = [
                 loadComponent: () => import('./features/admin/content/landing-content.component').then(m => m.LandingContentComponent)
             },
             {
+                path: 'announcements',
+                loadComponent: () => import('./features/admin/announcements/announcements.component').then(m => m.AnnouncementsComponent)
+            },
+            {
                 path: '',
                 redirectTo: 'dashboard',
                 pathMatch: 'full'
