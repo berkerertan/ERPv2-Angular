@@ -366,8 +366,8 @@ export class SubscribersComponent implements OnInit, OnDestroy {
 
     loadFromApi(): void {
         this.isLoading.set(true);
-        const plan = this.filter.plan !== 'all' ? this.planToEnum(this.filter.plan) : undefined;
-        const status = this.filter.status !== 'all' ? this.statusToEnum(this.filter.status) : undefined;
+        const plan = this.filter.plan && this.filter.plan !== 'all' ? this.planToEnum(this.filter.plan as string) : undefined;
+        const status = this.filter.status && this.filter.status !== 'all' ? this.statusToEnum(this.filter.status as string) : undefined;
         this.platformAdminService.getSubscribers(
             this.filter.search || undefined,
             plan,

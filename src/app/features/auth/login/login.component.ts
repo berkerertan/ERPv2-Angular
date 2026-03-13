@@ -56,7 +56,7 @@ export class LoginComponent {
             error: (err: any) => {
                 this.isLoading.set(false);
                 this.errorMessage.set(
-                    err.error?.message || 'Giriş başarısız. Lütfen bilgilerinizi kontrol edin.'
+                    err.error?.detail || err.error?.message || 'Giriş başarısız. Lütfen bilgilerinizi kontrol edin.'
                 );
             }
         });

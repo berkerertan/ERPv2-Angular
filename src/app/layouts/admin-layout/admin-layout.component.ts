@@ -27,6 +27,7 @@ export class AdminLayoutComponent {
         { label: 'Gelir & Analitik', icon: 'analytics', route: '/admin/revenue' },
         { label: 'Sayfa İçeriği', icon: 'edit_document', route: '/admin/content' },
         { label: 'Duyurular', icon: 'campaign', route: '/admin/announcements' },
+        { label: 'Denetim Kayıtları', icon: 'shield', route: '/admin/audit-logs' },
     ];
 
     constructor(

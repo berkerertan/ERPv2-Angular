@@ -4,7 +4,15 @@
       "Bash(npx tsc --noEmit --strict --target ES2022 --experimentalDecorators --emitDecoratorMetadata --moduleResolution node --lib ES2022,dom src/app/core/services/revenue.service.ts src/app/core/models/revenue.model.ts)",
       "Bash(npx ng build --configuration=development)",
       "Bash(node -e ':*)",
-      "Bash(node _parse_api.js)"
+      "Bash(node _parse_api.js)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5058/api/announcements)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5058/swagger/index.html)",
+      "Bash(curl -s http://localhost:5058/api/announcements)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5058/api/platform-admin/overview)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5058/api/products)",
+      "Bash(python3 -c \" import json,sys spec=json.load\\(sys.stdin\\) # Find register request schema paths=spec.get\\(''paths'',{}\\) for p in paths: if ''auth'' in p.lower\\(\\): print\\(p, list\\(paths[p].keys\\(\\)\\)\\) \")",
+      "Bash(# Check bootstrap-admin schema curl -s http://localhost:5058/swagger/v1/swagger.json)",
+      "Bash(python3 -c \":*)"
     ]
   }
 }

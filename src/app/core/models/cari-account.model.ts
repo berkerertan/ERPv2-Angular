@@ -1,9 +1,9 @@
 /** CariAccount — Backend CariAccountDto + DebtItem + Suggest + Details Response */
 
-/** CariType enum: 1=Supplier, 2=Buyer, 3=Both */
+/** CariType enum: 1=Buyer, 2=Supplier, 3=Both (backend confirmed) */
 export enum CariType {
-    Supplier = 1,
-    Buyer = 2,
+    Buyer = 1,
+    Supplier = 2,
     Both = 3
 }
 

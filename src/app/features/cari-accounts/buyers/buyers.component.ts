@@ -101,7 +101,7 @@ export class BuyersComponent implements OnInit {
         if (this.editingAccount()) {
             this.cariService.update(this.editingAccount().id, {
                 name: this.formData.name,
-                type: 2 // Buyer
+                type: 1 // Buyer (CariType.Buyer = 1)
             }).subscribe({
                 next: () => { this.loadAccounts(); this.closeModal(); },
                 error: () => {}
@@ -109,7 +109,7 @@ export class BuyersComponent implements OnInit {
         } else {
             this.cariService.create({
                 name: this.formData.name,
-                type: 2, // Buyer (CariType.Buyer = 2)
+                type: 1, // Buyer (CariType.Buyer = 1)
                 riskLimit: 0,
                 maturityDays: 0
             }).subscribe({
