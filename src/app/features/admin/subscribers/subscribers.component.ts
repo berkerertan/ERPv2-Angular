@@ -73,7 +73,7 @@ export class SubscribersComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit(): void {
-        this.loadTenants();
+        this.loadFromApi();
     }
 
     ngOnDestroy(): void {
@@ -106,13 +106,13 @@ export class SubscribersComponent implements OnInit, OnDestroy {
         if (this._searchDebounce) clearTimeout(this._searchDebounce);
         this._searchDebounce = setTimeout(() => {
             this.filter.page = 1;
-            this.loadTenants();
+            this.loadFromApi();
         }, 400);
     }
 
     onFilterChange(): void {
         this.filter.page = 1;
-        this.loadTenants();
+        this.loadFromApi();
     }
 
     // ─── Pagination ───────────────────────────────────────────────────────────
@@ -139,7 +139,7 @@ export class SubscribersComponent implements OnInit, OnDestroy {
     changePage(page: number): void {
         if (page < 1 || page > this.totalPages || page === this.filter.page) return;
         this.filter.page = page;
-        this.loadTenants();
+        this.loadFromApi();
     }
 
     // ─── Detail Modal ─────────────────────────────────────────────────────────
@@ -196,7 +196,7 @@ export class SubscribersComponent implements OnInit, OnDestroy {
                 if (this.showDetailModal() && this.selectedTenant()?.id === updated.id) {
                     this.selectedTenant.set(updated);
                 }
-                this.loadTenants();
+                this.loadFromApi();
             },
             error: () => {
                 this.showToast('Durum güncellenirken hata oluştu.', 'error');
@@ -220,7 +220,7 @@ export class SubscribersComponent implements OnInit, OnDestroy {
                 if (this.showDetailModal() && this.selectedTenant()?.id === updated.id) {
                     this.selectedTenant.set(updated);
                 }
-                this.loadTenants();
+                this.loadFromApi();
             },
             error: () => {
                 this.showToast('Plan güncellenirken hata oluştu.', 'error');
@@ -250,7 +250,7 @@ export class SubscribersComponent implements OnInit, OnDestroy {
                 if (this.tenants().length === 1 && this.filter.page > 1) {
                     this.filter.page--;
                 }
-                this.loadTenants();
+                this.loadFromApi();
             },
             error: () => {
                 this.showToast('Abone silinirken hata oluştu.', 'error');
@@ -366,6 +366,7 @@ export class SubscribersComponent implements OnInit, OnDestroy {
 
     loadFromApi(): void {
         this.isLoading.set(true);
+        this.error.set(null);
         const plan = this.filter.plan && this.filter.plan !== 'all' ? this.planToEnum(this.filter.plan as string) : undefined;
         const status = this.filter.status && this.filter.status !== 'all' ? this.statusToEnum(this.filter.status as string) : undefined;
         this.platformAdminService.getSubscribers(
@@ -377,9 +378,35 @@ export class SubscribersComponent implements OnInit, OnDestroy {
         ).subscribe({
             next: (data) => {
                 this.apiTenants.set(data);
+                // Map API data to Tenant format for template compatibility
+                const mapped: Tenant[] = data.map(d => ({
+                    id: d.tenantId,
+                    companyName: d.name || d.code || '—',
+                    ownerName: d.assignedRole || '—',
+                    email: '',
+                    phone: '',
+                    plan: this.enumToPlanId(d.plan),
+                    status: this.enumToStatus(d.status),
+                    billingCycle: 'monthly' as BillingCycle,
+                    trialEndsAt: null,
+                    subscribedAt: d.subscriptionStartAtUtc,
+                    lastActiveAt: d.lastActivityAtUtc || d.subscriptionStartAtUtc,
+                    monthlyRevenue: d.monthlyPrice,
+                    branchCount: 0,
+                    userCount: d.currentUserCount,
+                    productCount: 0,
+                    transactionCount: 0,
+                    city: '',
+                    notes: ''
+                }));
+                this.tenants.set(mapped);
+                this.total.set(data.length);
                 this.isLoading.set(false);
             },
-            error: () => this.isLoading.set(false)
+            error: (err) => {
+                this.error.set(err.error?.detail || 'Aboneler yüklenirken bir hata oluştu.');
+                this.isLoading.set(false);
+            }
         });
     }
 
@@ -398,6 +425,24 @@ export class SubscribersComponent implements OnInit, OnDestroy {
             },
             error: () => this.showToast('Güncelleme başarısız', 'error')
         });
+    }
+
+    private enumToPlanId(plan: SubscriptionPlan): PlanId {
+        const map: Record<number, PlanId> = {
+            [SubscriptionPlan.Starter]: 'starter',
+            [SubscriptionPlan.Pro]: 'pro',
+            [SubscriptionPlan.Enterprise]: 'enterprise'
+        };
+        return map[plan] || 'starter';
+    }
+
+    private enumToStatus(status: SubscriptionStatus): TenantStatus {
+        const map: Record<number, TenantStatus> = {
+            [SubscriptionStatus.Trial]: 'trial',
+            [SubscriptionStatus.Active]: 'active',
+            [SubscriptionStatus.Cancelled]: 'cancelled'
+        };
+        return map[status] || 'active';
     }
 
     private planToEnum(plan: string): SubscriptionPlan | undefined {

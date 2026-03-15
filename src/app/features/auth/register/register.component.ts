@@ -2,6 +2,8 @@ import { Component, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
+import { AuthService } from '../../../core/services/auth.service';
+import { SubscriptionPlan } from '../../../core/models/user.model';
 
 interface RegisterForm {
     fullName: string;
@@ -80,7 +82,8 @@ export class RegisterComponent implements OnInit {
 
     constructor(
         private router: Router,
-        private route: ActivatedRoute
+        private route: ActivatedRoute,
+        private authService: AuthService
     ) {}
 
     ngOnInit() {
@@ -149,13 +152,36 @@ export class RegisterComponent implements OnInit {
 
         this.isLoading.set(true);
 
-        // Simulate API call
-        setTimeout(() => {
-            this.isLoading.set(false);
-            this.router.navigate(['/auth/login'], {
-                queryParams: { registered: 'true', email: this.form.email }
-            });
-        }, 1500);
+        const planMap: Record<string, SubscriptionPlan> = {
+            starter: SubscriptionPlan.Starter,
+            pro: SubscriptionPlan.Pro,
+            enterprise: SubscriptionPlan.Enterprise
+        };
+
+        // Clear sensitive payment data before API call
+        this.form.cardNumber = '';
+        this.form.cardCvc = '';
+        this.form.cardExpiry = '';
+        this.form.cardName = '';
+
+        this.authService.registerSaas({
+            userName: this.form.email,
+            email: this.form.email,
+            password: this.form.password,
+            companyName: this.form.companyName,
+            plan: planMap[this.form.selectedPlan] || SubscriptionPlan.Starter
+        }).subscribe({
+            next: () => {
+                this.isLoading.set(false);
+                this.form.password = '';
+                this.form.passwordConfirm = '';
+                this.router.navigate(['/dashboard']);
+            },
+            error: (err) => {
+                this.isLoading.set(false);
+                this.errorMessage.set(err.error?.detail || err.error?.message || 'Kayıt başarısız. Lütfen bilgilerinizi kontrol edin.');
+            }
+        });
     }
 
     private isValidEmail(email: string): boolean {

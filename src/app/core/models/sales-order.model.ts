@@ -25,7 +25,7 @@ export interface SalesOrderItemDto {
 }
 
 export interface CreateSalesOrderRequest {
-    orderNo?: string;
+    orderNo: string;
     customerCariAccountId: string;
     warehouseId: string;
     items: CreateSalesOrderItemRequest[];

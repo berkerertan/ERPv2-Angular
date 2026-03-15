@@ -1,6 +1,13 @@
-import { Component, signal, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, signal, OnDestroy, OnInit, AfterViewInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ProductService } from '../../core/services/product.service';
+import { WarehouseService } from '../../core/services/warehouse.service';
+import { CariAccountService } from '../../core/services/cari-account.service';
+import { SalesOrderService } from '../../core/services/sales-order.service';
+import { Product } from '../../core/models/product.model';
+import { Warehouse } from '../../core/models/warehouse.model';
+import { CariAccount } from '../../core/models/cari-account.model';
 
 interface CartItem {
     productId: string;
@@ -27,7 +34,11 @@ interface QuickProduct {
     templateUrl: './pos.component.html',
     styleUrl: './pos.component.css'
 })
-export class PosComponent implements OnDestroy, AfterViewInit {
+export class PosComponent implements OnInit, OnDestroy, AfterViewInit {
+    private productService = inject(ProductService);
+    private warehouseService = inject(WarehouseService);
+    private cariAccountService = inject(CariAccountService);
+    private salesOrderService = inject(SalesOrderService);
     // Search
     searchTerm = '';
     private _searchTimer: any = null;
@@ -60,39 +71,57 @@ export class PosComponent implements OnDestroy, AfterViewInit {
     notification = signal<{ message: string, type: string } | null>(null);
     private _notifTimer: any = null;
 
-    // Mock data
-    warehouses = [
-        { id: '1', name: 'Ana Depo' },
-        { id: '2', name: 'Şube Depo' },
-        { id: '3', name: 'Fabrika Depo' },
-    ];
+    // Data from API
+    warehouses: { id: string; name: string }[] = [];
+    buyers: { id: string; name: string; phone: string; balance: number }[] = [];
+    productCatalog: QuickProduct[] = [];
+    isSaving = signal(false);
 
-    buyers = [
-        { id: '1', name: 'Peşin Müşteri', phone: '', balance: 0 },
-        { id: '2', name: 'Ahmet Yılmaz', phone: '0532 111 22 33', balance: -2500 },
-        { id: '3', name: 'Mehmet Kaya', phone: '0544 222 33 44', balance: -8700 },
-        { id: '4', name: 'Fatma Çelik', phone: '0555 333 44 55', balance: 0 },
-        { id: '5', name: 'Ali Öztürk', phone: '0533 444 55 66', balance: -1200 },
-        { id: '6', name: 'Ayşe Demir', phone: '0542 555 66 77', balance: -4300 },
-        { id: '7', name: 'Hasan Arslan', phone: '0531 666 77 88', balance: 0 },
-        { id: '8', name: 'Zeynep Koç', phone: '0546 777 88 99', balance: -950 },
-    ];
+    ngOnInit(): void {
+        this.loadWarehouses();
+        this.loadBuyers();
+        this.loadProducts();
+    }
 
-    // Quick product catalog for search
-    productCatalog: QuickProduct[] = [
-        { id: '1', name: 'Laptop HP ProBook', barcode: '8690001234567', unitPrice: 35000, category: 'Elektronik', unit: 'Adet' },
-        { id: '2', name: 'Samsung Monitor 27"', barcode: '8690009876543', unitPrice: 12500, category: 'Elektronik', unit: 'Adet' },
-        { id: '3', name: 'Mekanik Klavye', barcode: '8690005555555', unitPrice: 2800, category: 'Aksesuar', unit: 'Adet' },
-        { id: '4', name: 'USB-C Hub', barcode: '8690003333333', unitPrice: 1200, category: 'Aksesuar', unit: 'Adet' },
-        { id: '5', name: 'A4 Fotokopi Kağıdı', barcode: '8690007777777', unitPrice: 180, category: 'Kırtasiye', unit: 'Paket' },
-        { id: '6', name: 'Wireless Mouse Logitech', barcode: '8690002222222', unitPrice: 950, category: 'Aksesuar', unit: 'Adet' },
-        { id: '7', name: 'Ofis Sandalye Ergonomik', barcode: '8690004444444', unitPrice: 8500, category: 'Mobilya', unit: 'Adet' },
-        { id: '8', name: 'Webcam HD 1080p', barcode: '8690006666666', unitPrice: 1800, category: 'Elektronik', unit: 'Adet' },
-        { id: '9', name: 'Toner HP LaserJet', barcode: '8690008888888', unitPrice: 2200, category: 'Kırtasiye', unit: 'Adet' },
-        { id: '10', name: 'Ethernet Kablosu Cat6 5m', barcode: '8690001111111', unitPrice: 120, category: 'Aksesuar', unit: 'Adet' },
-        { id: '11', name: 'Coca Cola 330ml', barcode: '8690000001001', unitPrice: 35, category: 'Gıda', unit: 'Adet' },
-        { id: '12', name: 'Su Hayat 500ml', barcode: '8690000001002', unitPrice: 10, category: 'Gıda', unit: 'Adet' },
-    ];
+    private loadWarehouses(): void {
+        this.warehouseService.getAll().subscribe({
+            next: (data) => {
+                this.warehouses = data.map(w => ({ id: w.id, name: w.name }));
+                if (this.warehouses.length > 0) this.selectedWarehouseId = this.warehouses[0].id;
+            },
+            error: (err) => console.error('Depolar yüklenemedi:', err.error?.detail || err.message)
+        });
+    }
+
+    private loadBuyers(): void {
+        this.cariAccountService.getBuyers().subscribe({
+            next: (data) => {
+                this.buyers = data.map(b => ({
+                    id: b.id,
+                    name: b.name,
+                    phone: '',
+                    balance: b.currentBalance || 0
+                }));
+            },
+            error: (err) => console.error('Alıcılar yüklenemedi:', err.error?.detail || err.message)
+        });
+    }
+
+    private loadProducts(): void {
+        this.productService.getAll().subscribe({
+            next: (data) => {
+                this.productCatalog = data.map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    barcode: p.barcodeEan13 || '',
+                    unitPrice: p.defaultSalePrice,
+                    category: p.category || '',
+                    unit: p.unit || 'Adet'
+                }));
+            },
+            error: (err) => console.error('Ürünler yüklenemedi:', err.error?.detail || err.message)
+        });
+    }
 
     get searchResults(): QuickProduct[] {
         const term = this.debouncedTerm().toLowerCase();
@@ -132,9 +161,8 @@ export class PosComponent implements OnDestroy, AfterViewInit {
     // ─── Buyer Search (Veresiye) ───────────────────────
     get filteredBuyers() {
         const term = this.debouncedBuyerTerm().toLowerCase();
-        const allBuyers = this.buyers.filter(b => b.id !== '1'); // exclude Peşin Müşteri
-        if (!term) return allBuyers.slice(0, 6);
-        return allBuyers.filter(b =>
+        if (!term) return this.buyers.slice(0, 6);
+        return this.buyers.filter(b =>
             b.name.toLowerCase().includes(term) ||
             b.phone.includes(term)
         ).slice(0, 6);
@@ -178,9 +206,10 @@ export class PosComponent implements OnDestroy, AfterViewInit {
 
     highlightBuyerMatch(text: string): string {
         const term = this.debouncedBuyerTerm();
-        if (!term) return text;
+        if (!term) return this.escapeHtml(text);
+        const safe = this.escapeHtml(text);
         const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-        return text.replace(regex, '<mark class="search-highlight">$1</mark>');
+        return safe.replace(regex, '<mark class="search-highlight">$1</mark>');
     }
 
     ngAfterViewInit(): void {
@@ -340,6 +369,20 @@ export class PosComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
+        // Need a buyer for API — use selected or first available
+        const buyerId = this.selectedBuyerId || (this.buyers.length > 0 ? this.buyers[0].id : '');
+        if (!buyerId) {
+            this.showNotification('Satış için en az bir alıcı hesabı gerekli!', 'warning');
+            return;
+        }
+
+        if (!this.selectedWarehouseId) {
+            this.showNotification('Lütfen bir depo seçin!', 'warning');
+            return;
+        }
+
+        this.isSaving.set(true);
+
         const now = new Date();
         const receiptNo = 'FIS-' + now.getFullYear() +
             String(now.getMonth() + 1).padStart(2, '0') +
@@ -354,20 +397,38 @@ export class PosComponent implements OnDestroy, AfterViewInit {
             credit: 'Veresiye'
         };
 
-        this.lastSaleData.set({
-            items: [...this.cart()],
-            total: this.cartTotal,
-            tax: this.cartTax,
-            grandTotal: this.cartGrandTotal,
-            date: now.toLocaleString('tr-TR'),
-            receiptNo,
-            paymentMethod: paymentLabels[this.paymentMethod()] || 'Nakit',
-            customer: this.selectedCustomerName
-        });
+        this.salesOrderService.create({
+            orderNo: receiptNo,
+            customerCariAccountId: buyerId,
+            warehouseId: this.selectedWarehouseId,
+            items: this.cart().map(item => ({
+                productId: item.productId,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice
+            }))
+        }).subscribe({
+            next: () => {
+                this.lastSaleData.set({
+                    items: [...this.cart()],
+                    total: this.cartTotal,
+                    tax: this.cartTax,
+                    grandTotal: this.cartGrandTotal,
+                    date: now.toLocaleString('tr-TR'),
+                    receiptNo,
+                    paymentMethod: paymentLabels[this.paymentMethod()] || 'Nakit',
+                    customer: this.selectedCustomerName
+                });
 
-        this.showReceipt.set(true);
-        this.clearCart();
-        this.showNotification('Satış başarıyla tamamlandı!', 'success');
+                this.showReceipt.set(true);
+                this.clearCart();
+                this.isSaving.set(false);
+                this.showNotification('Satış başarıyla tamamlandı!', 'success');
+            },
+            error: (err) => {
+                this.isSaving.set(false);
+                this.showNotification(err.error?.detail || 'Satış kaydedilemedi!', 'error');
+            }
+        });
     }
 
     closeReceipt(): void {
@@ -386,7 +447,7 @@ export class PosComponent implements OnDestroy, AfterViewInit {
         data.items.forEach(item => {
             itemsHtml += `
                 <tr>
-                    <td style="text-align:left;padding:2px 0;">${item.name}</td>
+                    <td style="text-align:left;padding:2px 0;">${this.escapeHtml(item.name)}</td>
                     <td style="text-align:center;padding:2px 4px;">${item.quantity}</td>
                     <td style="text-align:right;padding:2px 0;">₺${item.total.toFixed(2)}</td>
                 </tr>`;
@@ -431,10 +492,10 @@ export class PosComponent implements OnDestroy, AfterViewInit {
         <p>Tel: 0212 555 00 00</p>
     </div>
     <div class="divider"></div>
-    <div class="info">Fiş No: <span>${data.receiptNo}</span></div>
-    <div class="info">Tarih: <span>${data.date}</span></div>
-    <div class="info">Müşteri: <span>${data.customer}</span></div>
-    <div class="info">Ödeme: <span>${data.paymentMethod}</span></div>
+    <div class="info">Fiş No: <span>${this.escapeHtml(data.receiptNo)}</span></div>
+    <div class="info">Tarih: <span>${this.escapeHtml(data.date)}</span></div>
+    <div class="info">Müşteri: <span>${this.escapeHtml(data.customer)}</span></div>
+    <div class="info">Ödeme: <span>${this.escapeHtml(data.paymentMethod)}</span></div>
     <div class="divider"></div>
     <table>
         <thead>
@@ -497,9 +558,19 @@ export class PosComponent implements OnDestroy, AfterViewInit {
     // ─── Highlight ─────────────────────────────────────
     highlightMatch(text: string): string {
         const term = this.debouncedTerm();
-        if (!term) return text;
+        if (!term) return this.escapeHtml(text);
+        const safe = this.escapeHtml(text);
         const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-        return text.replace(regex, '<mark class="search-highlight">$1</mark>');
+        return safe.replace(regex, '<mark class="search-highlight">$1</mark>');
+    }
+
+    private escapeHtml(str: string): string {
+        return str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 
     ngOnDestroy(): void {

@@ -1,6 +1,6 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RevenueService } from '../../../core/services/revenue.service';
+import { PlatformAdminService } from '../../../core/services/platform-admin.service';
 import { RevenueAnalytics, MonthlyRevenueTrend } from '../../../core/models/revenue.model';
 
 @Component({
@@ -11,20 +11,54 @@ import { RevenueAnalytics, MonthlyRevenueTrend } from '../../../core/models/reve
   styleUrl: './revenue.component.css',
 })
 export class RevenueComponent implements OnInit {
+  private platformAdminService = inject(PlatformAdminService);
+
   isLoading = signal<boolean>(true);
   analytics = signal<RevenueAnalytics | null>(null);
   selectedPeriod = signal<'6m' | '12m'>('12m');
 
-  constructor(private revenueService: RevenueService) {}
-
   ngOnInit(): void {
-    this.revenueService.getRevenueAnalytics().subscribe({
-      next: (data) => {
-        this.analytics.set(data);
+    this.platformAdminService.getRevenueSummary().subscribe({
+      next: (summary) => {
+        const totalMrr = summary.totalMonthlyRevenue;
+        const byPlan = (summary.breakdown || []).map(bp => {
+          const planColors: Record<string, string> = { '1': '#6366f1', '2': '#8b5cf6', '3': '#a855f7' };
+          const planNames: Record<string, string> = { '1': 'Starter', '2': 'Pro', '3': 'Enterprise' };
+          const planKey = bp.plan || '1';
+          return {
+            planId: planKey,
+            planName: planNames[planKey] || bp.plan || 'Plan',
+            color: planColors[planKey] || '#5c7cfa',
+            subscriberCount: bp.subscriberCount,
+            mrr: bp.revenue,
+            percentage: totalMrr > 0 ? (bp.revenue / totalMrr) * 100 : 0,
+          };
+        });
+        const totalSubs = byPlan.reduce((s, p) => s + p.subscriberCount, 0);
+
+        this.analytics.set({
+          stats: {
+            mrr: totalMrr,
+            arr: totalMrr * 12,
+            totalSubscribers: totalSubs,
+            activeSubscribers: totalSubs,
+            activeTrials: 0,
+            cancelledThisMonth: 0,
+            churnRate: 0,
+            growthRate: 0,
+            arpu: totalSubs > 0 ? Math.round(totalMrr / totalSubs) : 0,
+            ltv: 0,
+            mrrChange: 0,
+            subscriberChange: 0,
+          },
+          byPlan,
+          monthlyTrend: [],
+          dailySignups: [],
+        });
         this.isLoading.set(false);
       },
       error: (err) => {
-        console.error('Gelir analitik verileri yüklenirken hata:', err);
+        console.error('Gelir analitik verileri yüklenirken hata:', err.error?.detail || err.message);
         this.isLoading.set(false);
       },
     });

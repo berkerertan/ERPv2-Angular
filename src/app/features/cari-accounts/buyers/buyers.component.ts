@@ -29,7 +29,7 @@ export class BuyersComponent implements OnInit {
     constructor(private router: Router, private cariService: CariAccountService) { }
 
     formData = {
-        name: '', phone: '', email: '', address: '',
+        code: '', name: '', phone: '', email: '', address: '',
         taxNumber: '', city: '', notes: ''
     };
 
@@ -43,6 +43,7 @@ export class BuyersComponent implements OnInit {
         this.cariService.getBuyers().subscribe({
             next: (data) => this.accounts.set(data.map(a => ({
                 id: a.id,
+                code: a.code || '',
                 name: a.name,
                 phone: '',
                 email: '',
@@ -57,7 +58,7 @@ export class BuyersComponent implements OnInit {
                 lastOrder: '-',
                 isActive: true
             }))),
-            error: () => {}
+            error: (err) => console.error('Alıcılar yüklenemedi:', err.error?.detail || err.message)
         });
     }
 
@@ -83,40 +84,51 @@ export class BuyersComponent implements OnInit {
 
     openAddModal(): void {
         this.editingAccount.set(null);
-        this.formData = { name: '', phone: '', email: '', address: '', taxNumber: '', city: '', notes: '' };
+        this.formData = { code: '', name: '', phone: '', email: '', address: '', taxNumber: '', city: '', notes: '' };
         this.showModal.set(true);
     }
 
     openEditModal(account: any): void {
         this.editingAccount.set(account);
-        this.formData = { name: account.name, phone: account.phone, email: account.email, address: account.address, taxNumber: account.taxNumber, city: account.city, notes: '' };
+        this.formData = { code: account.code || '', name: account.name, phone: account.phone, email: account.email, address: account.address, taxNumber: account.taxNumber, city: account.city, notes: '' };
         this.showModal.set(true);
     }
 
     closeModal(): void { this.showModal.set(false); }
 
+    saveError = signal('');
+
     save(): void {
         if (!this.formData.name.trim()) return;
+        this.saveError.set('');
+
+        const code = this.formData.code.trim() || this.generateCode();
 
         if (this.editingAccount()) {
             this.cariService.update(this.editingAccount().id, {
+                code,
                 name: this.formData.name,
-                type: 1 // Buyer (CariType.Buyer = 1)
+                type: 1
             }).subscribe({
                 next: () => { this.loadAccounts(); this.closeModal(); },
-                error: () => {}
+                error: (err) => this.saveError.set(err.error?.detail || 'Güncelleme başarısız.')
             });
         } else {
             this.cariService.create({
+                code,
                 name: this.formData.name,
-                type: 1, // Buyer (CariType.Buyer = 1)
+                type: 1,
                 riskLimit: 0,
                 maturityDays: 0
             }).subscribe({
                 next: () => { this.loadAccounts(); this.closeModal(); },
-                error: () => {}
+                error: (err) => this.saveError.set(err.error?.detail || 'Kayıt başarısız.')
             });
         }
+    }
+
+    private generateCode(): string {
+        return 'ALI-' + Date.now().toString(36).toUpperCase();
     }
 
     viewDetail(account: any): void {
@@ -131,7 +143,7 @@ export class BuyersComponent implements OnInit {
         if (!confirm('Bu alıcıyı silmek istediğinize emin misiniz?')) return;
         this.cariService.delete(id).subscribe({
             next: () => this.loadAccounts(),
-            error: () => {}
+            error: (err) => alert(err.error?.detail || 'Silme işlemi başarısız.')
         });
     }
 

@@ -9,9 +9,12 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req).pipe(
         catchError((error: HttpErrorResponse) => {
             if (error.status === 401) {
-                localStorage.removeItem('erp_token');
-                localStorage.removeItem('erp_user');
-                router.navigate(['/auth/login']);
+                const isAuthEndpoint = req.url.includes('/api/Auth/');
+                if (!isAuthEndpoint) {
+                    localStorage.removeItem('erp_token');
+                    localStorage.removeItem('erp_user');
+                    router.navigate(['/auth/login']);
+                }
             }
 
             if (error.status === 403) {

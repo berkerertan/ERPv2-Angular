@@ -36,11 +36,13 @@ export interface UpdateStockMovementRequest {
 }
 
 export interface StockBalance {
-    warehouseId: string;
-    warehouseCode?: string;
     productId: string;
-    productCode?: string;
-    quantity: number;
+    productName?: string;
+    barcode?: string;
+    warehouseName?: string;
+    balance: number;
+    unit?: string;
+    totalValue: number;
 }
 
 export interface CriticalStockAlertDto {

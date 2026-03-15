@@ -38,11 +38,9 @@ export enum TreasuryChannel {
     Bank = 2
 }
 
-/** FinanceMovementType — shared with finance-movements module */
-export enum FinanceMovementType {
-    Collection = 1,
-    Payment = 2
-}
+/** FinanceMovementType — re-exported from finance-movement module (1=Income, 2=Expense) */
+import { FinanceMovementType } from './finance-movement.model';
+export { FinanceMovementType };
 
 export interface ChartOfAccountDto {
     id: string;
@@ -107,8 +105,8 @@ export interface CashAccountDto {
 }
 
 export interface UpsertCashAccountRequest {
-    code?: string;
-    name?: string;
+    code: string;
+    name: string;
     currency?: string;
 }
 

@@ -1,6 +1,7 @@
-import { Component, signal, HostListener, OnInit } from '@angular/core';
+import { Component, signal, HostListener, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
 
 @Component({
     selector: 'app-landing',
@@ -9,7 +10,10 @@ import { RouterModule } from '@angular/router';
     templateUrl: './landing.component.html',
     styleUrl: './landing.component.css'
 })
-export class LandingComponent implements OnInit {
+export class LandingComponent implements OnInit, OnDestroy {
+    private authService = inject(AuthService);
+    private _featureInterval: any = null;
+
     isScrolled = signal(false);
     billingAnnual = signal(false);
     activeFeature = signal(0);
@@ -157,9 +161,22 @@ export class LandingComponent implements OnInit {
     ];
 
     ngOnInit() {
-        setInterval(() => {
+        this._featureInterval = setInterval(() => {
             this.activeFeature.update(v => (v + 1) % this.features.length);
         }, 3000);
+
+        // Fetch real plan prices from API
+        this.authService.getSubscriptionPlans().subscribe({
+            next: (apiPlans) => {
+                const planMap: Record<number, number> = {};
+                apiPlans.forEach(p => planMap[p.plan] = p.monthlyPrice);
+                // Update plans with API prices: plan enum 1=starter, 2=pro, 3=enterprise
+                if (planMap[1]) { this.plans[0].monthlyPrice = planMap[1]; this.plans[0].annualPrice = Math.round(planMap[1] * 0.83); }
+                if (planMap[2]) { this.plans[1].monthlyPrice = planMap[2]; this.plans[1].annualPrice = Math.round(planMap[2] * 0.83); }
+                if (planMap[3]) { this.plans[2].monthlyPrice = planMap[3]; this.plans[2].annualPrice = Math.round(planMap[3] * 0.83); }
+            },
+            error: () => {} // Keep fallback prices on error
+        });
     }
 
     @HostListener('window:scroll')
@@ -177,5 +194,9 @@ export class LandingComponent implements OnInit {
 
     scrollTo(section: string) {
         document.getElementById(section)?.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    ngOnDestroy(): void {
+        if (this._featureInterval) clearInterval(this._featureInterval);
     }
 }

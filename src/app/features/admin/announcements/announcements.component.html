@@ -145,9 +145,9 @@
                   <label for="annPriority">Öncelik</label>
                   <select id="annPriority" class="form-control" [ngModel]="formPriority()" (ngModelChange)="formPriority.set(+$event)">
                       <option [value]="0">Düşük (Bilgi)</option>
-                      <option [value]="1">Normal (Başarı)</option>
-                      <option [value]="2">Yüksek (Uyarı)</option>
-                      <option [value]="3">Kritik (Hata)</option>
+                      <option [value]="5">Normal</option>
+                      <option [value]="10">Yüksek (Uyarı)</option>
+                      <option [value]="15">Kritik (Hata)</option>
                   </select>
               </div>
               <div class="form-group flex-1">

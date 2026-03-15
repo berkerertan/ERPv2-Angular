@@ -1,6 +1,8 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { SalesOrderService } from '../../core/services/sales-order.service';
+import { SalesOrder, OrderStatus } from '../../core/models/sales-order.model';
 
 @Component({
     selector: 'app-sales-orders',
@@ -9,18 +11,41 @@ import { FormsModule } from '@angular/forms';
     templateUrl: './sales-orders.component.html',
     styleUrls: ['./sales-orders.component.css', '../../shared/styles/crud-page.css']
 })
-export class SalesOrdersComponent {
+export class SalesOrdersComponent implements OnInit {
+    private salesOrderService = inject(SalesOrderService);
+
     searchTerm = '';
     activeTab = signal<'all' | 'Draft' | 'Approved' | 'Cancelled'>('all');
     showModal = signal(false);
 
-    orders = signal([
-        { id: '1', orderNumber: 'SIP-001', cariAccountName: 'Ahmet Yılmaz', status: 'Approved', totalAmount: 3240, createdAt: '2026-03-08' },
-        { id: '2', orderNumber: 'SIP-002', cariAccountName: 'Mehmet Kaya', status: 'Draft', totalAmount: 1890, createdAt: '2026-03-08' },
-        { id: '3', orderNumber: 'SIP-003', cariAccountName: 'Ayşe Demir', status: 'Approved', totalAmount: 5670, createdAt: '2026-03-07' },
-        { id: '4', orderNumber: 'SIP-004', cariAccountName: 'Fatma Çelik', status: 'Cancelled', totalAmount: 2100, createdAt: '2026-03-07' },
-        { id: '5', orderNumber: 'SIP-005', cariAccountName: 'Ali Öztürk', status: 'Draft', totalAmount: 14500, createdAt: '2026-03-06' },
-    ]);
+    orders = signal<any[]>([]);
+
+    ngOnInit(): void {
+        this.loadOrders();
+    }
+
+    loadOrders(): void {
+        this.salesOrderService.getAll().subscribe({
+            next: (data) => this.orders.set(data.map(o => ({
+                id: o.id,
+                orderNumber: o.orderNo || o.id.substring(0, 8),
+                cariAccountName: o.customerCariAccountId.substring(0, 8) + '...',
+                status: this.mapStatus(o.status),
+                totalAmount: o.totalAmount,
+                createdAt: o.orderDateUtc.split('T')[0]
+            }))),
+            error: (err) => console.error('Siparişler yüklenemedi:', err.error?.detail || err.message)
+        });
+    }
+
+    private mapStatus(status: OrderStatus): string {
+        switch (status) {
+            case OrderStatus.Approved: return 'Approved';
+            case OrderStatus.Draft: return 'Draft';
+            case OrderStatus.Cancelled: return 'Cancelled';
+            default: return 'Draft';
+        }
+    }
 
     get filteredOrders() {
         let items = this.orders();
@@ -35,10 +60,17 @@ export class SalesOrdersComponent {
     getStatusLabel(s: string) { return s === 'Approved' ? 'Onaylı' : s === 'Draft' ? 'Taslak' : 'İptal'; }
 
     approveOrder(id: string): void {
-        this.orders.update(items => items.map(o => o.id === id ? { ...o, status: 'Approved' } : o));
+        this.salesOrderService.approve(id).subscribe({
+            next: () => this.loadOrders(),
+            error: (err) => alert(err.error?.detail || 'Onaylama başarısız.')
+        });
     }
 
     deleteOrder(id: string): void {
-        this.orders.update(items => items.filter(o => o.id !== id));
+        if (!confirm('Bu siparişi silmek istediğinize emin misiniz?')) return;
+        this.salesOrderService.delete(id).subscribe({
+            next: () => this.loadOrders(),
+            error: (err) => alert(err.error?.detail || 'Silme başarısız.')
+        });
     }
 }

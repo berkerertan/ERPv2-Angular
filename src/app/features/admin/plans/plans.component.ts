@@ -1,7 +1,8 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { SubscriptionPlanService } from '../../../core/services/subscription-plan.service';
+import { PlatformAdminService } from '../../../core/services/platform-admin.service';
+import { SubscriptionPlanOptionDto } from '../../../core/models/user.model';
 import {
   SubscriptionPlan,
   PlanPermissions,
@@ -19,6 +20,8 @@ import {
   styleUrls: ['./plans.component.css'],
 })
 export class PlansComponent implements OnInit {
+  private platformAdminService = inject(PlatformAdminService);
+
   // ─── Signals ────────────────────────────────────────────────────────────────
   plans = signal<SubscriptionPlan[]>([]);
   isLoading = signal(false);
@@ -70,7 +73,12 @@ export class PlansComponent implements OnInit {
   readonly PERMISSION_LABELS = PERMISSION_LABELS;
   readonly PERMISSION_ICONS = PERMISSION_ICONS;
 
-  constructor(private planService: SubscriptionPlanService) {}
+  // Plan color/icon defaults
+  private readonly planDefaults: Record<number, { icon: string; color: 'blue' | 'purple' | 'gold'; description: string }> = {
+    1: { icon: 'rocket_launch', color: 'blue', description: 'Tek şubeli küçük işletmeler için temel ERP işlevleri.' },
+    2: { icon: 'workspace_premium', color: 'purple', description: 'Büyüyen işletmeler için çoklu şube desteği ve gelişmiş özellikler.' },
+    3: { icon: 'business_center', color: 'gold', description: 'Sınırsız özellikler, API erişimi ve özel destek.' },
+  };
 
   ngOnInit(): void {
     this.loadPlans();
@@ -79,15 +87,54 @@ export class PlansComponent implements OnInit {
   // ─── Data loading ────────────────────────────────────────────────────────────
   loadPlans(): void {
     this.isLoading.set(true);
-    this.planService.getPlans().subscribe({
+    this.platformAdminService.getPlans().subscribe({
       next: (data) => {
-        this.plans.set(data);
+        this.plans.set(data.map(p => this.mapApiPlan(p)));
         this.isLoading.set(false);
       },
-      error: () => {
+      error: (err) => {
+        console.error('Planlar yüklenemedi:', err.error?.detail || err.message);
         this.isLoading.set(false);
       },
     });
+  }
+
+  private mapApiPlan(p: SubscriptionPlanOptionDto): SubscriptionPlan {
+    const defaults = this.planDefaults[p.plan] || this.planDefaults[1];
+    const annualPrice = Math.round(p.monthlyPrice * 0.83);
+    return {
+      id: String(p.plan),
+      name: p.name,
+      description: defaults.description,
+      icon: defaults.icon,
+      monthlyPrice: p.monthlyPrice,
+      annualPrice,
+      annualDiscountPercent: 17,
+      isPopular: p.plan === 2,
+      isActive: p.isActive,
+      sortOrder: p.plan,
+      color: defaults.color,
+      permissions: this.getDefaultPermissions(p.plan, p.features),
+      limits: {
+        maxBranches: p.plan === 3 ? -1 : p.plan === 2 ? 3 : 1,
+        maxUsers: p.maxUsers,
+        maxProducts: p.plan === 3 ? -1 : p.plan === 2 ? 10000 : 2000,
+        maxTransactionsPerMonth: p.plan === 3 ? -1 : p.plan === 2 ? 30000 : 5000,
+      },
+      subscriberCount: 0,
+      monthlyRevenue: 0,
+    };
+  }
+
+  private getDefaultPermissions(plan: number, features?: string[]): PlanPermissions {
+    const base: PlanPermissions = {
+      pos: plan >= 1, stockManagement: plan >= 1, stockMovements: plan >= 1,
+      cariAccounts: plan >= 2, eFatura: plan >= 2, eArsiv: plan >= 2,
+      purchaseOrders: plan >= 2, salesOrders: plan >= 1, basicReports: plan >= 1,
+      advancedReports: plan >= 2, multiBranch: plan >= 2, multiWarehouse: plan >= 2,
+      apiAccess: plan >= 3, companyManagement: plan >= 3,
+    };
+    return base;
   }
 
   // ─── Edit modal ──────────────────────────────────────────────────────────────
@@ -131,45 +178,24 @@ export class PlansComponent implements OnInit {
       this.editForm.annualDiscountPercent = discount > 0 ? discount : 0;
     }
 
-    const updatePayload = {
-      name: this.editForm.name,
-      description: this.editForm.description,
-      icon: this.editForm.icon,
-      color: this.editForm.color,
-      monthlyPrice: this.editForm.monthlyPrice,
-      annualPrice: this.editForm.annualPrice,
-      annualDiscountPercent: this.editForm.annualDiscountPercent,
-      isPopular: this.editForm.isPopular,
-      isActive: this.editForm.isActive,
-      sortOrder: this.editForm.sortOrder,
-    };
-
-    this.planService.updatePlan(plan.id, updatePayload).subscribe({
+    const planEnum = parseInt(plan.id, 10);
+    this.platformAdminService.updatePlan(planEnum, {
+      displayName: this.editForm.name,
+      monthlyPrice: this.editForm.monthlyPrice || 0,
+      maxUsers: this.editForm.limits.maxUsers,
+      isActive: this.editForm.isActive ?? true,
+      features: Object.entries(this.editForm.permissions)
+        .filter(([_, v]) => v)
+        .map(([k]) => k),
+    }).subscribe({
       next: () => {
-        this.planService
-          .updatePermissions(plan.id, this.editForm.permissions)
-          .subscribe({
-            next: () => {
-              this.planService
-                .updateLimits(plan.id, this.editForm.limits)
-                .subscribe({
-                  next: () => {
-                    this.isSaving.set(false);
-                    this.loadPlans();
-                    this.closeEdit();
-                  },
-                  error: () => {
-                    this.isSaving.set(false);
-                  },
-                });
-            },
-            error: () => {
-              this.isSaving.set(false);
-            },
-          });
-      },
-      error: () => {
         this.isSaving.set(false);
+        this.loadPlans();
+        this.closeEdit();
+      },
+      error: (err) => {
+        this.isSaving.set(false);
+        alert(err.error?.detail || 'Plan kaydedilemedi.');
       },
     });
   }
@@ -184,15 +210,23 @@ export class PlansComponent implements OnInit {
 
   // ─── Quick toggles on card ────────────────────────────────────────────────────
   togglePopular(plan: SubscriptionPlan): void {
-    this.planService
-      .updatePlan(plan.id, { isPopular: !plan.isPopular })
-      .subscribe(() => this.loadPlans());
+    // Popular flag is frontend-only, toggle locally
+    this.plans.update(list => list.map(p =>
+      p.id === plan.id ? { ...p, isPopular: !p.isPopular } : p
+    ));
   }
 
   toggleActive(plan: SubscriptionPlan): void {
-    this.planService
-      .updatePlan(plan.id, { isActive: !plan.isActive })
-      .subscribe(() => this.loadPlans());
+    const planEnum = parseInt(plan.id, 10);
+    this.platformAdminService.updatePlan(planEnum, {
+      displayName: plan.name,
+      monthlyPrice: plan.monthlyPrice,
+      maxUsers: plan.limits.maxUsers,
+      isActive: !plan.isActive,
+    }).subscribe({
+      next: () => this.loadPlans(),
+      error: (err) => alert(err.error?.detail || 'Güncelleme başarısız.'),
+    });
   }
 
   // ─── Utility helpers ─────────────────────────────────────────────────────────

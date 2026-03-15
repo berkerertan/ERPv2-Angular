@@ -8,7 +8,7 @@
 
     <div class="reports-grid">
         @for (r of reports; track r.id) {
-        <div class="report-card card" [class.active]="activeReport() === r.id" (click)="activeReport.set(r.id)">
+        <div class="report-card card" [class.active]="activeReport() === r.id" (click)="selectReport(r.id)">
             <div class="report-card-icon">
                 <span class="material-icons-outlined">{{ r.icon }}</span>
             </div>
@@ -26,19 +26,241 @@
         <div class="report-content-header">
             <h2>{{ reports.find(r => r.id === activeReport())?.label }}</h2>
             <div class="report-actions">
-                <button class="btn btn-secondary btn-sm"><span class="material-icons-outlined">download</span>
-                    Excel</button>
-                <button class="btn btn-secondary btn-sm"><span class="material-icons-outlined">print</span>
-                    Yazdır</button>
+                <button class="btn btn-secondary btn-sm" (click)="loadReport(activeReport())">
+                    <span class="material-icons-outlined">refresh</span> Yenile
+                </button>
             </div>
         </div>
 
+        <!-- Loading -->
+        @if (isLoading()) {
         <div class="report-placeholder">
-            <span class="material-icons-outlined">assessment</span>
-            <h3>Rapor Alanı</h3>
-            <p>API bağlantısı kurulduğunda burada {{ reports.find(r => r.id === activeReport())?.label?.toLowerCase() }}
-                verisi görüntülenecektir.</p>
-            <p class="text-xs text-muted">Endpoint: GET /api/reports/{{ activeReport() }}</p>
+            <span class="material-icons-outlined">hourglass_empty</span>
+            <h3>Yükleniyor...</h3>
         </div>
+        }
+
+        <!-- Error -->
+        @if (errorMessage() && !isLoading()) {
+        <div class="report-placeholder">
+            <span class="material-icons-outlined">error_outline</span>
+            <h3>Hata</h3>
+            <p>{{ errorMessage() }}</p>
+        </div>
+        }
+
+        <!-- Stock Report -->
+        @if (activeReport() === 'stock' && !isLoading() && !errorMessage()) {
+        @if (stockData().length === 0) {
+        <div class="report-placeholder">
+            <span class="material-icons-outlined">inventory</span>
+            <p>Stok verisi bulunamadı.</p>
+        </div>
+        } @else {
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Ürün</th>
+                    <th>Barkod</th>
+                    <th>Depo</th>
+                    <th>Bakiye</th>
+                    <th>Birim</th>
+                    <th>Toplam Değer</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (item of stockData(); track item.productId) {
+                <tr>
+                    <td>{{ item.productName }}</td>
+                    <td>{{ item.barcode }}</td>
+                    <td>{{ item.warehouseName }}</td>
+                    <td>{{ item.balance }}</td>
+                    <td>{{ item.unit }}</td>
+                    <td>{{ formatCurrency(item.totalValue) }}</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+        }
+        }
+
+        <!-- Sales Report -->
+        @if (activeReport() === 'sales' && !isLoading() && !errorMessage()) {
+        @if (salesData().length === 0) {
+        <div class="report-placeholder">
+            <span class="material-icons-outlined">shopping_cart</span>
+            <p>Satış verisi bulunamadı.</p>
+        </div>
+        } @else {
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Tarih</th>
+                    <th>Sipariş Sayısı</th>
+                    <th>Toplam Tutar</th>
+                    <th>En Çok Satan</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (item of salesData(); track item.date) {
+                <tr>
+                    <td>{{ item.date }}</td>
+                    <td>{{ item.orderCount }}</td>
+                    <td>{{ formatCurrency(item.totalAmount) }}</td>
+                    <td>{{ item.topProduct }}</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+        }
+        }
+
+        <!-- Purchases Report -->
+        @if (activeReport() === 'purchases' && !isLoading() && !errorMessage()) {
+        @if (purchasesData().length === 0) {
+        <div class="report-placeholder">
+            <span class="material-icons-outlined">local_shipping</span>
+            <p>Satın alma verisi bulunamadı.</p>
+        </div>
+        } @else {
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Tarih</th>
+                    <th>Sipariş Sayısı</th>
+                    <th>Toplam Tutar</th>
+                    <th>En Çok Tedarikçi</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (item of purchasesData(); track item.date) {
+                <tr>
+                    <td>{{ item.date }}</td>
+                    <td>{{ item.orderCount }}</td>
+                    <td>{{ formatCurrency(item.totalAmount) }}</td>
+                    <td>{{ item.topSupplier }}</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+        }
+        }
+
+        <!-- Cari Balances -->
+        @if (activeReport() === 'cari-balances' && !isLoading() && !errorMessage()) {
+        @if (cariBalancesData().length === 0) {
+        <div class="report-placeholder">
+            <span class="material-icons-outlined">account_balance_wallet</span>
+            <p>Cari bakiye verisi bulunamadı.</p>
+        </div>
+        } @else {
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Hesap Adı</th>
+                    <th>Tür</th>
+                    <th>Bakiye</th>
+                    <th>Son İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (item of cariBalancesData(); track item.cariAccountId) {
+                <tr>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.type }}</td>
+                    <td [class.text-success]="item.balance >= 0" [class.text-danger]="item.balance < 0">
+                        {{ formatCurrency(item.balance) }}
+                    </td>
+                    <td>{{ item.lastTransaction }}</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+        }
+        }
+
+        <!-- Cari Aging -->
+        @if (activeReport() === 'cari-aging' && !isLoading() && !errorMessage()) {
+        @if (cariAgingData().length === 0) {
+        <div class="report-placeholder">
+            <span class="material-icons-outlined">schedule</span>
+            <p>Yaşlandırma verisi bulunamadı.</p>
+        </div>
+        } @else {
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Hesap Adı</th>
+                    <th>Güncel</th>
+                    <th>0-30 Gün</th>
+                    <th>31-60 Gün</th>
+                    <th>61-90 Gün</th>
+                    <th>90+ Gün</th>
+                    <th>Toplam</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (item of cariAgingData(); track item.cariAccountId) {
+                <tr>
+                    <td>{{ item.name }}</td>
+                    <td>{{ formatCurrency(item.current) }}</td>
+                    <td>{{ formatCurrency(item.days30) }}</td>
+                    <td>{{ formatCurrency(item.days60) }}</td>
+                    <td>{{ formatCurrency(item.days90) }}</td>
+                    <td>{{ formatCurrency(item.over90) }}</td>
+                    <td><strong>{{ formatCurrency(item.total) }}</strong></td>
+                </tr>
+                }
+            </tbody>
+        </table>
+        }
+        }
+
+        <!-- Income-Expense -->
+        @if (activeReport() === 'income-expense' && !isLoading() && !errorMessage()) {
+        @if (!incomeExpenseData()) {
+        <div class="report-placeholder">
+            <span class="material-icons-outlined">bar_chart</span>
+            <p>Gelir-gider verisi bulunamadı.</p>
+        </div>
+        } @else {
+        <div class="income-expense-summary" style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+            <div class="card" style="flex: 1; padding: 1rem; text-align: center;">
+                <p style="color: var(--text-secondary); font-size: 0.85rem;">Toplam Gelir</p>
+                <p style="font-size: 1.5rem; font-weight: 700; color: #51cf66;">{{ formatCurrency(incomeExpenseData()!.totalIncome) }}</p>
+            </div>
+            <div class="card" style="flex: 1; padding: 1rem; text-align: center;">
+                <p style="color: var(--text-secondary); font-size: 0.85rem;">Toplam Gider</p>
+                <p style="font-size: 1.5rem; font-weight: 700; color: #ff6b6b;">{{ formatCurrency(incomeExpenseData()!.totalExpense) }}</p>
+            </div>
+            <div class="card" style="flex: 1; padding: 1rem; text-align: center;">
+                <p style="color: var(--text-secondary); font-size: 0.85rem;">Net Kar</p>
+                <p style="font-size: 1.5rem; font-weight: 700;" [style.color]="incomeExpenseData()!.netProfit >= 0 ? '#51cf66' : '#ff6b6b'">
+                    {{ formatCurrency(incomeExpenseData()!.netProfit) }}
+                </p>
+            </div>
+        </div>
+        @if (incomeExpenseData()!.items.length > 0) {
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Tarih</th>
+                    <th>Gelir</th>
+                    <th>Gider</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (item of incomeExpenseData()!.items; track item.date) {
+                <tr>
+                    <td>{{ item.date }}</td>
+                    <td class="text-success">{{ formatCurrency(item.income) }}</td>
+                    <td class="text-danger">{{ formatCurrency(item.expense) }}</td>
+                </tr>
+                }
+            </tbody>
+        </table>
+        }
+        }
+        }
     </div>
 </div>

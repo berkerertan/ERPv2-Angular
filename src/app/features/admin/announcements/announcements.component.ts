@@ -22,7 +22,7 @@ export class AnnouncementsComponent implements OnInit {
 
   formTitle = signal<string>('');
   formContent = signal<string>('');
-  formPriority = signal<number>(0);
+  formPriority = signal<number>(5);
   formIsPublished = signal<boolean>(false);
   formStartsAt = signal<string>('');
   formEndsAt = signal<string>('');
@@ -78,7 +78,7 @@ export class AnnouncementsComponent implements OnInit {
   resetForm(): void {
     this.formTitle.set('');
     this.formContent.set('');
-    this.formPriority.set(0);
+    this.formPriority.set(5);
     this.formIsPublished.set(false);
     this.formStartsAt.set('');
     this.formEndsAt.set('');
@@ -99,12 +99,12 @@ export class AnnouncementsComponent implements OnInit {
     if (this.editingItem()) {
       this.announcementService.adminUpdate(this.editingItem()!.id, req).subscribe({
         next: () => { this.loadAnnouncements(); this.closeModal(); },
-        error: () => {}
+        error: (err) => alert(err.error?.detail || 'Güncelleme başarısız.')
       });
     } else {
       this.announcementService.adminCreate(req).subscribe({
         next: () => { this.loadAnnouncements(); this.closeModal(); },
-        error: () => {}
+        error: (err) => alert(err.error?.detail || 'Kayıt başarısız.')
       });
     }
   }
@@ -113,21 +113,21 @@ export class AnnouncementsComponent implements OnInit {
     if (!confirm('Bu duyuruyu silmek istediğinize emin misiniz?')) return;
     this.announcementService.adminDelete(id).subscribe({
       next: () => this.loadAnnouncements(),
-      error: () => {}
+      error: (err) => alert(err.error?.detail || 'Silme başarısız.')
     });
   }
 
   publishNow(item: AnnouncementDto): void {
     this.announcementService.adminPublish(item.id).subscribe({
       next: () => this.loadAnnouncements(),
-      error: () => {}
+      error: (err) => alert(err.error?.detail || 'Yayınlama başarısız.')
     });
   }
 
   unpublish(item: AnnouncementDto): void {
     this.announcementService.adminUnpublish(item.id).subscribe({
       next: () => this.loadAnnouncements(),
-      error: () => {}
+      error: (err) => alert(err.error?.detail || 'Yayından kaldırma başarısız.')
     });
   }
 
@@ -150,17 +150,23 @@ export class AnnouncementsComponent implements OnInit {
   }
 
   getPriorityLabel(priority: number): string {
-    const map: Record<number, string> = { 0: 'Düşük', 1: 'Normal', 2: 'Yüksek', 3: 'Kritik' };
-    return map[priority] || 'Normal';
+    if (priority >= 15) return 'Kritik';
+    if (priority >= 10) return 'Yüksek';
+    if (priority >= 5) return 'Normal';
+    return 'Düşük';
   }
 
   getPriorityClass(priority: number): string {
-    const map: Record<number, string> = { 0: 'type-info', 1: 'type-success', 2: 'type-warning', 3: 'type-error' };
-    return map[priority] || '';
+    if (priority >= 15) return 'type-error';
+    if (priority >= 10) return 'type-warning';
+    if (priority >= 5) return 'type-success';
+    return 'type-info';
   }
 
   getPriorityIcon(priority: number): string {
-    const map: Record<number, string> = { 0: 'info', 1: 'check_circle', 2: 'warning', 3: 'error' };
-    return map[priority] || 'info';
+    if (priority >= 15) return 'error';
+    if (priority >= 10) return 'warning';
+    if (priority >= 5) return 'check_circle';
+    return 'info';
   }
 }

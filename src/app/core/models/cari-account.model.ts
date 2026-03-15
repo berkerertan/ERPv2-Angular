@@ -67,7 +67,7 @@ export interface CreateCariDebtItemRequest {
 }
 
 export interface UpdateCariDebtItemRequest {
-    transactionDate?: string;
+    transactionDate: string;
     materialDescription?: string;
     quantity?: number;
     listPrice?: number;

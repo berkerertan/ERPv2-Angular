@@ -103,9 +103,19 @@ export class ProductsComponent implements OnDestroy {
     // Highlight matched text
     highlightMatch(text: string): string {
         const term = this.debouncedTerm();
-        if (!term) return text;
+        if (!term) return this.escapeHtml(text);
+        const safe = this.escapeHtml(text);
         const regex = new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-        return text.replace(regex, '<mark class="search-highlight">$1</mark>');
+        return safe.replace(regex, '<mark class="search-highlight">$1</mark>');
+    }
+
+    private escapeHtml(str: string): string {
+        return str
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 
     // ─── Barcode Scanner ───────────────────────────────

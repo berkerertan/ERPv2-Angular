@@ -12,7 +12,8 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5058/api/products)",
       "Bash(python3 -c \" import json,sys spec=json.load\\(sys.stdin\\) # Find register request schema paths=spec.get\\(''paths'',{}\\) for p in paths: if ''auth'' in p.lower\\(\\): print\\(p, list\\(paths[p].keys\\(\\)\\)\\) \")",
       "Bash(# Check bootstrap-admin schema curl -s http://localhost:5058/swagger/v1/swagger.json)",
-      "Bash(python3 -c \":*)"
+      "Bash(python3 -c \":*)",
+      "Bash(python3:*)"
     ]
   }
 }

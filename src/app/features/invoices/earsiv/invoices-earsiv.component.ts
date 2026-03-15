@@ -1,6 +1,8 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { InvoiceService } from '../../../core/services/invoice.service';
+import { Invoice, InvoiceType, InvoiceStatus } from '../../../core/models/invoice.model';
 
 @Component({
     selector: 'app-invoices-earsiv',
@@ -9,7 +11,9 @@ import { FormsModule } from '@angular/forms';
     templateUrl: './invoices-earsiv.component.html',
     styleUrls: ['./invoices-earsiv.component.css', '../../../shared/styles/crud-page.css']
 })
-export class InvoicesEArsivComponent {
+export class InvoicesEArsivComponent implements OnInit {
+    private invoiceService = inject(InvoiceService);
+
     searchTerm = '';
     activeTab = signal<'all' | 'Draft' | 'Sent' | 'Cancelled'>('all');
     showCreateModal = signal(false);
@@ -28,13 +32,41 @@ export class InvoicesEArsivComponent {
         ]
     };
 
-    invoices = signal([
-        { id: '1', invoiceNumber: 'EAR2026000001', invoiceCategory: 'Satis', status: 'Sent', customerName: 'Ali Veli', tcknVkn: '12345678901', email: 'ali@mail.com', issueDate: '2026-03-08', grandTotal: 1250, taxTotal: 208, currency: 'TRY' },
-        { id: '2', invoiceNumber: 'EAR2026000002', invoiceCategory: 'Satis', status: 'Sent', customerName: 'Ayşe Fatma', tcknVkn: '98765432109', email: 'ayse@mail.com', issueDate: '2026-03-08', grandTotal: 3400, taxTotal: 566, currency: 'TRY' },
-        { id: '3', invoiceNumber: 'EAR2026000003', invoiceCategory: 'Iade', status: 'Draft', customerName: 'Fatma Çelik', tcknVkn: '11223344556', email: 'fatma@mail.com', issueDate: '2026-03-07', grandTotal: 780, taxTotal: 130, currency: 'TRY' },
-        { id: '4', invoiceNumber: 'EAR2026000004', invoiceCategory: 'Satis', status: 'Sent', customerName: 'Peşin Müşteri', tcknVkn: '11111111111', email: '', issueDate: '2026-03-07', grandTotal: 540, taxTotal: 90, currency: 'TRY' },
-        { id: '5', invoiceNumber: 'EAR2026000005', invoiceCategory: 'Satis', status: 'Cancelled', customerName: 'Hasan Demir', tcknVkn: '22334455667', email: 'hasan@mail.com', issueDate: '2026-03-06', grandTotal: 12500, taxTotal: 2083, currency: 'TRY' },
-    ]);
+    invoices = signal<any[]>([]);
+
+    ngOnInit(): void {
+        this.loadInvoices();
+    }
+
+    loadInvoices(): void {
+        this.invoiceService.getAll({ invoiceType: InvoiceType.EArsiv }).subscribe({
+            next: (data) => this.invoices.set(data.map(inv => ({
+                id: inv.id,
+                invoiceNumber: inv.invoiceNumber,
+                invoiceCategory: inv.invoiceCategory === 1 ? 'Satis' : 'Iade',
+                status: this.mapStatus(inv.status),
+                customerName: inv.cariAccountName || '—',
+                tcknVkn: inv.taxNumber || '',
+                email: '',
+                issueDate: inv.issueDate?.split('T')[0] || '',
+                grandTotal: inv.grandTotal,
+                taxTotal: inv.taxTotal,
+                currency: inv.currency || 'TRY'
+            }))),
+            error: (err) => console.error('E-Arşiv faturaları yüklenemedi:', err.error?.detail || err.message)
+        });
+    }
+
+    private mapStatus(status: InvoiceStatus): string {
+        switch (status) {
+            case InvoiceStatus.Draft: return 'Draft';
+            case InvoiceStatus.Sent: return 'Sent';
+            case InvoiceStatus.Approved: return 'Sent';
+            case InvoiceStatus.Rejected: return 'Cancelled';
+            case InvoiceStatus.Cancelled: return 'Cancelled';
+            default: return 'Draft';
+        }
+    }
 
     get filteredInvoices() {
         let items = this.invoices();
@@ -112,6 +144,8 @@ export class InvoicesEArsivComponent {
     closeCreateModal(): void { this.showCreateModal.set(false); }
 
     saveInvoice(): void {
+        // Note: Create requires cariAccountId, but this form uses free-text customerName
+        // For now, keep local creation; full API create needs cariAccount selection
         const newInvoice = {
             id: Date.now().toString(),
             invoiceNumber: `EAR2026${String(this.invoices().length + 1).padStart(6, '0')}`,
@@ -130,7 +164,10 @@ export class InvoicesEArsivComponent {
     }
 
     sendInvoice(id: string): void {
-        this.invoices.update(list => list.map(i => i.id === id ? { ...i, status: 'Sent' } : i));
+        this.invoiceService.send(id).subscribe({
+            next: () => this.loadInvoices(),
+            error: (err) => alert(err.error?.detail || 'Gönderme başarısız.')
+        });
     }
 
     viewDetail(invoice: any): void {
@@ -141,15 +178,32 @@ export class InvoicesEArsivComponent {
     closeDetailModal(): void { this.showDetailModal.set(false); }
 
     deleteInvoice(id: string): void {
-        this.invoices.update(list => list.filter(i => i.id !== id));
+        if (!confirm('Bu faturayı silmek istediğinize emin misiniz?')) return;
+        this.invoiceService.delete(id).subscribe({
+            next: () => this.loadInvoices(),
+            error: (err) => alert(err.error?.detail || 'Silme başarısız.')
+        });
     }
 
     cancelInvoice(id: string): void {
-        this.invoices.update(list => list.map(i => i.id === id ? { ...i, status: 'Cancelled' } : i));
+        this.invoiceService.cancel(id, 'İptal edildi').subscribe({
+            next: () => this.loadInvoices(),
+            error: (err) => alert(err.error?.detail || 'İptal başarısız.')
+        });
     }
 
     downloadPdf(id: string): void {
-        console.log('PDF indir:', id);
+        this.invoiceService.downloadPdf(id).subscribe({
+            next: (blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `fatura-${id}.pdf`;
+                a.click();
+                URL.revokeObjectURL(url);
+            },
+            error: (err) => alert(err.error?.detail || 'PDF indirilemedi.')
+        });
     }
 
     sendEmail(id: string): void {

@@ -1,6 +1,8 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { InvoiceService } from '../../../core/services/invoice.service';
+import { InvoiceType, InvoiceStatus } from '../../../core/models/invoice.model';
 
 @Component({
     selector: 'app-invoices-efatura',
@@ -9,7 +11,9 @@ import { FormsModule } from '@angular/forms';
     templateUrl: './invoices-efatura.component.html',
     styleUrls: ['./invoices-efatura.component.css', '../../../shared/styles/crud-page.css']
 })
-export class InvoicesEFaturaComponent {
+export class InvoicesEFaturaComponent implements OnInit {
+    private invoiceService = inject(InvoiceService);
+
     searchTerm = '';
     activeTab = signal<'all' | 'Draft' | 'Sent' | 'Approved' | 'Rejected' | 'Cancelled'>('all');
     showCreateModal = signal(false);
@@ -28,13 +32,41 @@ export class InvoicesEFaturaComponent {
         ]
     };
 
-    invoices = signal([
-        { id: '1', invoiceNumber: 'EFT2026000001', invoiceCategory: 'Satis', status: 'Approved', cariAccountName: 'Tedarik A.Ş.', taxNumber: '1234567890', issueDate: '2026-03-08', grandTotal: 45000, taxTotal: 7500, currency: 'TRY', ettn: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' },
-        { id: '2', invoiceNumber: 'EFT2026000002', invoiceCategory: 'Satis', status: 'Sent', cariAccountName: 'Global Elektronik', taxNumber: '0987654321', issueDate: '2026-03-07', grandTotal: 22000, taxTotal: 3666, currency: 'TRY', ettn: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' },
-        { id: '3', invoiceNumber: 'EFT2026000003', invoiceCategory: 'Iade', status: 'Draft', cariAccountName: 'Ahmet Yılmaz', taxNumber: '5556667788', issueDate: '2026-03-07', grandTotal: 3240, taxTotal: 540, currency: 'TRY', ettn: '' },
-        { id: '4', invoiceNumber: 'EFT2026000004', invoiceCategory: 'Satis', status: 'Rejected', cariAccountName: 'XYZ Ticaret Ltd.', taxNumber: '1122334455', issueDate: '2026-03-06', grandTotal: 8900, taxTotal: 1483, currency: 'TRY', ettn: 'b2c3d4e5-f6a7-8901-bcde-f12345678901' },
-        { id: '5', invoiceNumber: 'EFT2026000005', invoiceCategory: 'Satis', status: 'Approved', cariAccountName: 'Mehmet Kaya', taxNumber: '9988776655', issueDate: '2026-03-05', grandTotal: 15600, taxTotal: 2600, currency: 'TRY', ettn: 'c3d4e5f6-a7b8-9012-cdef-123456789012' },
-    ]);
+    invoices = signal<any[]>([]);
+
+    ngOnInit(): void {
+        this.loadInvoices();
+    }
+
+    loadInvoices(): void {
+        this.invoiceService.getAll({ invoiceType: InvoiceType.EFatura }).subscribe({
+            next: (data) => this.invoices.set(data.map(inv => ({
+                id: inv.id,
+                invoiceNumber: inv.invoiceNumber,
+                invoiceCategory: inv.invoiceCategory === 1 ? 'Satis' : 'Iade',
+                status: this.mapStatus(inv.status),
+                cariAccountName: inv.cariAccountName || '—',
+                taxNumber: inv.taxNumber || '',
+                issueDate: inv.issueDate?.split('T')[0] || '',
+                grandTotal: inv.grandTotal,
+                taxTotal: inv.taxTotal,
+                currency: inv.currency || 'TRY',
+                ettn: inv.ettn || ''
+            }))),
+            error: (err) => console.error('E-Fatura listesi yüklenemedi:', err.error?.detail || err.message)
+        });
+    }
+
+    private mapStatus(status: InvoiceStatus): string {
+        switch (status) {
+            case InvoiceStatus.Draft: return 'Draft';
+            case InvoiceStatus.Sent: return 'Sent';
+            case InvoiceStatus.Approved: return 'Approved';
+            case InvoiceStatus.Rejected: return 'Rejected';
+            case InvoiceStatus.Cancelled: return 'Cancelled';
+            default: return 'Draft';
+        }
+    }
 
     get filteredInvoices() {
         let items = this.invoices();
@@ -118,6 +150,7 @@ export class InvoicesEFaturaComponent {
     closeCreateModal(): void { this.showCreateModal.set(false); }
 
     saveInvoice(): void {
+        // Note: Full API create needs cariAccountId selection — keeping local for now
         const newInvoice = {
             id: Date.now().toString(),
             invoiceNumber: `EFT2026${String(this.invoices().length + 1).padStart(6, '0')}`,
@@ -136,7 +169,10 @@ export class InvoicesEFaturaComponent {
     }
 
     sendInvoice(id: string): void {
-        this.invoices.update(list => list.map(i => i.id === id ? { ...i, status: 'Sent', ettn: crypto.randomUUID() } : i));
+        this.invoiceService.send(id).subscribe({
+            next: () => this.loadInvoices(),
+            error: (err) => alert(err.error?.detail || 'Gönderme başarısız.')
+        });
     }
 
     viewDetail(invoice: any): void {
@@ -147,16 +183,38 @@ export class InvoicesEFaturaComponent {
     closeDetailModal(): void { this.showDetailModal.set(false); }
 
     deleteInvoice(id: string): void {
-        this.invoices.update(list => list.filter(i => i.id !== id));
+        if (!confirm('Bu faturayı silmek istediğinize emin misiniz?')) return;
+        this.invoiceService.delete(id).subscribe({
+            next: () => this.loadInvoices(),
+            error: (err) => alert(err.error?.detail || 'Silme başarısız.')
+        });
     }
 
     downloadPdf(id: string): void {
-        // TODO: API entegrasyonu
-        console.log('PDF indir:', id);
+        this.invoiceService.downloadPdf(id).subscribe({
+            next: (blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `efatura-${id}.pdf`;
+                a.click();
+                URL.revokeObjectURL(url);
+            },
+            error: (err) => alert(err.error?.detail || 'PDF indirilemedi.')
+        });
     }
 
     downloadXml(id: string): void {
-        // TODO: API entegrasyonu
-        console.log('XML indir:', id);
+        this.invoiceService.downloadXml(id).subscribe({
+            next: (blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `efatura-${id}.xml`;
+                a.click();
+                URL.revokeObjectURL(url);
+            },
+            error: (err) => alert(err.error?.detail || 'XML indirilemedi.')
+        });
     }
 }

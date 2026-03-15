@@ -1,6 +1,8 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { PurchaseOrderService } from '../../core/services/purchase-order.service';
+import { OrderStatus } from '../../core/models/sales-order.model';
 
 @Component({
     selector: 'app-purchase-orders',
@@ -9,15 +11,40 @@ import { FormsModule } from '@angular/forms';
     templateUrl: './purchase-orders.component.html',
     styleUrls: ['./purchase-orders.component.css', '../../shared/styles/crud-page.css']
 })
-export class PurchaseOrdersComponent {
+export class PurchaseOrdersComponent implements OnInit {
+    private purchaseOrderService = inject(PurchaseOrderService);
+
     searchTerm = '';
     activeTab = signal<'all' | 'Draft' | 'Approved' | 'Cancelled'>('all');
 
-    orders = signal([
-        { id: '1', orderNumber: 'SAT-001', cariAccountName: 'Tedarik A.Ş.', status: 'Approved', totalAmount: 45000, createdAt: '2026-03-08' },
-        { id: '2', orderNumber: 'SAT-002', cariAccountName: 'Global Elektronik', status: 'Draft', totalAmount: 22000, createdAt: '2026-03-07' },
-        { id: '3', orderNumber: 'SAT-003', cariAccountName: 'Tedarik A.Ş.', status: 'Approved', totalAmount: 8500, createdAt: '2026-03-06' },
-    ]);
+    orders = signal<any[]>([]);
+
+    ngOnInit(): void {
+        this.loadOrders();
+    }
+
+    loadOrders(): void {
+        this.purchaseOrderService.getAll().subscribe({
+            next: (data) => this.orders.set(data.map(o => ({
+                id: o.id,
+                orderNumber: o.orderNo || o.id.substring(0, 8),
+                cariAccountName: o.supplierCariAccountId.substring(0, 8) + '...',
+                status: this.mapStatus(o.status),
+                totalAmount: o.totalAmount,
+                createdAt: o.orderDateUtc.split('T')[0]
+            }))),
+            error: (err) => console.error('Satın alma siparişleri yüklenemedi:', err.error?.detail || err.message)
+        });
+    }
+
+    private mapStatus(status: OrderStatus): string {
+        switch (status) {
+            case OrderStatus.Approved: return 'Approved';
+            case OrderStatus.Draft: return 'Draft';
+            case OrderStatus.Cancelled: return 'Cancelled';
+            default: return 'Draft';
+        }
+    }
 
     get filteredOrders() {
         let items = this.orders();
@@ -31,6 +58,18 @@ export class PurchaseOrdersComponent {
     getStatusBadge(s: string) { return s === 'Approved' ? 'badge-success' : s === 'Draft' ? 'badge-warning' : 'badge-danger'; }
     getStatusLabel(s: string) { return s === 'Approved' ? 'Onaylı' : s === 'Draft' ? 'Taslak' : 'İptal'; }
 
-    approveOrder(id: string): void { this.orders.update(items => items.map(o => o.id === id ? { ...o, status: 'Approved' } : o)); }
-    deleteOrder(id: string): void { this.orders.update(items => items.filter(o => o.id !== id)); }
+    approveOrder(id: string): void {
+        this.purchaseOrderService.approve(id).subscribe({
+            next: () => this.loadOrders(),
+            error: (err) => alert(err.error?.detail || 'Onaylama başarısız.')
+        });
+    }
+
+    deleteOrder(id: string): void {
+        if (!confirm('Bu siparişi silmek istediğinize emin misiniz?')) return;
+        this.purchaseOrderService.delete(id).subscribe({
+            next: () => this.loadOrders(),
+            error: (err) => alert(err.error?.detail || 'Silme başarısız.')
+        });
+    }
 }

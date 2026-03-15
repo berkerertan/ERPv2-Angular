@@ -20,7 +20,7 @@ export interface PurchaseOrderItemDto {
 }
 
 export interface CreatePurchaseOrderRequest {
-    orderNo?: string;
+    orderNo: string;
     supplierCariAccountId: string;
     warehouseId: string;
     items: CreatePurchaseOrderItemRequest[];

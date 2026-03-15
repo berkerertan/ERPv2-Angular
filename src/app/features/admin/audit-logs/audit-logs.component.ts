@@ -45,7 +45,7 @@ export class AuditLogsComponent implements OnInit {
             toUtc: this.toDate || undefined
         }).subscribe({
             next: (data) => this.summary.set(data),
-            error: () => {}
+            error: (err) => console.error('Audit log özet yüklenemedi:', err.error?.detail || err.message)
         });
     }
 
@@ -65,7 +65,7 @@ export class AuditLogsComponent implements OnInit {
                 this.logs.set(data);
                 this.isLoading.set(false);
             },
-            error: () => this.isLoading.set(false)
+            error: (err) => { this.isLoading.set(false); console.error('Audit loglar yüklenemedi:', err.error?.detail || err.message); }
         });
     }
 

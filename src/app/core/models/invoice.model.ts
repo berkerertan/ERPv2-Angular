@@ -3,8 +3,8 @@
 /** InvoiceType enum: 1=EFatura, 2=EArsiv */
 export enum InvoiceType { EFatura = 1, EArsiv = 2 }
 
-/** InvoiceCategory enum: 1=Satis, 2=Iade, 3=Tevkifat */
-export enum InvoiceCategory { Satis = 1, Iade = 2, Tevkifat = 3 }
+/** InvoiceCategory enum: 0=Standard, 1=Satis, 2=Iade, 3=Tevkifat */
+export enum InvoiceCategory { Standard = 0, Satis = 1, Iade = 2, Tevkifat = 3 }
 
 /** InvoiceStatus enum: 1=Draft, 2=Sent, 3=Approved, 4=Rejected, 5=Cancelled */
 export enum InvoiceStatus { Draft = 1, Sent = 2, Approved = 3, Rejected = 4, Cancelled = 5 }
