@@ -2,6 +2,8 @@ import { Component, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { ToastComponent } from '../../shared/components/toast/toast.component';
 
 interface NavItem {
     label: string;
@@ -13,7 +15,7 @@ interface NavItem {
 @Component({
     selector: 'app-admin-layout',
     standalone: true,
-    imports: [CommonModule, RouterModule, RouterLinkActive],
+    imports: [CommonModule, RouterModule, RouterLinkActive, ConfirmDialogComponent, ToastComponent],
     templateUrl: './admin-layout.component.html',
     styleUrl: './admin-layout.component.css'
 })

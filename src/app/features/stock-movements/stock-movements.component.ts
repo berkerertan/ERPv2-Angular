@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { StockMovementService } from '../../core/services/stock-movement.service';
 import { StockMovementType } from '../../core/models/stock-movement.model';
+import { ConfirmService } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
     selector: 'app-stock-movements',
@@ -13,6 +15,8 @@ import { StockMovementType } from '../../core/models/stock-movement.model';
 })
 export class StockMovementsComponent implements OnInit {
     private stockService = inject(StockMovementService);
+    private confirmService = inject(ConfirmService);
+    private toastService = inject(ToastService);
 
     searchTerm = '';
     activeTab = signal<'movements' | 'balances'>('movements');
@@ -77,15 +81,21 @@ export class StockMovementsComponent implements OnInit {
             referenceNo: this.formData.description || undefined
         }).subscribe({
             next: () => { this.loadMovements(); this.loadBalances(); this.closeModal(); },
-            error: (err) => alert(err.error?.detail || 'Kayıt başarısız.')
+            error: (err) => this.toastService.error('Hata', err.error?.detail || 'Kayıt başarısız.')
         });
     }
 
-    deleteMovement(id: string): void {
-        if (!confirm('Bu hareketi silmek istediğinize emin misiniz?')) return;
+    async deleteMovement(id: string): Promise<void> {
+        const confirmed = await this.confirmService.confirm({
+            title: 'Silme Onayı',
+            message: 'Bu hareketi silmek istediğinize emin misiniz?',
+            confirmText: 'Sil',
+            type: 'danger'
+        });
+        if (!confirmed) return;
         this.stockService.delete(id).subscribe({
-            next: () => { this.loadMovements(); this.loadBalances(); },
-            error: (err) => alert(err.error?.detail || 'Silme başarısız.')
+            next: () => { this.loadMovements(); this.loadBalances(); this.toastService.success('Silindi', 'Stok hareketi silindi'); },
+            error: (err) => this.toastService.error('Hata', err.error?.detail || 'Silme başarısız.')
         });
     }
 }

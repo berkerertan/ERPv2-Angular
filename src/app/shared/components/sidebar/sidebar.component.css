@@ -203,6 +203,61 @@
     padding: var(--space-5) var(--space-3);
 }
 
+/* Hover Expand — Kapalıyken fare üzerine gelince geçici genişleme */
+.sidebar.collapsed.hover-expanded {
+    width: var(--sidebar-width);
+    box-shadow: 6px 0 32px rgba(0, 0, 0, 0.45);
+}
+
+.sidebar.collapsed.hover-expanded .nav-link {
+    justify-content: flex-start;
+    padding: 10px 12px;
+}
+
+.sidebar.collapsed.hover-expanded .sidebar-logo {
+    justify-content: flex-start;
+    padding: var(--space-5) var(--space-5);
+}
+
+/* Hover ile gelen etiketler soldan hafif süzülsün */
+.hover-label {
+    animation: fadeInLeft 180ms ease forwards;
+}
+
+@keyframes fadeInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Pin Butonu — Fareyle açıkken sabit aç */
+.pin-btn {
+    margin-left: auto;
+    opacity: 0.55;
+    color: var(--text-muted);
+}
+
+.pin-btn:hover {
+    opacity: 1;
+    color: var(--primary-400);
+    background: rgba(76, 110, 245, 0.1);
+}
+
+.pin-btn .material-icons-outlined {
+    font-size: 16px;
+    transform: rotate(45deg);
+}
+
+/* Footer her zaman görünür olsun */
+.sidebar-footer {
+    min-height: 48px;
+}
+
 /* Mobile */
 @media (max-width: 768px) {
     .sidebar {

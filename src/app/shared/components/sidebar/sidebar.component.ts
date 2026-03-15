@@ -23,6 +23,27 @@ interface NavSection {
 export class SidebarComponent {
     isCollapsed = signal(false);
     isMobileOpen = signal(false);
+    isHoverExpanded = signal(false);
+
+    private hoverLeaveTimer: ReturnType<typeof setTimeout> | null = null;
+
+    /** Fare sidebar'a girdiğinde — sadece kapalıysa geçici aç */
+    onMouseEnter(): void {
+        if (!this.isCollapsed()) return;
+        if (this.hoverLeaveTimer) {
+            clearTimeout(this.hoverLeaveTimer);
+            this.hoverLeaveTimer = null;
+        }
+        this.isHoverExpanded.set(true);
+    }
+
+    /** Fare sidebar'dan çıktığında — küçük gecikmeyle kapat */
+    onMouseLeave(): void {
+        if (!this.isCollapsed()) return;
+        this.hoverLeaveTimer = setTimeout(() => {
+            this.isHoverExpanded.set(false);
+        }, 120);
+    }
 
     navSections: NavSection[] = [
         {

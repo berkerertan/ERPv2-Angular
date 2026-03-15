@@ -1,3 +1,20 @@
+<!-- Demo Seed Overlay -->
+@if (demoSeed.isSeeding()) {
+<div class="seed-overlay">
+    <div class="seed-box">
+        <div class="seed-icon">
+            <span class="material-icons-outlined">rocket_launch</span>
+        </div>
+        <h3 class="seed-title">Demo Hesabı Hazırlanıyor</h3>
+        <p class="seed-step">{{ demoSeed.seedStep() }}</p>
+        <div class="seed-bar-wrap">
+            <div class="seed-bar" [style.width.%]="demoSeed.seedProgress()"></div>
+        </div>
+        <span class="seed-pct">{{ demoSeed.seedProgress() }}%</span>
+    </div>
+</div>
+}
+
 <div class="login-card card-glass">
     <!-- Logo -->
     <div class="login-header">
@@ -53,21 +70,18 @@
         </button>
     </form>
 
+    <!-- Demo Giriş -->
+    <div class="demo-divider">
+        <span>veya</span>
+    </div>
+
+    <button type="button" class="btn btn-demo" (click)="demoLogin()" [disabled]="isLoading()">
+        <span class="material-icons-outlined">play_circle</span>
+        <span>Demo Hesabıyla Dene</span>
+    </button>
+
     <!-- Footer -->
     <div class="login-footer">
         <p>Hesabınız yok mu? <a routerLink="/auth/register" class="link">Kayıt Olun</a></p>
-    </div>
-
-    <!-- Dev Login -->
-    <div class="dev-login">
-        <div class="dev-divider"><span>Geliştirici Girişi (Backend Yok)</span></div>
-        <div class="dev-roles-grid">
-            @for (r of devRoles; track r.role) {
-            <button type="button" class="dev-role-btn" (click)="devLoginAs(r.role)" [style.--role-color]="r.color">
-                <span class="material-icons-outlined">{{ r.icon }}</span>
-                <span>{{ r.label }}</span>
-            </button>
-            }
-        </div>
     </div>
 </div>

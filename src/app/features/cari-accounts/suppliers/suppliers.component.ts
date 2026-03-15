@@ -1,7 +1,9 @@
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CariAccountService } from '../../../core/services/cari-account.service';
+import { ConfirmService } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { ToastService } from '../../../core/services/toast.service';
 
 interface ExcelUploadResult {
     totalRows: number;
@@ -18,6 +20,9 @@ interface ExcelUploadResult {
     styleUrls: ['./suppliers.component.css', '../../../shared/styles/crud-page.css']
 })
 export class SuppliersComponent implements OnInit {
+    private confirmService = inject(ConfirmService);
+    private toastService = inject(ToastService);
+
     searchTerm = '';
     statusFilter = signal<'all' | 'active' | 'inactive'>('all');
     showModal = signal(false);
@@ -157,11 +162,17 @@ export class SuppliersComponent implements OnInit {
         this.accounts.update(items => items.map(a => a.id === id ? { ...a, isActive: !a.isActive } : a));
     }
 
-    deleteAccount(id: string): void {
-        if (!confirm('Bu tedarikçiyi silmek istediğinize emin misiniz?')) return;
+    async deleteAccount(id: string): Promise<void> {
+        const confirmed = await this.confirmService.confirm({
+            title: 'Silme Onayı',
+            message: 'Bu tedarikçiyi silmek istediğinize emin misiniz?',
+            confirmText: 'Sil',
+            type: 'danger'
+        });
+        if (!confirmed) return;
         this.cariService.delete(id).subscribe({
-            next: () => this.loadAccounts(),
-            error: (err) => alert(err.error?.detail || 'Silme işlemi başarısız.')
+            next: () => { this.loadAccounts(); this.toastService.success('Silindi', 'Tedarikçi silindi'); },
+            error: (err) => this.toastService.error('Hata', err.error?.detail || 'Silme işlemi başarısız.')
         });
     }
 

@@ -3,17 +3,29 @@
 </div>
 
 <!-- Sidebar -->
-<aside class="sidebar" [class.collapsed]="isCollapsed()" [class.mobile-open]="isMobileOpen()">
+<aside class="sidebar"
+    [class.collapsed]="isCollapsed()"
+    [class.mobile-open]="isMobileOpen()"
+    [class.hover-expanded]="isHoverExpanded()"
+    (mouseenter)="onMouseEnter()"
+    (mouseleave)="onMouseLeave()">
 
     <!-- Logo Area -->
     <div class="sidebar-logo">
         <div class="logo-icon">
             <span class="material-icons-outlined">hub</span>
         </div>
+        @if (!isCollapsed() || isHoverExpanded()) {
+        <span class="logo-text" [class.hover-label]="isHoverExpanded()">ERPv2</span>
+        }
         @if (!isCollapsed()) {
-        <span class="logo-text">ERPv2</span>
         <button class="collapse-btn" (click)="toggleCollapse()">
             <span class="material-icons-outlined">chevron_left</span>
+        </button>
+        }
+        @if (isCollapsed() && isHoverExpanded()) {
+        <button class="collapse-btn pin-btn" (click)="toggleCollapse()" title="Sabit aç">
+            <span class="material-icons-outlined">push_pin</span>
         </button>
         }
     </div>
@@ -22,8 +34,8 @@
     <nav class="sidebar-nav">
         @for (section of navSections; track section.title) {
         <div class="nav-section">
-            @if (!isCollapsed()) {
-            <div class="nav-section-title">{{ section.title }}</div>
+            @if (!isCollapsed() || isHoverExpanded()) {
+            <div class="nav-section-title" [class.hover-label]="isHoverExpanded()">{{ section.title }}</div>
             } @else {
             <div class="nav-section-divider"></div>
             }
@@ -32,10 +44,10 @@
                 <li class="nav-item">
                     <a class="nav-link" [routerLink]="item.route" routerLinkActive="active"
                         [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }" (click)="closeMobile()"
-                        [title]="isCollapsed() ? item.label : ''">
+                        [title]="isCollapsed() && !isHoverExpanded() ? item.label : ''">
                         <span class="nav-icon material-icons-outlined">{{ item.icon }}</span>
-                        @if (!isCollapsed()) {
-                        <span class="nav-label">{{ item.label }}</span>
+                        @if (!isCollapsed() || isHoverExpanded()) {
+                        <span class="nav-label" [class.hover-label]="isHoverExpanded()">{{ item.label }}</span>
                         }
                     </a>
                 </li>
@@ -45,12 +57,16 @@
         }
     </nav>
 
-    <!-- Expand button (when collapsed) -->
-    @if (isCollapsed()) {
+    <!-- Footer: Expand butonu (kapalı + hover değilse) -->
     <div class="sidebar-footer">
-        <button class="collapse-btn expand" (click)="toggleCollapse()">
+        @if (isCollapsed() && !isHoverExpanded()) {
+        <button class="collapse-btn expand" (click)="toggleCollapse()" title="Sabit aç">
             <span class="material-icons-outlined">chevron_right</span>
         </button>
+        } @else if (!isCollapsed()) {
+        <button class="collapse-btn" (click)="toggleCollapse()" title="Kapat">
+            <span class="material-icons-outlined">chevron_left</span>
+        </button>
+        }
     </div>
-    }
 </aside>

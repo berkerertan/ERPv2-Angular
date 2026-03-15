@@ -12,6 +12,8 @@ import {
   StatItem,
   CtaContent,
 } from '../../../core/models/landing-content.model';
+import { ConfirmService } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { ToastService } from '../../../core/services/toast.service';
 
 type TabType = 'hero' | 'stats' | 'features' | 'testimonials' | 'cta';
 
@@ -24,6 +26,8 @@ type TabType = 'hero' | 'stats' | 'features' | 'testimonials' | 'cta';
 })
 export class LandingContentComponent implements OnInit {
   private platformAdminService = inject(PlatformAdminService);
+  private confirmService = inject(ConfirmService);
+  private toastService = inject(ToastService);
 
   // ── Content state ────────────────────────────────────────────────────────────
   content = signal<LandingContent | null>(null);
@@ -266,11 +270,17 @@ export class LandingContentComponent implements OnInit {
     }
   }
 
-  deleteFeature(id: string): void {
-    if (!confirm('Bu özelliği silmek istediğinizden emin misiniz?')) return;
+  async deleteFeature(id: string): Promise<void> {
+    const confirmed = await this.confirmService.confirm({
+      title: 'Silme Onayı',
+      message: 'Bu özelliği silmek istediğinizden emin misiniz?',
+      confirmText: 'Sil',
+      type: 'danger'
+    });
+    if (!confirmed) return;
     this.landingContentService.deleteFeature(id).subscribe({
-      next: () => this.showToast('Özellik silindi'),
-      error: (err) => console.error('Özellik silinirken hata:', err),
+      next: () => { this.showToast('Özellik silindi'); this.toastService.success('Silindi', 'Özellik silindi'); },
+      error: (err) => { console.error('Özellik silinirken hata:', err); this.toastService.error('Hata', 'Özellik silinemedi.'); },
     });
   }
 
@@ -336,11 +346,17 @@ export class LandingContentComponent implements OnInit {
     }
   }
 
-  deleteTestimonial(id: string): void {
-    if (!confirm('Bu referansı silmek istediğinizden emin misiniz?')) return;
+  async deleteTestimonial(id: string): Promise<void> {
+    const confirmed = await this.confirmService.confirm({
+      title: 'Silme Onayı',
+      message: 'Bu referansı silmek istediğinizden emin misiniz?',
+      confirmText: 'Sil',
+      type: 'danger'
+    });
+    if (!confirmed) return;
     this.landingContentService.deleteTestimonial(id).subscribe({
-      next: () => this.showToast('Referans silindi'),
-      error: (err) => console.error('Referans silinirken hata:', err),
+      next: () => { this.showToast('Referans silindi'); this.toastService.success('Silindi', 'Referans silindi'); },
+      error: (err) => { console.error('Referans silinirken hata:', err); this.toastService.error('Hata', 'Referans silinemedi.'); },
     });
   }
 

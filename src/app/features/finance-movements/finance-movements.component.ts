@@ -5,6 +5,8 @@ import { FinanceMovementService } from '../../core/services/finance-movement.ser
 import { FinanceMovementType, CreateFinanceMovementRequest } from '../../core/models/finance-movement.model';
 import { CariAccountService } from '../../core/services/cari-account.service';
 import { CariAccount } from '../../core/models/cari-account.model';
+import { ConfirmService } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
     selector: 'app-finance-movements',
@@ -16,6 +18,8 @@ import { CariAccount } from '../../core/models/cari-account.model';
 export class FinanceMovementsComponent implements OnInit {
     private financeService = inject(FinanceMovementService);
     private cariAccountService = inject(CariAccountService);
+    private confirmService = inject(ConfirmService);
+    private toastService = inject(ToastService);
 
     searchTerm = '';
     activeTab = signal<'all' | 'Income' | 'Expense'>('all');
@@ -118,11 +122,17 @@ export class FinanceMovementsComponent implements OnInit {
         });
     }
 
-    deleteItem(id: string): void {
-        if (!confirm('Bu hareketi silmek istediğinize emin misiniz?')) return;
+    async deleteItem(id: string): Promise<void> {
+        const confirmed = await this.confirmService.confirm({
+            title: 'Silme Onayı',
+            message: 'Bu hareketi silmek istediğinize emin misiniz?',
+            confirmText: 'Sil',
+            type: 'danger'
+        });
+        if (!confirmed) return;
         this.financeService.delete(id).subscribe({
-            next: () => this.loadItems(),
-            error: (err) => alert(err.error?.detail || 'Silme başarısız.')
+            next: () => { this.loadItems(); this.toastService.success('Silindi', 'Finans hareketi silindi'); },
+            error: (err) => this.toastService.error('Hata', err.error?.detail || 'Silme başarısız.')
         });
     }
 }

@@ -6,6 +6,8 @@ import { InvoiceType, InvoiceStatus, InvoiceCategory, CreateInvoiceRequest } fro
 import { CariAccountService } from '../../../core/services/cari-account.service';
 import { CariAccount } from '../../../core/models/cari-account.model';
 import { ProductService } from '../../../core/services/product.service';
+import { ConfirmService } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
     selector: 'app-invoices-efatura',
@@ -18,6 +20,8 @@ export class InvoicesEFaturaComponent implements OnInit {
     private invoiceService = inject(InvoiceService);
     private cariAccountService = inject(CariAccountService);
     private productService = inject(ProductService);
+    private confirmService = inject(ConfirmService);
+    private toastService = inject(ToastService);
 
     searchTerm = '';
     activeTab = signal<'all' | 'Draft' | 'Sent' | 'Approved' | 'Rejected' | 'Cancelled'>('all');
@@ -240,7 +244,7 @@ export class InvoicesEFaturaComponent implements OnInit {
     sendInvoice(id: string): void {
         this.invoiceService.send(id).subscribe({
             next: () => this.loadInvoices(),
-            error: (err) => alert(err.error?.detail || 'Gönderme başarısız.')
+            error: (err) => this.toastService.error('Hata', err.error?.detail || 'Gönderme başarısız.')
         });
     }
 
@@ -251,11 +255,17 @@ export class InvoicesEFaturaComponent implements OnInit {
 
     closeDetailModal(): void { this.showDetailModal.set(false); }
 
-    deleteInvoice(id: string): void {
-        if (!confirm('Bu faturayı silmek istediğinize emin misiniz?')) return;
+    async deleteInvoice(id: string): Promise<void> {
+        const confirmed = await this.confirmService.confirm({
+            title: 'Silme Onayı',
+            message: 'Bu faturayı silmek istediğinize emin misiniz?',
+            confirmText: 'Sil',
+            type: 'danger'
+        });
+        if (!confirmed) return;
         this.invoiceService.delete(id).subscribe({
-            next: () => this.loadInvoices(),
-            error: (err) => alert(err.error?.detail || 'Silme başarısız.')
+            next: () => { this.loadInvoices(); this.toastService.success('Silindi', 'Fatura silindi'); },
+            error: (err) => this.toastService.error('Hata', err.error?.detail || 'Silme başarısız.')
         });
     }
 
@@ -269,7 +279,7 @@ export class InvoicesEFaturaComponent implements OnInit {
                 a.click();
                 URL.revokeObjectURL(url);
             },
-            error: (err) => alert(err.error?.detail || 'PDF indirilemedi.')
+            error: (err) => this.toastService.error('Hata', err.error?.detail || 'PDF indirilemedi.')
         });
     }
 
@@ -283,7 +293,7 @@ export class InvoicesEFaturaComponent implements OnInit {
                 a.click();
                 URL.revokeObjectURL(url);
             },
-            error: (err) => alert(err.error?.detail || 'XML indirilemedi.')
+            error: (err) => this.toastService.error('Hata', err.error?.detail || 'XML indirilemedi.')
         });
     }
 }

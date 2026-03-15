@@ -157,74 +157,146 @@
     }
 }
 
-/* Dev Login */
-.dev-login {
-    margin-top: var(--space-4);
-}
-
-.dev-divider {
+/* Demo Login */
+.demo-divider {
     display: flex;
     align-items: center;
     gap: var(--space-3);
+    margin-top: var(--space-5);
     margin-bottom: var(--space-4);
 }
 
-.dev-divider::before,
-.dev-divider::after {
+.demo-divider::before,
+.demo-divider::after {
     content: '';
     flex: 1;
     height: 1px;
     background: var(--border-color);
 }
 
-.dev-divider span {
+.demo-divider span {
     font-size: 0.75rem;
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
 
-.dev-login-btn {
+.btn-demo {
     width: 100%;
-    font-size: 0.8125rem;
-    opacity: 0.7;
-    transition: opacity var(--transition-fast);
-}
-
-.dev-login-btn:hover {
-    opacity: 1;
-}
-
-/* Dev Roles Grid */
-.dev-roles-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-}
-
-.dev-role-btn {
+    height: 46px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    padding: 10px 12px;
+    gap: var(--space-2);
     border-radius: var(--radius-md);
-    font-size: 0.8125rem;
-    font-weight: 500;
+    font-size: 0.9rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: all var(--transition-fast);
-    background: color-mix(in srgb, var(--role-color, #4c6ef5) 12%, transparent);
-    color: var(--role-color, var(--text-secondary));
-    border: 1px solid color-mix(in srgb, var(--role-color, #4c6ef5) 25%, transparent);
+    transition: all var(--transition-base);
+    background: transparent;
+    color: var(--primary-400);
+    border: 1.5px solid rgba(76, 110, 245, 0.35);
 }
 
-.dev-role-btn:hover {
-    background: color-mix(in srgb, var(--role-color, #4c6ef5) 22%, transparent);
-    border-color: color-mix(in srgb, var(--role-color, #4c6ef5) 45%, transparent);
+.btn-demo:hover:not(:disabled) {
+    background: rgba(76, 110, 245, 0.1);
+    border-color: rgba(76, 110, 245, 0.6);
+    color: var(--primary-300);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--role-color, #4c6ef5) 20%, transparent);
+    box-shadow: 0 4px 16px rgba(76, 110, 245, 0.2);
 }
 
-.dev-role-btn .material-icons-outlined {
-    font-size: 16px;
+.btn-demo:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── Demo Seed Overlay ─────────────────────────────────────── */
+.seed-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(10, 13, 26, 0.92);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.25s ease;
+}
+
+.seed-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-xl);
+    padding: 40px 48px;
+    min-width: 360px;
+    max-width: 440px;
+    text-align: center;
+    box-shadow: var(--shadow-xl);
+}
+
+.seed-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 20px;
+    background: linear-gradient(135deg, var(--primary-600), var(--primary-800));
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.seed-icon .material-icons-outlined {
+    font-size: 32px;
+    color: #fff;
+    animation: pulse 1.2s ease-in-out infinite;
+}
+
+.seed-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 8px;
+}
+
+.seed-step {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin: 0 0 20px;
+    min-height: 20px;
+}
+
+.seed-bar-wrap {
+    height: 6px;
+    background: var(--bg-elevated);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.seed-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-600), var(--primary-400));
+    border-radius: 99px;
+    transition: width 0.4s ease;
+}
+
+.seed-pct {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50%       { transform: scale(1.15); opacity: 0.8; }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+.btn-demo .material-icons-outlined {
+    font-size: 20px;
 }

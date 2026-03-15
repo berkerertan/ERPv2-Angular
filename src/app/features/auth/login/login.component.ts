@@ -1,8 +1,9 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { DemoSeedService } from '../../../core/services/demo-seed.service';
 
 @Component({
     selector: 'app-login',
@@ -18,17 +19,9 @@ export class LoginComponent {
     errorMessage = signal('');
     showPassword = signal(false);
 
-    devRoles = [
-        { role: 'Admin', label: 'Admin', icon: 'admin_panel_settings', color: '#4c6ef5' },
-        { role: 'Manager', label: 'Şube Müdürü', icon: 'supervisor_account', color: '#7950f2' },
-        { role: 'Cashier', label: 'Kasiyer', icon: 'point_of_sale', color: '#20c997' },
-        { role: 'Viewer', label: 'İzleyici', icon: 'visibility', color: '#fab005' },
-    ];
-
-    constructor(
-        private authService: AuthService,
-        private router: Router
-    ) { }
+    private authService = inject(AuthService);
+    private router = inject(Router);
+    readonly demoSeed = inject(DemoSeedService);
 
     togglePassword(): void {
         this.showPassword.update(v => !v);
@@ -44,9 +37,16 @@ export class LoginComponent {
         this.errorMessage.set('');
 
         this.authService.login({ userName: this.userName, password: this.password }).subscribe({
-            next: () => {
+            next: async () => {
                 this.isLoading.set(false);
-                const role = this.authService.currentUser()?.role;
+                const user = this.authService.currentUser();
+                const role = user?.role;
+
+                // Demo kullanıcısı için seed çalıştır
+                if (this.userName === 'demo') {
+                    await this.demoSeed.seedIfNeeded();
+                }
+
                 if (role === 'SuperAdmin' || role === 'Admin') {
                     this.router.navigate(['/admin/dashboard']);
                 } else {
@@ -62,11 +62,9 @@ export class LoginComponent {
         });
     }
 
-    devLogin(): void {
-        this.authService.devLogin();
-    }
-
-    devLoginAs(role: string): void {
-        this.authService.devLoginAs(role);
+    demoLogin(): void {
+        this.userName = 'demo';
+        this.password = 'Test123!';
+        this.onSubmit();
     }
 }

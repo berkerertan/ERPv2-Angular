@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -19,6 +19,7 @@ import {
     UpdateTenantSubscriptionRequest,
 } from '../../../core/models/platform-admin.model';
 import { SubscriptionPlan, SubscriptionStatus } from '../../../core/models/user.model';
+import { ConfirmService } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
     selector: 'app-subscribers',
@@ -28,6 +29,7 @@ import { SubscriptionPlan, SubscriptionStatus } from '../../../core/models/user.
     styleUrls: ['./subscribers.component.css', '../../../shared/styles/crud-page.css'],
 })
 export class SubscribersComponent implements OnInit, OnDestroy {
+    private confirmService = inject(ConfirmService);
 
     // ─── Signals ──────────────────────────────────────────────────────────────
     tenants = signal<Tenant[]>([]);
@@ -236,10 +238,16 @@ export class SubscribersComponent implements OnInit, OnDestroy {
 
     // ─── Delete ───────────────────────────────────────────────────────────────
 
-    deleteTenant(id: string): void {
+    async deleteTenant(id: string): Promise<void> {
         const tenant = this.tenants().find(t => t.id === id);
         const name = tenant?.companyName ?? 'bu aboneyi';
-        if (!confirm(`"${name}" silinecek. Bu işlem geri alınamaz. Devam etmek istiyor musunuz?`)) return;
+        const confirmed = await this.confirmService.confirm({
+            title: 'Silme Onayı',
+            message: `"${name}" silinecek. Bu işlem geri alınamaz. Devam etmek istiyor musunuz?`,
+            confirmText: 'Sil',
+            type: 'danger'
+        });
+        if (!confirmed) return;
         this.tenantService.deleteTenant(id).subscribe({
             next: () => {
                 this.showToast('Abone silindi.', 'success');

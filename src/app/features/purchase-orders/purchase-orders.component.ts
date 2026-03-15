@@ -8,6 +8,8 @@ import { CariAccountService } from '../../core/services/cari-account.service';
 import { CariAccount } from '../../core/models/cari-account.model';
 import { ProductService } from '../../core/services/product.service';
 import { WarehouseService } from '../../core/services/warehouse.service';
+import { ConfirmService } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { ToastService } from '../../core/services/toast.service';
 
 @Component({
     selector: 'app-purchase-orders',
@@ -21,6 +23,8 @@ export class PurchaseOrdersComponent implements OnInit {
     private cariAccountService = inject(CariAccountService);
     private productService = inject(ProductService);
     private warehouseService = inject(WarehouseService);
+    private confirmService = inject(ConfirmService);
+    private toastService = inject(ToastService);
 
     searchTerm = '';
     activeTab = signal<'all' | 'Draft' | 'Approved' | 'Cancelled'>('all');
@@ -199,15 +203,21 @@ export class PurchaseOrdersComponent implements OnInit {
     approveOrder(id: string): void {
         this.purchaseOrderService.approve(id).subscribe({
             next: () => this.loadOrders(),
-            error: (err) => alert(err.error?.detail || 'Onaylama başarısız.')
+            error: (err) => this.toastService.error('Hata', err.error?.detail || 'Onaylama başarısız.')
         });
     }
 
-    deleteOrder(id: string): void {
-        if (!confirm('Bu siparişi silmek istediğinize emin misiniz?')) return;
+    async deleteOrder(id: string): Promise<void> {
+        const confirmed = await this.confirmService.confirm({
+            title: 'Silme Onayı',
+            message: 'Bu siparişi silmek istediğinize emin misiniz?',
+            confirmText: 'Sil',
+            type: 'danger'
+        });
+        if (!confirmed) return;
         this.purchaseOrderService.delete(id).subscribe({
-            next: () => this.loadOrders(),
-            error: (err) => alert(err.error?.detail || 'Silme başarısız.')
+            next: () => { this.loadOrders(); this.toastService.success('Silindi', 'Sipariş silindi'); },
+            error: (err) => this.toastService.error('Hata', err.error?.detail || 'Silme başarısız.')
         });
     }
 }
