@@ -15,6 +15,7 @@ export interface CariAccount {
     riskLimit: number;
     maturityDays: number;
     currentBalance: number;
+    phone?: string;
 }
 
 export interface CreateCariAccountRequest {

@@ -4,7 +4,7 @@
             <h1 class="page-title">Satın Alma Siparişleri</h1>
             <p class="page-subtitle">Tedarikçi siparişlerini yönetin</p>
         </div>
-        <button class="btn btn-primary"><span class="material-icons-outlined">add</span> Yeni Sipariş</button>
+        <button class="btn btn-primary" (click)="openCreateModal()"><span class="material-icons-outlined">add</span> Yeni Sipariş</button>
     </div>
 
     <div class="tabs">
@@ -57,3 +57,86 @@
         </table>
     </div>
 </div>
+
+<!-- ─── Sipariş Oluşturma Modalı ──────────────────────────── -->
+@if (showCreateModal()) {
+<div class="overlay" (click)="closeCreateModal()"></div>
+<div class="modal">
+    <div class="modal-header">
+        <h2><span class="material-icons-outlined" style="color: var(--primary-400);">shopping_cart</span> Yeni Satın Alma Siparişi</h2>
+        <button class="modal-close" (click)="closeCreateModal()"><span class="material-icons-outlined">close</span></button>
+    </div>
+    <div class="modal-form">
+        <div class="form-section">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Tedarikçi *</label>
+                    <select class="form-input" [(ngModel)]="formData.supplierCariAccountId">
+                        <option value="">-- Tedarikçi Seçin --</option>
+                        @for (s of suppliers(); track s.id) {
+                        <option [value]="s.id">{{ s.name }}{{ s.code ? ' (' + s.code + ')' : '' }}</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Depo *</label>
+                    <select class="form-input" [(ngModel)]="formData.warehouseId">
+                        <option value="">-- Depo Seçin --</option>
+                        @for (w of warehouses(); track w.id) {
+                        <option [value]="w.id">{{ w.name }}</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="form-section">
+            <div class="form-section-header">
+                <h3 class="form-section-title">Sipariş Kalemleri</h3>
+                <button class="btn btn-secondary btn-sm" (click)="addItem()">
+                    <span class="material-icons-outlined">add</span> Kalem Ekle
+                </button>
+            </div>
+            <div class="invoice-items-table">
+                <div class="invoice-items-header">
+                    <span class="col-product">Ürün</span>
+                    <span class="col-qty">Miktar</span>
+                    <span class="col-price">Birim Fiyat</span>
+                    <span class="col-total">Toplam</span>
+                    <span class="col-action"></span>
+                </div>
+                @for (item of formData.items; track $index; let i = $index) {
+                <div class="invoice-item-row">
+                    <select class="form-input col-product" [ngModel]="item.productId" (ngModelChange)="onProductSelect(item, $event)">
+                        <option value="">-- Ürün Seçin --</option>
+                        @for (p of products(); track p.id) {
+                        <option [value]="p.id">{{ p.name }}{{ p.barcode ? ' · ' + p.barcode : '' }}</option>
+                        }
+                    </select>
+                    <input class="form-input col-qty" type="number" [(ngModel)]="item.quantity" min="1" />
+                    <input class="form-input col-price" type="number" [(ngModel)]="item.unitPrice" min="0" step="0.01" />
+                    <span class="col-total item-total">₺{{ (item.quantity * item.unitPrice).toLocaleString('tr-TR', {minimumFractionDigits: 2}) }}</span>
+                    <button class="action-btn delete col-action" (click)="removeItem(i)" [disabled]="formData.items.length === 1">
+                        <span class="material-icons-outlined">close</span>
+                    </button>
+                </div>
+                }
+            </div>
+        </div>
+        <div class="invoice-totals">
+            <div class="total-row grand-total">
+                <span>Genel Toplam</span>
+                <span>₺{{ getFormTotal().toLocaleString('tr-TR', {minimumFractionDigits: 2}) }}</span>
+            </div>
+        </div>
+    </div>
+    @if (formError()) {
+    <div class="form-error" style="padding: 0 1.5rem; color: var(--danger); font-size: 0.875rem;">{{ formError() }}</div>
+    }
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeCreateModal()">İptal</button>
+        <button class="btn btn-primary" (click)="saveOrder()" [disabled]="isSaving()">
+            <span class="material-icons-outlined">save</span> {{ isSaving() ? 'Kaydediliyor...' : 'Sipariş Oluştur' }}
+        </button>
+    </div>
+</div>
+}

@@ -14,7 +14,7 @@
 }
 
 .navbar.scrolled {
-    background: rgba(15, 17, 23, 0.85);
+    background: rgba(10, 13, 26, 0.88);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-bottom: 1px solid var(--border-color);
@@ -1093,8 +1093,94 @@
 /* ---- FOOTER ---- */
 .footer {
     background: var(--bg-secondary);
+}
+
+/* Newsletter Bandı */
+.footer-newsletter-bar {
+    background: linear-gradient(135deg,
+        rgba(76, 110, 245, 0.10),
+        rgba(121, 80, 242, 0.07));
+    border-top: 1px solid rgba(76, 110, 245, 0.15);
+    border-bottom: 1px solid rgba(76, 110, 245, 0.10);
+    padding: 36px 24px;
+}
+
+.footer-nl-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+    flex-wrap: wrap;
+}
+
+.footer-nl-text {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.footer-nl-icon {
+    font-size: 32px !important;
+    color: var(--primary-400);
+    flex-shrink: 0;
+    opacity: 0.9;
+}
+
+.footer-nl-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.footer-nl-sub {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+.footer-nl-form {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.footer-nl-input {
+    width: 260px;
+    padding: 10px 16px;
+    background: var(--bg-input);
+    border: 1px solid var(--border-light);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    transition: all var(--transition-fast);
+}
+
+.footer-nl-input:focus {
+    outline: none;
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px rgba(92, 124, 250, 0.12);
+}
+
+.footer-nl-input::placeholder {
+    color: var(--text-muted);
+}
+
+.footer-nl-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    font-size: 0.875rem;
+    padding: 10px 20px;
+}
+
+/* Footer Ana Gövde */
+.footer-body {
+    padding: 56px 24px 44px;
     border-top: 1px solid var(--border-color);
-    padding: 48px 24px 0;
 }
 
 .footer-container {
@@ -1103,12 +1189,13 @@
     display: flex;
     justify-content: space-between;
     gap: 48px;
-    padding-bottom: 40px;
     flex-wrap: wrap;
 }
 
+/* Marka Sütunu */
 .footer-brand {
-    max-width: 280px;
+    max-width: 290px;
+    flex-shrink: 0;
 }
 
 .footer-logo {
@@ -1121,27 +1208,89 @@
 .footer-tagline {
     font-size: 0.875rem;
     color: var(--text-muted);
-    line-height: 1.6;
+    line-height: 1.7;
+    margin-bottom: 20px;
 }
 
+/* Sosyal Medya */
+.footer-social {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.social-btn {
+    width: 36px;
+    height: 36px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+}
+
+.social-btn:hover {
+    background: rgba(76, 110, 245, 0.14);
+    border-color: rgba(76, 110, 245, 0.35);
+    color: var(--primary-400);
+    transform: translateY(-2px);
+}
+
+.social-btn .material-icons-outlined {
+    font-size: 17px;
+}
+
+/* Güven Rozetleri */
+.footer-trust-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.footer-trust-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-full);
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.footer-trust-badge .material-icons-outlined {
+    font-size: 13px;
+    color: var(--success);
+}
+
+/* Bağlantı Sütunları */
 .footer-links {
     display: flex;
-    gap: 48px;
+    gap: 40px;
+    flex-wrap: wrap;
 }
 
 .footer-col {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 9px;
+    min-width: 130px;
 }
 
 .footer-col-title {
-    font-size: 0.8125rem;
-    font-weight: 600;
+    font-size: 0.75rem;
+    font-weight: 700;
     color: var(--text-primary);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 4px;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
 }
 
 .footer-link {
@@ -1151,28 +1300,87 @@
     border: none;
     cursor: pointer;
     text-decoration: none;
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 5px;
     text-align: left;
     transition: color var(--transition-fast);
     padding: 0;
+    width: fit-content;
 }
 
 .footer-link:hover {
     color: var(--text-primary);
 }
 
+.footer-link-highlight {
+    color: var(--primary-400);
+    font-weight: 500;
+}
+
+.footer-link-highlight .material-icons-outlined {
+    font-size: 14px;
+}
+
+.footer-link-highlight:hover {
+    color: var(--primary-300);
+}
+
+/* Footer Alt Çubuk */
 .footer-bottom {
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border-color);
+    padding: 16px 24px;
+}
+
+.footer-bottom-inner {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 20px 0;
-    border-top: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.8125rem;
-    color: var(--text-muted);
     flex-wrap: wrap;
     gap: 12px;
+}
+
+.footer-copy {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+}
+
+.footer-made-in {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+}
+
+.footer-made-in .material-icons-outlined {
+    font-size: 14px;
+    color: var(--danger);
+}
+
+.footer-bottom-links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.footer-bottom-link {
+    font-size: 0.8125rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+.footer-bottom-link:hover {
+    color: var(--text-primary);
+}
+
+.footer-dot {
+    color: var(--border-light);
+    font-size: 0.75rem;
 }
 
 /* ---- RESPONSIVE ---- */
@@ -1248,9 +1456,34 @@
         flex-direction: column;
     }
 
+    .footer-brand {
+        max-width: 100%;
+    }
+
     .footer-links {
         flex-wrap: wrap;
-        gap: 32px;
+        gap: 28px;
+    }
+
+    .footer-nl-inner {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+    }
+
+    .footer-nl-form {
+        width: 100%;
+    }
+
+    .footer-nl-input {
+        width: 100%;
+        flex: 1;
+    }
+
+    .footer-bottom-center {
+        order: 3;
+        width: 100%;
+        text-align: center;
     }
 
     .hero-actions {

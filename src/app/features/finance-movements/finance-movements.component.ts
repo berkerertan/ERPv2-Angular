@@ -2,7 +2,9 @@ import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FinanceMovementService } from '../../core/services/finance-movement.service';
-import { FinanceMovementType } from '../../core/models/finance-movement.model';
+import { FinanceMovementType, CreateFinanceMovementRequest } from '../../core/models/finance-movement.model';
+import { CariAccountService } from '../../core/services/cari-account.service';
+import { CariAccount } from '../../core/models/cari-account.model';
 
 @Component({
     selector: 'app-finance-movements',
@@ -13,29 +15,52 @@ import { FinanceMovementType } from '../../core/models/finance-movement.model';
 })
 export class FinanceMovementsComponent implements OnInit {
     private financeService = inject(FinanceMovementService);
+    private cariAccountService = inject(CariAccountService);
 
     searchTerm = '';
     activeTab = signal<'all' | 'Income' | 'Expense'>('all');
     showModal = signal(false);
-    formData = { type: 'Income', amount: 0, description: '', category: '' };
+    isSaving = signal(false);
+    formError = signal('');
+    formData = { type: 'Income', amount: 0, description: '', category: '', cariAccountId: '' };
 
+    cariAccounts = signal<CariAccount[]>([]);
+    cariMap = signal<Record<string, string>>({});
     items = signal<any[]>([]);
 
     ngOnInit(): void {
+        this.loadCariAccounts();
         this.loadItems();
+    }
+
+    private loadCariAccounts(): void {
+        this.cariAccountService.getAll().subscribe({
+            next: (data) => {
+                this.cariAccounts.set(data);
+                const map: Record<string, string> = {};
+                data.forEach(c => map[c.id] = c.name);
+                this.cariMap.set(map);
+                // Re-map items if already loaded
+                if (this.items().length) this.loadItems();
+            },
+            error: () => {}
+        });
     }
 
     loadItems(): void {
         this.financeService.getAll().subscribe({
-            next: (data) => this.items.set(data.map(m => ({
-                id: m.id,
-                type: m.type === FinanceMovementType.Income ? 'Income' : 'Expense',
-                amount: m.amount,
-                description: m.description || '',
-                category: m.referenceNo || '—',
-                cariAccountName: m.cariAccountId.substring(0, 8) + '...',
-                createdAt: m.movementDateUtc?.split('T')[0] || ''
-            }))),
+            next: (data) => {
+                const map = this.cariMap();
+                this.items.set(data.map(m => ({
+                    id: m.id,
+                    type: m.type === FinanceMovementType.Income ? 'Income' : 'Expense',
+                    amount: m.amount,
+                    description: m.description || '',
+                    category: m.referenceNo || '—',
+                    cariAccountName: map[m.cariAccountId] || m.cariAccountId.substring(0, 8) + '...',
+                    createdAt: m.movementDateUtc?.split('T')[0] || ''
+                })));
+            },
             error: (err) => console.error('Finans hareketleri yüklenemedi:', err.error?.detail || err.message)
         });
     }
@@ -52,13 +77,45 @@ export class FinanceMovementsComponent implements OnInit {
     get totalExpense() { return this.items().filter(i => i.type === 'Expense').reduce((s, i) => s + i.amount, 0); }
     get netBalance() { return this.totalIncome - this.totalExpense; }
 
-    openAddModal(): void { this.formData = { type: 'Income', amount: 0, description: '', category: '' }; this.showModal.set(true); }
+    openAddModal(): void {
+        this.formData = { type: 'Income', amount: 0, description: '', category: '', cariAccountId: '' };
+        this.formError.set('');
+        this.showModal.set(true);
+    }
     closeModal(): void { this.showModal.set(false); }
 
     save(): void {
-        // Note: API requires cariAccountId — for now this creates with a placeholder
-        // Full implementation needs cariAccount selection in form
-        alert('Finans hareketi oluşturmak için cari hesap seçimi gereklidir.');
+        if (!this.formData.cariAccountId) {
+            this.formError.set('Lütfen bir cari hesap seçin.');
+            return;
+        }
+        if (this.formData.amount <= 0) {
+            this.formError.set('Tutar sıfırdan büyük olmalıdır.');
+            return;
+        }
+
+        this.isSaving.set(true);
+        this.formError.set('');
+
+        const request: CreateFinanceMovementRequest = {
+            cariAccountId: this.formData.cariAccountId,
+            type: this.formData.type === 'Income' ? FinanceMovementType.Income : FinanceMovementType.Expense,
+            amount: this.formData.amount,
+            description: this.formData.description || undefined,
+            referenceNo: this.formData.category || undefined
+        };
+
+        this.financeService.create(request).subscribe({
+            next: () => {
+                this.isSaving.set(false);
+                this.closeModal();
+                this.loadItems();
+            },
+            error: (err) => {
+                this.isSaving.set(false);
+                this.formError.set(err.error?.detail || 'Hareket oluşturulamadı.');
+            }
+        });
     }
 
     deleteItem(id: string): void {

@@ -99,7 +99,7 @@ export class PosComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.buyers = data.map(b => ({
                     id: b.id,
                     name: b.name,
-                    phone: '',
+                    phone: b.phone || '',
                     balance: b.currentBalance || 0
                 }));
             },

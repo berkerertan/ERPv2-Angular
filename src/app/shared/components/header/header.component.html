@@ -13,6 +13,11 @@
     </div>
 
     <div class="header-right">
+        <!-- Theme Toggle -->
+        <button class="btn-icon" (click)="themeService.toggle()" [title]="themeService.isDark() ? 'Gündüz Modu' : 'Gece Modu'">
+            <span class="material-icons-outlined">{{ themeService.isDark() ? 'light_mode' : 'dark_mode' }}</span>
+        </button>
+
         <!-- Notifications -->
         <div class="header-action" (click)="toggleNotifications()">
             <button class="btn-icon" title="Bildirimler">

@@ -173,8 +173,13 @@
             </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label">Müşteri Adı</label>
-                    <input class="form-input" [(ngModel)]="formData.customerName" placeholder="Ad Soyad veya Firma" />
+                    <label class="form-label">Müşteri *</label>
+                    <select class="form-input" [ngModel]="selectedCariAccountId()" (ngModelChange)="selectedCariAccountId.set($event)">
+                        <option value="">-- Cari Hesap Seçin --</option>
+                        @for (cari of cariAccounts(); track cari.id) {
+                        <option [value]="cari.id">{{ cari.name }} ({{ cari.code }})</option>
+                        }
+                    </select>
                 </div>
                 <div class="form-group">
                     <label class="form-label">TCKN / VKN</label>
@@ -216,7 +221,12 @@
 
                 @for (item of formData.items; track $index; let i = $index) {
                 <div class="invoice-item-row">
-                    <input class="form-input col-product" [(ngModel)]="item.productName" placeholder="Ürün adı" />
+                    <select class="form-input col-product" [ngModel]="item.productId" (ngModelChange)="onProductSelect(item, $event)">
+                        <option value="">-- Ürün Seçin --</option>
+                        @for (p of products(); track p.id) {
+                        <option [value]="p.id">{{ p.name }}{{ p.barcode ? ' · ' + p.barcode : '' }}</option>
+                        }
+                    </select>
                     <input class="form-input col-qty" type="number" [(ngModel)]="item.quantity" min="1" />
                     <select class="form-input col-unit" [(ngModel)]="item.unit">
                         <option>Adet</option>
@@ -264,10 +274,13 @@
         </div>
     </div>
 
+    @if (formError()) {
+    <div class="form-error" style="padding: 0 1.5rem; color: var(--danger); font-size: 0.875rem;">{{ formError() }}</div>
+    }
     <div class="modal-footer">
         <button class="btn btn-secondary" (click)="closeCreateModal()">İptal</button>
-        <button class="btn btn-primary" (click)="saveInvoice()">
-            <span class="material-icons-outlined">save</span> Taslak Kaydet
+        <button class="btn btn-primary" (click)="saveInvoice()" [disabled]="isSaving()">
+            <span class="material-icons-outlined">save</span> {{ isSaving() ? 'Kaydediliyor...' : 'Taslak Kaydet' }}
         </button>
     </div>
 </div>

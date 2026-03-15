@@ -337,33 +337,139 @@
      FOOTER
      ============================================ -->
 <footer class="footer">
-    <div class="footer-container">
-        <div class="footer-brand">
-            <div class="footer-logo">
-                <div class="logo-icon logo-icon-sm">
-                    <span class="material-icons-outlined">hub</span>
-                </div>
-                <span class="logo-text">ERP<span class="logo-accent">v2</span></span>
-            </div>
-            <p class="footer-tagline">Perakende işletmeler için modern kurumsal yönetim sistemi.</p>
-        </div>
 
-        <div class="footer-links">
-            <div class="footer-col">
-                <span class="footer-col-title">Ürün</span>
-                <button class="footer-link" (click)="scrollTo('features')">Özellikler</button>
-                <button class="footer-link" (click)="scrollTo('pricing')">Fiyatlar</button>
-                <button class="footer-link" (click)="scrollTo('testimonials')">Referanslar</button>
+    <!-- Newsletter Bandı -->
+    <div class="footer-newsletter-bar">
+        <div class="footer-nl-inner">
+            <div class="footer-nl-text">
+                <span class="material-icons-outlined footer-nl-icon">mark_email_unread</span>
+                <div>
+                    <h4 class="footer-nl-title">Güncellemelerden Haberdar Olun</h4>
+                    <p class="footer-nl-sub">Yeni özellikler, kampanyalar ve ipuçları doğrudan gelen kutunuza gelsin.</p>
+                </div>
             </div>
-            <div class="footer-col">
-                <span class="footer-col-title">Hesap</span>
-                <a routerLink="/auth/login" class="footer-link">Giriş Yap</a>
-                <a routerLink="/auth/register" class="footer-link">Kayıt Ol</a>
+            <div class="footer-nl-form">
+                <input type="email" class="footer-nl-input" placeholder="E-posta adresinizi girin" />
+                <button class="btn btn-primary footer-nl-btn">
+                    <span class="material-icons-outlined">send</span>
+                    Abone Ol
+                </button>
             </div>
         </div>
     </div>
-    <div class="footer-bottom">
-        <span>© 2025 ERPv2. Tüm hakları saklıdır.</span>
-        <span>Türkiye'de geliştirildi 🇹🇷</span>
+
+    <!-- Footer Ana Gövde -->
+    <div class="footer-body">
+        <div class="footer-container">
+
+            <!-- Marka Sütunu -->
+            <div class="footer-brand">
+                <div class="footer-logo">
+                    <div class="logo-icon logo-icon-sm">
+                        <span class="material-icons-outlined">hub</span>
+                    </div>
+                    <span class="logo-text">ERP<span class="logo-accent">v2</span></span>
+                </div>
+                <p class="footer-tagline">
+                    Perakende işletmeler için modern kurumsal yönetim platformu. POS'tan e-faturaya, stoktan muhasebeye tek çözüm.
+                </p>
+
+                <!-- Sosyal Medya -->
+                <div class="footer-social">
+                    <a href="#" class="social-btn" title="Twitter / X">
+                        <span class="material-icons-outlined">alternate_email</span>
+                    </a>
+                    <a href="#" class="social-btn" title="LinkedIn">
+                        <span class="material-icons-outlined">business_center</span>
+                    </a>
+                    <a href="#" class="social-btn" title="YouTube">
+                        <span class="material-icons-outlined">play_circle</span>
+                    </a>
+                    <a href="#" class="social-btn" title="Instagram">
+                        <span class="material-icons-outlined">photo_camera</span>
+                    </a>
+                </div>
+
+                <!-- Güven Rozetleri -->
+                <div class="footer-trust-badges">
+                    <div class="footer-trust-badge">
+                        <span class="material-icons-outlined">lock</span>
+                        SSL Güvenli
+                    </div>
+                    <div class="footer-trust-badge">
+                        <span class="material-icons-outlined">verified_user</span>
+                        KVKK Uyumlu
+                    </div>
+                    <div class="footer-trust-badge">
+                        <span class="material-icons-outlined">cloud_done</span>
+                        %99.9 Uptime
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bağlantı Sütunları -->
+            <div class="footer-links">
+                <div class="footer-col">
+                    <span class="footer-col-title">Ürün</span>
+                    <button class="footer-link" (click)="scrollTo('features')">Özellikler</button>
+                    <button class="footer-link" (click)="scrollTo('pricing')">Fiyatlandırma</button>
+                    <button class="footer-link" (click)="scrollTo('testimonials')">Referanslar</button>
+                    <a routerLink="/auth/register" class="footer-link footer-link-highlight">
+                        <span class="material-icons-outlined">rocket_launch</span>
+                        Ücretsiz Dene
+                    </a>
+                </div>
+
+                <div class="footer-col">
+                    <span class="footer-col-title">Çözümler</span>
+                    <a href="#" class="footer-link">POS Sistemi</a>
+                    <a href="#" class="footer-link">Stok Yönetimi</a>
+                    <a href="#" class="footer-link">E-Fatura / e-Arşiv</a>
+                    <a href="#" class="footer-link">Cari Hesaplar</a>
+                    <a href="#" class="footer-link">Raporlama</a>
+                </div>
+
+                <div class="footer-col">
+                    <span class="footer-col-title">Destek</span>
+                    <a href="#" class="footer-link">Yardım Merkezi</a>
+                    <a href="#" class="footer-link">Dokümantasyon</a>
+                    <a href="#" class="footer-link">API Referansı</a>
+                    <a href="#" class="footer-link">Sistem Durumu</a>
+                    <a href="#" class="footer-link">İletişim</a>
+                </div>
+
+                <div class="footer-col">
+                    <span class="footer-col-title">Hesap</span>
+                    <a routerLink="/auth/login" class="footer-link">Giriş Yap</a>
+                    <a routerLink="/auth/register" class="footer-link">Kayıt Ol</a>
+                    <a href="#" class="footer-link">Gizlilik Politikası</a>
+                    <a href="#" class="footer-link">Kullanım Koşulları</a>
+                    <a href="#" class="footer-link">Çerez Politikası</a>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Footer Alt Çubuk -->
+    <div class="footer-bottom">
+        <div class="footer-bottom-inner">
+            <span class="footer-copy">© 2026 ERPv2. Tüm hakları saklıdır.</span>
+
+            <div class="footer-bottom-center">
+                <span class="footer-made-in">
+                    <span class="material-icons-outlined">favorite</span>
+                    Türkiye'de sevgiyle geliştirildi &nbsp;🇹🇷
+                </span>
+            </div>
+
+            <div class="footer-bottom-links">
+                <a href="#" class="footer-bottom-link">Gizlilik</a>
+                <span class="footer-dot">·</span>
+                <a href="#" class="footer-bottom-link">Koşullar</a>
+                <span class="footer-dot">·</span>
+                <a href="#" class="footer-bottom-link">Çerezler</a>
+            </div>
+        </div>
+    </div>
+
 </footer>

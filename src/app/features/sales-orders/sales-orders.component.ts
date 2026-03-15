@@ -2,7 +2,11 @@ import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SalesOrderService } from '../../core/services/sales-order.service';
-import { SalesOrder, OrderStatus } from '../../core/models/sales-order.model';
+import { OrderStatus, CreateSalesOrderRequest } from '../../core/models/sales-order.model';
+import { CariAccountService } from '../../core/services/cari-account.service';
+import { CariAccount } from '../../core/models/cari-account.model';
+import { ProductService } from '../../core/services/product.service';
+import { WarehouseService } from '../../core/services/warehouse.service';
 
 @Component({
     selector: 'app-sales-orders',
@@ -13,15 +17,32 @@ import { SalesOrder, OrderStatus } from '../../core/models/sales-order.model';
 })
 export class SalesOrdersComponent implements OnInit {
     private salesOrderService = inject(SalesOrderService);
+    private cariAccountService = inject(CariAccountService);
+    private productService = inject(ProductService);
+    private warehouseService = inject(WarehouseService);
 
     searchTerm = '';
     activeTab = signal<'all' | 'Draft' | 'Approved' | 'Cancelled'>('all');
-    showModal = signal(false);
+    showCreateModal = signal(false);
+    isSaving = signal(false);
+    formError = signal('');
 
     orders = signal<any[]>([]);
+    buyers = signal<CariAccount[]>([]);
+    products = signal<{ id: string; name: string; barcode: string; defaultSalePrice: number }[]>([]);
+    warehouses = signal<{ id: string; name: string }[]>([]);
+    private cariMap = new Map<string, string>();
+
+    formData = {
+        customerCariAccountId: '',
+        warehouseId: '',
+        items: [{ productId: '', productName: '', quantity: 1, unitPrice: 0 }]
+    };
 
     ngOnInit(): void {
-        this.loadOrders();
+        this.loadBuyers();
+        this.loadProducts();
+        this.loadWarehouses();
     }
 
     loadOrders(): void {
@@ -29,12 +50,45 @@ export class SalesOrdersComponent implements OnInit {
             next: (data) => this.orders.set(data.map(o => ({
                 id: o.id,
                 orderNumber: o.orderNo || o.id.substring(0, 8),
-                cariAccountName: o.customerCariAccountId.substring(0, 8) + '...',
+                cariAccountName: this.cariMap.get(o.customerCariAccountId) || o.customerCariAccountId.substring(0, 8) + '...',
                 status: this.mapStatus(o.status),
                 totalAmount: o.totalAmount,
                 createdAt: o.orderDateUtc.split('T')[0]
             }))),
             error: (err) => console.error('Siparişler yüklenemedi:', err.error?.detail || err.message)
+        });
+    }
+
+    private loadBuyers(): void {
+        this.cariAccountService.getBuyers().subscribe({
+            next: (data) => {
+                this.buyers.set(data);
+                data.forEach(b => this.cariMap.set(b.id, b.name));
+                this.loadOrders();
+            },
+            error: () => this.loadOrders()
+        });
+    }
+
+    private loadProducts(): void {
+        this.productService.getAll().subscribe({
+            next: (data) => this.products.set(data.map(p => ({
+                id: p.id,
+                name: p.name,
+                barcode: p.barcodeEan13 || '',
+                defaultSalePrice: p.defaultSalePrice || 0
+            }))),
+            error: () => {}
+        });
+    }
+
+    private loadWarehouses(): void {
+        this.warehouseService.getAll().subscribe({
+            next: (data) => {
+                this.warehouses.set(data.map(w => ({ id: w.id, name: w.name })));
+                if (data.length > 0) this.formData.warehouseId = data[0].id;
+            },
+            error: () => {}
         });
     }
 
@@ -58,6 +112,88 @@ export class SalesOrdersComponent implements OnInit {
 
     getStatusBadge(s: string) { return s === 'Approved' ? 'badge-success' : s === 'Draft' ? 'badge-warning' : 'badge-danger'; }
     getStatusLabel(s: string) { return s === 'Approved' ? 'Onaylı' : s === 'Draft' ? 'Taslak' : 'İptal'; }
+
+    openCreateModal(): void {
+        this.formData = {
+            customerCariAccountId: '',
+            warehouseId: this.warehouses().length > 0 ? this.warehouses()[0].id : '',
+            items: [{ productId: '', productName: '', quantity: 1, unitPrice: 0 }]
+        };
+        this.formError.set('');
+        this.showCreateModal.set(true);
+    }
+
+    closeCreateModal(): void { this.showCreateModal.set(false); }
+
+    addItem(): void {
+        this.formData.items.push({ productId: '', productName: '', quantity: 1, unitPrice: 0 });
+    }
+
+    removeItem(index: number): void {
+        if (this.formData.items.length > 1) this.formData.items.splice(index, 1);
+    }
+
+    onProductSelect(item: any, productId: string): void {
+        item.productId = productId;
+        const product = this.products().find(p => p.id === productId);
+        if (product) {
+            item.productName = product.name;
+            item.unitPrice = product.defaultSalePrice;
+        }
+    }
+
+    getFormTotal(): number {
+        return this.formData.items.reduce((s, it) => s + it.quantity * it.unitPrice, 0);
+    }
+
+    saveOrder(): void {
+        if (!this.formData.customerCariAccountId) {
+            this.formError.set('Lütfen bir müşteri seçin.');
+            return;
+        }
+        if (!this.formData.warehouseId) {
+            this.formError.set('Lütfen bir depo seçin.');
+            return;
+        }
+        if (this.formData.items.some(it => !it.productId)) {
+            this.formError.set('Tüm kalemlerde ürün seçilmelidir.');
+            return;
+        }
+
+        this.isSaving.set(true);
+        this.formError.set('');
+
+        const now = new Date();
+        const orderNo = 'SS-' + now.getFullYear() +
+            String(now.getMonth() + 1).padStart(2, '0') +
+            String(now.getDate()).padStart(2, '0') + '-' +
+            String(now.getHours()).padStart(2, '0') +
+            String(now.getMinutes()).padStart(2, '0') +
+            String(now.getSeconds()).padStart(2, '0');
+
+        const request: CreateSalesOrderRequest = {
+            orderNo,
+            customerCariAccountId: this.formData.customerCariAccountId,
+            warehouseId: this.formData.warehouseId,
+            items: this.formData.items.map(it => ({
+                productId: it.productId,
+                quantity: it.quantity,
+                unitPrice: it.unitPrice
+            }))
+        };
+
+        this.salesOrderService.create(request).subscribe({
+            next: () => {
+                this.isSaving.set(false);
+                this.closeCreateModal();
+                this.loadOrders();
+            },
+            error: (err) => {
+                this.isSaving.set(false);
+                this.formError.set(err.error?.detail || 'Sipariş oluşturulamadı.');
+            }
+        });
+    }
 
     approveOrder(id: string): void {
         this.salesOrderService.approve(id).subscribe({

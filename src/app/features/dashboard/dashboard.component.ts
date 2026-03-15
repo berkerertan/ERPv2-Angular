@@ -63,13 +63,17 @@ export class DashboardComponent implements OnInit {
                 // Active cari count
                 this.kpiCards[3].value = caris.length.toLocaleString('tr-TR');
 
+                // Build cari ID → name map
+                const cariMap: Record<string, string> = {};
+                caris.forEach(c => cariMap[c.id] = c.name);
+
                 // Recent orders (last 5)
                 const sorted = [...orders].sort((a, b) =>
                     new Date(b.orderDateUtc).getTime() - new Date(a.orderDateUtc).getTime()
                 );
                 this.recentOrders = sorted.slice(0, 5).map(o => ({
                     id: o.orderNo || o.id.substring(0, 8),
-                    customer: o.customerCariAccountId.substring(0, 8) + '...',
+                    customer: cariMap[o.customerCariAccountId] || o.customerCariAccountId.substring(0, 8) + '...',
                     amount: '₺' + o.totalAmount.toLocaleString('tr-TR'),
                     status: this.mapOrderStatus(o.status),
                     date: o.orderDateUtc.split('T')[0]

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { NotificationService } from '../../../core/services/notification.service';
+import { ThemeService } from '../../../core/services/theme.service';
 
 @Component({
     selector: 'app-header',
@@ -19,6 +20,7 @@ export class HeaderComponent {
 
     public authService = inject(AuthService);
     public notificationService = inject(NotificationService);
+    public themeService = inject(ThemeService);
 
     toggleProfileMenu(): void {
         this.showProfileMenu.update(v => !v);

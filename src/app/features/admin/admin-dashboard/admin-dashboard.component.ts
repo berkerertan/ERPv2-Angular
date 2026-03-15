@@ -53,11 +53,12 @@ export class AdminDashboardComponent implements OnInit {
     this.isLoading.set(true);
     this.error.set(null);
 
-    // Load mock data (backward compat — recent activities, alerts, etc.)
+    // Load mock data for recent activities, alerts, etc.
     this.revenueService.getDashboardStats().subscribe({
       next: (data) => {
         this.stats.set(data);
         this.isLoading.set(false);
+        this.applyRealData(); // overlay any already-loaded real data
       },
       error: (err) => {
         console.error('Dashboard stats yüklenirken hata oluştu:', err);
@@ -66,17 +67,66 @@ export class AdminDashboardComponent implements OnInit {
       },
     });
 
-    // Load real API data — KPI overview
+    // Load real API data — KPI overview (subscribers, MRR)
     this.platformAdminService.getOverview().subscribe({
-      next: (data) => this.overview.set(data),
-      error: () => {} // silently fall back to mock data
+      next: (data) => {
+        this.overview.set(data);
+        this.applyRealData();
+      },
+      error: () => {}
     });
 
     // Load real API data — revenue summary & plan breakdown
     this.platformAdminService.getRevenueSummary().subscribe({
-      next: (data) => this.revenueSummary.set(data),
-      error: () => {} // silently fall back to mock data
+      next: (data) => {
+        this.revenueSummary.set(data);
+        this.applyRealData();
+      },
+      error: () => {}
     });
+  }
+
+  /** Overlays real API data onto mock stats signal. */
+  private applyRealData(): void {
+    const s = this.stats();
+    if (!s) return;
+
+    const ov = this.overview();
+    const rs = this.revenueSummary();
+    if (!ov && !rs) return;
+
+    const updatedRevenue = { ...s.revenue };
+    let updatedByPlan = s.byPlan;
+
+    if (ov) {
+      updatedRevenue.totalSubscribers = ov.totalSubscribers;
+      updatedRevenue.activeSubscribers = ov.activeSubscribers;
+      if (ov.totalMonthlyRecurringRevenue) {
+        updatedRevenue.mrr = ov.totalMonthlyRecurringRevenue;
+        updatedRevenue.arr = ov.totalMonthlyRecurringRevenue * 12;
+      }
+    }
+
+    if (rs?.totalMonthlyRevenue) {
+      updatedRevenue.mrr = rs.totalMonthlyRevenue;
+      updatedRevenue.arr = rs.totalMonthlyRevenue * 12;
+      if (rs.breakdown?.length) {
+        const planColors: Record<string, string> = { '1': '#6366f1', '2': '#8b5cf6', '3': '#a855f7' };
+        updatedByPlan = rs.breakdown.map(b => {
+          const planKey = b.plan?.match(/\d/)?.[0] || '';
+          return {
+            planId: (b.plan || 'unknown').toLowerCase().replace(/[\s.]/g, '-'),
+            planName: b.plan || 'Bilinmeyen',
+            color: planColors[planKey] || 'var(--primary-500)',
+            subscriberCount: b.subscriberCount,
+            mrr: b.revenue,
+            percentage: rs.totalMonthlyRevenue > 0 ? (b.revenue / rs.totalMonthlyRevenue) * 100 : 0,
+          };
+        });
+      }
+    }
+
+    this.stats.set({ ...s, revenue: updatedRevenue, byPlan: updatedByPlan });
   }
 
   onRefresh(): void {

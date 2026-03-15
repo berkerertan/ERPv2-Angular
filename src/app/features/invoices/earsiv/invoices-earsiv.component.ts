@@ -2,7 +2,10 @@ import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InvoiceService } from '../../../core/services/invoice.service';
-import { Invoice, InvoiceType, InvoiceStatus } from '../../../core/models/invoice.model';
+import { InvoiceType, InvoiceStatus, InvoiceCategory, CreateInvoiceRequest } from '../../../core/models/invoice.model';
+import { CariAccountService } from '../../../core/services/cari-account.service';
+import { CariAccount } from '../../../core/models/cari-account.model';
+import { ProductService } from '../../../core/services/product.service';
 
 @Component({
     selector: 'app-invoices-earsiv',
@@ -13,22 +16,29 @@ import { Invoice, InvoiceType, InvoiceStatus } from '../../../core/models/invoic
 })
 export class InvoicesEArsivComponent implements OnInit {
     private invoiceService = inject(InvoiceService);
+    private cariAccountService = inject(CariAccountService);
+    private productService = inject(ProductService);
 
     searchTerm = '';
     activeTab = signal<'all' | 'Draft' | 'Sent' | 'Cancelled'>('all');
     showCreateModal = signal(false);
     showDetailModal = signal(false);
     selectedInvoice = signal<any>(null);
+    isSaving = signal(false);
+    formError = signal('');
+
+    cariAccounts = signal<CariAccount[]>([]);
+    selectedCariAccountId = signal('');
+    products = signal<{ id: string; name: string; barcode: string; defaultSalePrice: number }[]>([]);
 
     formData = {
         invoiceCategory: 'Satis' as 'Satis' | 'Iade',
-        customerName: '',
         tcknVkn: '',
         email: '',
         issueDate: new Date().toISOString().split('T')[0],
         notes: '',
         items: [
-            { productName: '', quantity: 1, unitPrice: 0, taxRate: 20, unit: 'Adet' }
+            { productId: '', productName: '', quantity: 1, unitPrice: 0, taxRate: 20, unit: 'Adet' }
         ]
     };
 
@@ -36,6 +46,36 @@ export class InvoicesEArsivComponent implements OnInit {
 
     ngOnInit(): void {
         this.loadInvoices();
+        this.loadCariAccounts();
+        this.loadProducts();
+    }
+
+    private loadCariAccounts(): void {
+        this.cariAccountService.getAll().subscribe({
+            next: (data) => this.cariAccounts.set(data),
+            error: () => {}
+        });
+    }
+
+    private loadProducts(): void {
+        this.productService.getAll().subscribe({
+            next: (data) => this.products.set(data.map(p => ({
+                id: p.id,
+                name: p.name,
+                barcode: p.barcodeEan13 || '',
+                defaultSalePrice: p.defaultSalePrice || 0
+            }))),
+            error: () => {}
+        });
+    }
+
+    onProductSelect(item: any, productId: string): void {
+        item.productId = productId;
+        const product = this.products().find(p => p.id === productId);
+        if (product) {
+            item.productName = product.name;
+            item.unitPrice = product.defaultSalePrice;
+        }
     }
 
     loadInvoices(): void {
@@ -106,16 +146,18 @@ export class InvoicesEArsivComponent implements OnInit {
     openCreateModal(): void {
         this.formData = {
             invoiceCategory: 'Satis',
-            customerName: '', tcknVkn: '', email: '',
+            tcknVkn: '', email: '',
             issueDate: new Date().toISOString().split('T')[0],
             notes: '',
-            items: [{ productName: '', quantity: 1, unitPrice: 0, taxRate: 20, unit: 'Adet' }]
+            items: [{ productId: '', productName: '', quantity: 1, unitPrice: 0, taxRate: 20, unit: 'Adet' }]
         };
+        this.selectedCariAccountId.set('');
+        this.formError.set('');
         this.showCreateModal.set(true);
     }
 
     addItem(): void {
-        this.formData.items.push({ productName: '', quantity: 1, unitPrice: 0, taxRate: 20, unit: 'Adet' });
+        this.formData.items.push({ productId: '', productName: '', quantity: 1, unitPrice: 0, taxRate: 20, unit: 'Adet' });
     }
 
     removeItem(index: number): void {
@@ -144,23 +186,48 @@ export class InvoicesEArsivComponent implements OnInit {
     closeCreateModal(): void { this.showCreateModal.set(false); }
 
     saveInvoice(): void {
-        // Note: Create requires cariAccountId, but this form uses free-text customerName
-        // For now, keep local creation; full API create needs cariAccount selection
-        const newInvoice = {
-            id: Date.now().toString(),
-            invoiceNumber: `EAR2026${String(this.invoices().length + 1).padStart(6, '0')}`,
-            invoiceCategory: this.formData.invoiceCategory,
-            status: 'Draft',
-            customerName: this.formData.customerName,
-            tcknVkn: this.formData.tcknVkn,
-            email: this.formData.email,
+        if (!this.selectedCariAccountId()) {
+            this.formError.set('Lütfen bir cari hesap seçin.');
+            return;
+        }
+        if (this.formData.items.some(it => !it.productId)) {
+            this.formError.set('Tüm kalemlerde ürün seçilmelidir.');
+            return;
+        }
+        if (this.formData.items.some(it => it.unitPrice <= 0)) {
+            this.formError.set('Tüm kalemlerde birim fiyat girilmelidir.');
+            return;
+        }
+
+        this.isSaving.set(true);
+        this.formError.set('');
+
+        const request: CreateInvoiceRequest = {
+            invoiceType: InvoiceType.EArsiv,
+            invoiceCategory: this.formData.invoiceCategory === 'Satis' ? InvoiceCategory.Satis : InvoiceCategory.Iade,
+            cariAccountId: this.selectedCariAccountId(),
             issueDate: this.formData.issueDate,
-            grandTotal: this.getFormGrandTotal(),
-            taxTotal: this.getFormTaxTotal(),
-            currency: 'TRY'
+            notes: this.formData.notes || undefined,
+            items: this.formData.items.map(it => ({
+                productId: it.productId,
+                quantity: it.quantity,
+                unitPrice: it.unitPrice,
+                taxRate: it.taxRate,
+                discountRate: 0
+            }))
         };
-        this.invoices.update(list => [newInvoice, ...list]);
-        this.closeCreateModal();
+
+        this.invoiceService.create(request).subscribe({
+            next: () => {
+                this.isSaving.set(false);
+                this.closeCreateModal();
+                this.loadInvoices();
+            },
+            error: (err) => {
+                this.isSaving.set(false);
+                this.formError.set(err.error?.detail || 'Fatura oluşturulamadı.');
+            }
+        });
     }
 
     sendInvoice(id: string): void {

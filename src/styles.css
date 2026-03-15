@@ -81,14 +81,14 @@ table {
   --primary-800: #3b5bdb;
   --primary-900: #364fc7;
 
-  /* Background Colors (Dark Mode) */
-  --bg-primary: #0f1117;
-  --bg-secondary: #161822;
-  --bg-card: #1c1e2d;
-  --bg-elevated: #252736;
-  --bg-hover: #2a2d3e;
-  --bg-sidebar: #12141e;
-  --bg-input: #1e2030;
+  /* Background Colors (Dark Mode) — Midnight Indigo Palette */
+  --bg-primary: #0a0d1a;
+  --bg-secondary: #101426;
+  --bg-card: #161b2e;
+  --bg-elevated: #1e2440;
+  --bg-hover: #252d4e;
+  --bg-sidebar: #0d1020;
+  --bg-input: #181e35;
 
   /* Text Colors */
   --text-primary: #f1f3f5;
@@ -107,20 +107,20 @@ table {
   --info-bg: rgba(116, 192, 252, 0.12);
 
   /* Borders */
-  --border-color: rgba(255, 255, 255, 0.06);
-  --border-light: rgba(255, 255, 255, 0.1);
+  --border-color: rgba(255, 255, 255, 0.07);
+  --border-light: rgba(255, 255, 255, 0.12);
   --border-focus: var(--primary-500);
 
   /* Glassmorphism */
-  --glass-bg: rgba(28, 30, 45, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --glass-bg: rgba(14, 18, 38, 0.78);
+  --glass-border: rgba(255, 255, 255, 0.09);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
 
   /* Shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
-  --shadow-xl: 0 12px 48px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 12px 48px rgba(0, 0, 0, 0.6);
 
   /* Spacing */
   --space-1: 4px;
@@ -159,6 +159,42 @@ table {
   --z-overlay: 300;
   --z-modal: 400;
   --z-toast: 500;
+}
+
+/* === Light Mode Overrides === */
+html.light-mode {
+  --bg-primary: #f4f6fb;
+  --bg-secondary: #ffffff;
+  --bg-card: #ffffff;
+  --bg-elevated: #f0f2f7;
+  --bg-hover: #e8eaf0;
+  --bg-sidebar: #f8f9fc;
+  --bg-input: #f0f2f7;
+
+  --text-primary: #1a1d2e;
+  --text-secondary: #495057;
+  --text-muted: #868e96;
+  --text-inverse: #f1f3f5;
+
+  --border-color: rgba(0, 0, 0, 0.08);
+  --border-light: rgba(0, 0, 0, 0.12);
+
+  --glass-bg: rgba(255, 255, 255, 0.8);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-xl: 0 12px 48px rgba(0, 0, 0, 0.15);
+}
+
+html.light-mode ::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+}
+
+html.light-mode ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
 }
 
 /* === Typography === */

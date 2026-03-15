@@ -87,6 +87,14 @@
                 class="material-icons-outlined">close</span></button>
     </div>
     <div class="modal-form">
+        <div class="form-group"><label class="form-label">Cari Hesap *</label>
+            <select class="form-input" [(ngModel)]="formData.cariAccountId">
+                <option value="">-- Cari Hesap Seçin --</option>
+                @for (cari of cariAccounts(); track cari.id) {
+                <option [value]="cari.id">{{ cari.name }} ({{ cari.code }})</option>
+                }
+            </select>
+        </div>
         <div class="form-group"><label class="form-label">Tür</label><select class="form-input"
                 [(ngModel)]="formData.type">
                 <option value="Income">Gelir</option>
@@ -94,13 +102,16 @@
             </select></div>
         <div class="form-group"><label class="form-label">Tutar (₺)</label><input class="form-input" type="number"
                 [(ngModel)]="formData.amount" /></div>
-        <div class="form-group"><label class="form-label">Kategori</label><input class="form-input"
-                [(ngModel)]="formData.category" placeholder="Satış, Genel Gider..." /></div>
+        <div class="form-group"><label class="form-label">Referans No</label><input class="form-input"
+                [(ngModel)]="formData.category" placeholder="Referans numarası (opsiyonel)" /></div>
         <div class="form-group"><label class="form-label">Açıklama</label><input class="form-input"
                 [(ngModel)]="formData.description" placeholder="Hareket açıklaması" /></div>
     </div>
+    @if (formError()) {
+    <div style="padding: 0 1.5rem; color: var(--danger); font-size: 0.875rem;">{{ formError() }}</div>
+    }
     <div class="modal-footer"><button class="btn btn-secondary" (click)="closeModal()">İptal</button><button
-            class="btn btn-primary" (click)="save()"><span class="material-icons-outlined">save</span> Kaydet</button>
+            class="btn btn-primary" (click)="save()" [disabled]="isSaving()"><span class="material-icons-outlined">save</span> {{ isSaving() ? 'Kaydediliyor...' : 'Kaydet' }}</button>
     </div>
 </div>
 }
