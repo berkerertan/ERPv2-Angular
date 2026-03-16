@@ -6,6 +6,7 @@ import { CariAccountService } from '../../../core/services/cari-account.service'
 import { CariAccount, BuyerDebtItemsBatchImportResult, BuyerDebtItemsBatchImportFileResult } from '../../../core/models/cari-account.model';
 import { ConfirmService } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ToastService } from '../../../core/services/toast.service';
+import { DEMO_BUYER_EXTRA } from '../../../core/mock/demo-data';
 
 @Component({
     selector: 'app-buyers',
@@ -46,23 +47,26 @@ export class BuyersComponent implements OnInit {
 
     loadAccounts(): void {
         this.cariService.getBuyers().subscribe({
-            next: (data) => this.accounts.set(data.map(a => ({
-                id: a.id,
-                code: a.code || '',
-                name: a.name,
-                phone: '',
-                email: '',
-                address: '',
-                taxNumber: '',
-                city: '',
-                balance: a.currentBalance,
-                totalSales: 0,
-                totalPayments: 0,
-                remainingDebt: a.currentBalance,
-                orderCount: 0,
-                lastOrder: '-',
-                isActive: true
-            }))),
+            next: (data) => this.accounts.set(data.map(a => {
+                const ex = DEMO_BUYER_EXTRA[a.id] ?? {};
+                return {
+                    id: a.id,
+                    code: a.code || '',
+                    name: a.name,
+                    phone:        ex.phone        ?? '',
+                    email:        ex.email        ?? '',
+                    address:      ex.address      ?? '',
+                    taxNumber:    ex.taxNumber    ?? '',
+                    city:         ex.city         ?? '',
+                    balance:      a.currentBalance,
+                    totalSales:   ex.totalSales   ?? 0,
+                    totalPayments:ex.totalPayments ?? 0,
+                    remainingDebt:a.currentBalance,
+                    orderCount:   ex.orderCount   ?? 0,
+                    lastOrder:    ex.lastOrder    ?? '-',
+                    isActive: true
+                };
+            })),
             error: (err) => console.error('Alıcılar yüklenemedi:', err.error?.detail || err.message)
         });
     }

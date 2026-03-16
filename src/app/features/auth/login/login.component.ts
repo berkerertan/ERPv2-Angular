@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
-import { DemoSeedService } from '../../../core/services/demo-seed.service';
 
 @Component({
     selector: 'app-login',
@@ -21,7 +20,6 @@ export class LoginComponent {
 
     private authService = inject(AuthService);
     private router = inject(Router);
-    readonly demoSeed = inject(DemoSeedService);
 
     togglePassword(): void {
         this.showPassword.update(v => !v);
@@ -37,15 +35,10 @@ export class LoginComponent {
         this.errorMessage.set('');
 
         this.authService.login({ userName: this.userName, password: this.password }).subscribe({
-            next: async () => {
+            next: () => {
                 this.isLoading.set(false);
                 const user = this.authService.currentUser();
                 const role = user?.role;
-
-                // Demo kullanıcısı için seed çalıştır
-                if (this.userName === 'demo') {
-                    await this.demoSeed.seedIfNeeded();
-                }
 
                 if (role === 'SuperAdmin' || role === 'Admin') {
                     this.router.navigate(['/admin/dashboard']);
