@@ -16,6 +16,9 @@ import {
     DEMO_CARI_BALANCES, DEMO_CARI_AGING, DEMO_INCOME_EXPENSE,
     DEMO_CASH_FLOW, DEMO_DUE_LIST,
     DEMO_PRODUCT_PROFITABILITY, DEMO_CUSTOMER_PROFITABILITY, DEMO_BRANCH_PROFITABILITY,
+    DEMO_ACTIVITY_LOGS, DEMO_ACTIVITY_SUMMARY,
+    DEMO_MY_ACTIVITY_LOGS, DEMO_MY_ACTIVITY_SUMMARY,
+    DEMO_PLATFORM_TENANTS, DEMO_PLATFORM_OVERVIEW,
 } from '../mock/demo-data';
 import { InvoiceType } from '../models/invoice.model';
 
@@ -254,6 +257,77 @@ export const demoInterceptor: HttpInterceptorFn = (req, next) => {
     if (path.startsWith('/api/warehouses')) {
         if (method === 'POST') return ok(`"${newMockId()}"`);
         return ok(DEMO_WAREHOUSES);
+    }
+
+    // ── AKTİVİTE LOGLARI (Tenant — sadece kendi işlemleri) ──────────────────
+    if (path.startsWith('/api/activity-logs/me')) {
+        if (path.endsWith('/summary')) return ok(DEMO_MY_ACTIVITY_SUMMARY);
+        const logId = path.replace('/api/activity-logs/me/', '').split('/')[0];
+        if (logId && logId !== 'summary') {
+            const found = DEMO_MY_ACTIVITY_LOGS.find(l => l.id === logId);
+            return ok(found ?? DEMO_MY_ACTIVITY_LOGS[0]);
+        }
+        let logs = [...DEMO_MY_ACTIVITY_LOGS];
+        const onlyErrors = req.params.get('onlyErrors');
+        if (onlyErrors === 'true') logs = logs.filter(l => l.statusCode >= 400);
+        const page     = parseInt(req.params.get('page')     || '1');
+        const pageSize = parseInt(req.params.get('pageSize') || '100');
+        return ok(logs.slice((page-1)*pageSize, page*pageSize));
+    }
+
+    // ── PLATFORM ADMIN — DASHBOARD OVERVIEW ──────────────────────────────────
+    if (path === '/api/platform-admin/dashboard/overview') {
+        return ok(DEMO_PLATFORM_OVERVIEW);
+    }
+
+    // ── PLATFORM ADMIN — ABONE LİSTESİ & DETAY ───────────────────────────────
+    if (path.startsWith('/api/platform-admin/subscribers')) {
+        // Abone aktiviteleri: /subscribers/{id}/activities
+        if (/\/subscribers\/[^/]+\/activities/.test(path)) {
+            const page     = parseInt(req.params.get('page')     || '1');
+            const pageSize = parseInt(req.params.get('pageSize') || '20');
+            return ok(DEMO_ACTIVITY_LOGS.slice((page-1)*pageSize, page*pageSize));
+        }
+        // Abone detay: /subscribers/{id}
+        const tenantId = path.split('/').pop();
+        if (tenantId && tenantId !== 'subscribers') {
+            const found = DEMO_PLATFORM_TENANTS.find(t => t.tenantId === tenantId);
+            return ok(found ? { ...found, features: ['Stok', 'Fatura', 'Raporlar'], recentActivities: [] } : null);
+        }
+        // Abone listesi + filtreleme
+        let tenants = [...DEMO_PLATFORM_TENANTS];
+        const q      = (req.params.get('q') || '').toLowerCase();
+        const plan   = req.params.get('plan');
+        const status = req.params.get('status');
+        if (q)      tenants = tenants.filter(t => (t.name || '').toLowerCase().includes(q) || (t.code || '').toLowerCase().includes(q));
+        if (plan)   tenants = tenants.filter(t => String(t.plan) === plan);
+        if (status) tenants = tenants.filter(t => String(t.status) === status);
+        const page     = parseInt(req.params.get('page')     || '1');
+        const pageSize = parseInt(req.params.get('pageSize') || '50');
+        return ok(tenants.slice((page-1)*pageSize, page*pageSize));
+    }
+
+    // ── PLATFORM ADMIN — DENETİM KAYITLARI (tüm kullanıcılar) ───────────────
+    if (path.startsWith('/api/platform-admin/audit-logs')) {
+        if (path.endsWith('/summary')) return ok(DEMO_ACTIVITY_SUMMARY);
+        const logId = path.replace('/api/platform-admin/audit-logs/', '').split('/')[0];
+        if (logId && logId !== 'summary') {
+            const found = DEMO_ACTIVITY_LOGS.find(l => l.id === logId);
+            return ok(found ?? DEMO_ACTIVITY_LOGS[0]);
+        }
+        let logs = [...DEMO_ACTIVITY_LOGS];
+        const onlyErrors = req.params.get('onlyErrors');
+        const q          = (req.params.get('q') || '').toLowerCase();
+        const userId     = req.params.get('userId');
+        if (onlyErrors === 'true') logs = logs.filter(l => l.statusCode >= 400);
+        if (q) logs = logs.filter(l =>
+            (l.userName || '').toLowerCase().includes(q) ||
+            (l.path     || '').toLowerCase().includes(q)
+        );
+        if (userId) logs = logs.filter(l => l.userId === userId);
+        const page     = parseInt(req.params.get('page')     || '1');
+        const pageSize = parseInt(req.params.get('pageSize') || '50');
+        return ok(logs.slice((page-1)*pageSize, page*pageSize));
     }
 
     // ── Muhasebe ─────────────────────────────────────────────────────────────

@@ -433,3 +433,171 @@ export const DEMO_BRANCH_PROFITABILITY = [
     { branchId:BR1, branchCode:'MRK', branchName:'Merkez Şube',             revenue:10876753, cost:8701402, profit:2175351, marginPercent:20.0 },
     { branchId:BR2, branchCode:'AND', branchName:'İstanbul Anadolu Şubesi', revenue: 2179957, cost:1742500, profit: 437457, marginPercent:20.1 },
 ];
+
+// ── Aktivite Logları (Tenant) ─────────────────────────────────────────────────
+const alid = (n: number) => `0000000b-0000-0000-0000-${String(n).padStart(12,'0')}`;
+const agoH = (days: number, h: number, m = 0): string => {
+    const dt = new Date('2026-03-17T00:00:00Z');
+    dt.setDate(dt.getDate() - days);
+    dt.setUTCHours(h, m, 0, 0);
+    return dt.toISOString();
+};
+
+type AL = { id:string; userId:string; userName:string; httpMethod:string; path:string; statusCode:number; durationMs:number; ipAddress:string; occurredAtUtc:string };
+const al = (n:number, user:string, uid:string, m:string, path:string, status:number, ms:number, days:number, h:number, min=0): AL => ({
+    id: alid(n), userId: uid, userName: user,
+    httpMethod: m, path, statusCode: status, durationMs: ms,
+    ipAddress: `192.168.1.${10 + (n % 20)}`,
+    occurredAtUtc: agoH(days, h, min)
+});
+
+const U0 = '00000099-0000-0000-0000-000000000000'; // demo (giriş yapan kullanıcı)
+const U1 = '00000099-0001-0000-0000-000000000001'; // test.admin
+const U2 = '00000099-0002-0000-0000-000000000002'; // kasiyer1
+const U3 = '00000099-0003-0000-0000-000000000003'; // muhasebe1
+
+// Demo kullanıcısının kendi aktiviteleri (tenant bireysel görünüm)
+export const DEMO_MY_ACTIVITY_LOGS: AL[] = [
+    al(101, 'demo', U0, 'GET',    '/api/products',                         200,  91,  0, 15),
+    al(102, 'demo', U0, 'GET',    '/api/invoices/e-fatura',                200, 118,  0, 14, 40),
+    al(103, 'demo', U0, 'GET',    '/api/sales-orders',                     200, 104,  0, 14, 10),
+    al(104, 'demo', U0, 'GET',    '/api/reports/sales',                    200, 298,  1, 16,  0),
+    al(105, 'demo', U0, 'GET',    '/api/reports/stock',                    200, 276,  1, 16, 12),
+    al(106, 'demo', U0, 'POST',   '/api/invoices',                         201, 423,  1, 11,  0),
+    al(107, 'demo', U0, 'POST',   '/api/invoices/00000007-0000-0000-0000-000000000002/send', 200, 411, 1, 11, 15),
+    al(108, 'demo', U0, 'GET',    '/api/cari-accounts/buyers',             200, 137,  2, 15, 30),
+    al(109, 'demo', U0, 'POST',   '/api/cari-accounts',                    201, 245,  2, 15, 50),
+    al(110, 'demo', U0, 'GET',    '/api/finance-movements',                200,  88,  2,  9, 45),
+    al(111, 'demo', U0, 'POST',   '/api/finance-movements',                201, 214,  2, 10,  0),
+    al(112, 'demo', U0, 'POST',   '/api/sales-orders',                     201, 198,  3, 13, 15),
+    al(113, 'demo', U0, 'POST',   '/api/sales-orders/00000003-0000-0000-0000-000000000001/approve', 200, 156, 3, 13, 20),
+    al(114, 'demo', U0, 'GET',    '/api/stock-movements',                  200,  95,  4, 10,  0),
+    al(115, 'demo', U0, 'POST',   '/api/products',                         201, 312,  4, 11, 30),
+    al(116, 'demo', U0, 'PUT',    '/api/products/00000001-0000-0000-0000-000000000002', 204, 167, 4, 11, 45),
+    al(117, 'demo', U0, 'POST',   '/api/invoices',                         500, 1180, 5, 14,  0), // hata
+    al(118, 'demo', U0, 'GET',    '/api/invoices/e-arsiv',                 200, 112,  5,  9, 20),
+    al(119, 'demo', U0, 'POST',   '/api/purchase-orders',                  201, 289,  6, 14, 10),
+    al(120, 'demo', U0, 'GET',    '/api/reports/cari-balances',            200, 334,  7, 15, 30),
+    al(121, 'demo', U0, 'GET',    '/api/reports/income-expense',           200, 312,  7, 15, 45),
+    al(122, 'demo', U0, 'POST',   '/api/stock-movements',                  201, 201,  8, 11,  0),
+    al(123, 'demo', U0, 'DELETE', '/api/products/00000001-0000-0000-0000-000000000015', 204, 143, 10, 16, 0),
+    al(124, 'demo', U0, 'GET',    '/api/cari-accounts/suppliers',          200, 109, 12, 10, 30),
+    al(125, 'demo', U0, 'POST',   '/api/invoices',                         201, 398, 14, 11,  0),
+    al(126, 'demo', U0, 'POST',   '/api/invoices/00000007-0000-0000-0000-000000000004/send', 200, 445, 14, 11, 20),
+    al(127, 'demo', U0, 'GET',    '/api/reports/sales',                    200, 287, 20, 15,  0),
+    al(128, 'demo', U0, 'PUT',    '/api/cari-accounts/00000002-0000-0000-0000-000000000003', 204, 178, 25, 10, 0),
+    al(129, 'demo', U0, 'POST',   '/api/products',                         201, 356, 28, 14,  0),
+    al(130, 'demo', U0, 'POST',   '/api/products',                         400, 134, 28, 14, 20), // hata
+];
+
+export const DEMO_MY_ACTIVITY_SUMMARY = {
+    totalCount:        DEMO_MY_ACTIVITY_LOGS.length,
+    todayCount:        3,
+    errorCount:        DEMO_MY_ACTIVITY_LOGS.filter(l => l.statusCode >= 400).length,
+    averageDurationMs: Math.round(DEMO_MY_ACTIVITY_LOGS.reduce((s,l) => s + l.durationMs, 0) / DEMO_MY_ACTIVITY_LOGS.length),
+    lastActivityAtUtc: '2026-03-17T15:00:00.000Z',
+};
+
+export const DEMO_ACTIVITY_LOGS: AL[] = [
+    // Bugün
+    al( 1, 'test.admin',  U1, 'GET',    '/api/products',                        200,  87,  0, 14),
+    al( 2, 'test.admin',  U1, 'GET',    '/api/sales-orders',                    200, 112,  0, 13, 45),
+    al( 3, 'kasiyer1',    U2, 'POST',   '/api/sales-orders',                    201, 243,  0, 11, 20),
+    al( 4, 'kasiyer1',    U2, 'GET',    '/api/products',                        200,  65,  0, 11, 18),
+    al( 5, 'muhasebe1',   U3, 'GET',    '/api/invoices/e-fatura',               200, 134,  0,  9, 30),
+    al( 6, 'muhasebe1',   U3, 'POST',   '/api/invoices/00000007-0000-0000-0000-000000000001/send', 200, 389, 0, 9, 35),
+    // 1 gün önce
+    al( 7, 'test.admin',  U1, 'POST',   '/api/products',                        201, 178,  1, 16),
+    al( 8, 'test.admin',  U1, 'PUT',    '/api/products/00000001-0000-0000-0000-000000000003', 204, 155, 1, 16, 12),
+    al( 9, 'kasiyer1',    U2, 'POST',   '/api/stock-movements',                 201, 203,  1, 14, 22),
+    al(10, 'muhasebe1',   U3, 'GET',    '/api/finance-movements',               200,  98,  1, 10,  5),
+    al(11, 'muhasebe1',   U3, 'POST',   '/api/finance-movements',               201, 221,  1, 10, 15),
+    al(12, 'kasiyer1',    U2, 'GET',    '/api/sales-orders',                    200,  77,  1,  9, 48),
+    al(13, 'kasiyer1',    U2, 'POST',   '/api/sales-orders/00000003-0000-0000-0000-000000000002/approve', 200, 145, 1, 9, 51),
+    // 2 gün önce
+    al(14, 'test.admin',  U1, 'GET',    '/api/reports/sales',                   200, 312,  2, 15, 30),
+    al(15, 'test.admin',  U1, 'GET',    '/api/reports/stock',                   200, 287,  2, 15, 35),
+    al(16, 'muhasebe1',   U3, 'POST',   '/api/invoices',                        201, 445,  2, 11,  0),
+    al(17, 'muhasebe1',   U3, 'GET',    '/api/invoices/e-arsiv',                200, 101,  2, 10, 50),
+    al(18, 'kasiyer1',    U2, 'POST',   '/api/purchase-orders',                 201, 334,  2,  9, 15),
+    // 3 gün önce
+    al(19, 'test.admin',  U1, 'GET',    '/api/cari-accounts/buyers',            200, 134,  3, 16, 20),
+    al(20, 'test.admin',  U1, 'POST',   '/api/cari-accounts',                   201, 267,  3, 16, 35),
+    al(21, 'kasiyer1',    U2, 'POST',   '/api/sales-orders',                    201, 198,  3, 13, 10),
+    al(22, 'kasiyer1',    U2, 'GET',    '/api/stock-movements/balance',         200,  89,  3, 11,  0),
+    al(23, 'muhasebe1',   U3, 'GET',    '/api/finance-movements',               200,  93,  3,  9, 45),
+    al(24, 'muhasebe1',   U3, 'DELETE', '/api/finance-movements/00000006-0000-0000-0000-000000000005', 204, 113, 3, 9, 50),
+    // 5 gün önce
+    al(25, 'test.admin',  U1, 'GET',    '/api/products',                        200,  72,  5, 10,  0),
+    al(26, 'test.admin',  U1, 'PUT',    '/api/cari-accounts/00000002-0000-0000-0000-000000000001', 204, 189, 5, 10, 20),
+    al(27, 'kasiyer1',    U2, 'POST',   '/api/sales-orders',                    201, 222,  5, 14, 30),
+    al(28, 'muhasebe1',   U3, 'POST',   '/api/invoices/00000007-0000-0000-0000-000000000003/send', 200, 402, 5, 11, 0),
+    al(29, 'kasiyer1',    U2, 'POST',   '/api/products',                        400, 134,  5, 15, 10), // hata: eksik alan
+    // 7 gün önce
+    al(30, 'test.admin',  U1, 'GET',    '/api/reports/purchases',               200, 298,  7, 16,  0),
+    al(31, 'test.admin',  U1, 'GET',    '/api/reports/cari-balances',           200, 243,  7, 16, 10),
+    al(32, 'muhasebe1',   U3, 'GET',    '/api/invoices/e-fatura',               200, 119,  7,  9, 30),
+    al(33, 'muhasebe1',   U3, 'POST',   '/api/finance-movements',               201, 209,  7, 10,  0),
+    al(34, 'kasiyer1',    U2, 'POST',   '/api/purchase-orders/00000004-0000-0000-0000-000000000001/approve', 200, 167, 7, 11, 0),
+    // 10 gün önce
+    al(35, 'test.admin',  U1, 'POST',   '/api/products',                        201, 312, 10, 14,  0),
+    al(36, 'test.admin',  U1, 'POST',   '/api/products',                        201, 289, 10, 14, 20),
+    al(37, 'kasiyer1',    U2, 'POST',   '/api/stock-movements',                 201, 198, 10, 11, 45),
+    al(38, 'muhasebe1',   U3, 'GET',    '/api/reports/income-expense',          200, 334, 10,  9, 20),
+    al(39, 'kasiyer1',    U2, 'POST',   '/api/invoices',                        500, 1203,10, 15, 30), // hata: sunucu hatası
+    // 14 gün önce
+    al(40, 'test.admin',  U1, 'GET',    '/api/cari-accounts/suppliers',        200, 112, 14, 15,  0),
+    al(41, 'test.admin',  U1, 'PUT',    '/api/products/00000001-0000-0000-0000-000000000007', 204, 145, 14, 15, 20),
+    al(42, 'muhasebe1',   U3, 'POST',   '/api/invoices',                        201, 389, 14, 10,  0),
+    al(43, 'muhasebe1',   U3, 'POST',   '/api/invoices/00000007-0000-0000-0000-000000000005/send', 200, 445, 14, 10, 15),
+    al(44, 'kasiyer1',    U2, 'POST',   '/api/sales-orders',                    201, 212, 14, 13, 30),
+    // 20 gün önce
+    al(45, 'test.admin',  U1, 'DELETE', '/api/products/00000001-0000-0000-0000-000000000015', 204, 134, 20, 11,  0),
+    al(46, 'test.admin',  U1, 'POST',   '/api/warehouses',                      201, 198, 20, 11, 20),
+    al(47, 'muhasebe1',   U3, 'GET',    '/api/finance-movements',               200,  88, 20,  9, 45),
+    al(48, 'kasiyer1',    U2, 'POST',   '/api/purchase-orders',                 201, 267, 20, 14,  0),
+    // 30 gün önce
+    al(49, 'test.admin',  U1, 'GET',    '/api/reports/sales',                   200, 312, 30, 16,  0),
+    al(50, 'muhasebe1',   U3, 'POST',   '/api/invoices',                        201, 401, 30, 10,  0),
+];
+
+export const DEMO_ACTIVITY_SUMMARY = {
+    totalCount:        DEMO_ACTIVITY_LOGS.length,
+    todayCount:        DEMO_ACTIVITY_LOGS.filter(l => new Date(l.occurredAtUtc).toDateString() === new Date().toDateString()).length,
+    errorCount:        DEMO_ACTIVITY_LOGS.filter(l => l.statusCode >= 400).length,
+    uniqueUsers:       3,
+    averageDurationMs: Math.round(DEMO_ACTIVITY_LOGS.reduce((s,l) => s + l.durationMs, 0) / DEMO_ACTIVITY_LOGS.length),
+};
+
+// ── Platform Admin — Tenant (Abone) Listesi ───────────────────────────────────
+import { SubscriptionPlan, SubscriptionStatus } from '../models/user.model';
+
+const paAgo = (days: number): string => {
+    const d = new Date('2026-03-18T12:00:00Z');
+    d.setDate(d.getDate() - days);
+    return d.toISOString();
+};
+
+export const DEMO_PLATFORM_TENANTS = [
+    { tenantId: 'aa000001-0000-0000-0000-000000000001', name: 'Altın Market A.Ş.',      code: 'ALTINMKT', plan: SubscriptionPlan.Pro,        assignedRole: '2. Kademe', status: SubscriptionStatus.Active,    maxUsers: 10, currentUserCount: 4,  subscriptionStartAtUtc: paAgo(180), lastActivityAtUtc: paAgo(0),  monthlyPrice: 1499 },
+    { tenantId: 'aa000001-0000-0000-0000-000000000002', name: 'Yıldız Gıda Ltd. Şti.',  code: 'YLDIZGID', plan: SubscriptionPlan.Starter,    assignedRole: '1. Kademe', status: SubscriptionStatus.Active,    maxUsers:  5, currentUserCount: 2,  subscriptionStartAtUtc: paAgo(90),  lastActivityAtUtc: paAgo(1),  monthlyPrice: 499  },
+    { tenantId: 'aa000001-0000-0000-0000-000000000003', name: 'Mavi Tekstil San. Tic.',  code: 'MAVITEKS', plan: SubscriptionPlan.Enterprise, assignedRole: '3. Kademe', status: SubscriptionStatus.Active,    maxUsers: 25, currentUserCount: 9,  subscriptionStartAtUtc: paAgo(365), lastActivityAtUtc: paAgo(0),  monthlyPrice: 3999 },
+    { tenantId: 'aa000001-0000-0000-0000-000000000004', name: 'Güneş Elektronik',        code: 'GUNESELK', plan: SubscriptionPlan.Pro,        assignedRole: '2. Kademe', status: SubscriptionStatus.Trial,     maxUsers: 10, currentUserCount: 1,  subscriptionStartAtUtc: paAgo(14),  lastActivityAtUtc: paAgo(2),  monthlyPrice: 1499 },
+    { tenantId: 'aa000001-0000-0000-0000-000000000005', name: 'Kaya İnşaat Malzemeleri', code: 'KAYAINST', plan: SubscriptionPlan.Starter,    assignedRole: '1. Kademe', status: SubscriptionStatus.Cancelled, maxUsers:  5, currentUserCount: 3,  subscriptionStartAtUtc: paAgo(60),  lastActivityAtUtc: paAgo(15), monthlyPrice: 499  },
+    { tenantId: 'aa000001-0000-0000-0000-000000000006', name: 'Demir Otomotiv',           code: 'DEMIROTO', plan: SubscriptionPlan.Pro,        assignedRole: '2. Kademe', status: SubscriptionStatus.Active,    maxUsers: 10, currentUserCount: 5,  subscriptionStartAtUtc: paAgo(200), lastActivityAtUtc: paAgo(0),  monthlyPrice: 1499 },
+    { tenantId: 'aa000001-0000-0000-0000-000000000007', name: 'Çiçek Pastanesi',          code: 'CICEKPST', plan: SubscriptionPlan.Starter,    assignedRole: '1. Kademe', status: SubscriptionStatus.Active,    maxUsers:  5, currentUserCount: 2,  subscriptionStartAtUtc: paAgo(45),  lastActivityAtUtc: paAgo(3),  monthlyPrice: 499  },
+    { tenantId: 'aa000001-0000-0000-0000-000000000008', name: 'Bora Mobilya',             code: 'BORAMOB',  plan: SubscriptionPlan.Enterprise, assignedRole: '3. Kademe', status: SubscriptionStatus.Active,    maxUsers: 25, currentUserCount: 12, subscriptionStartAtUtc: paAgo(500), lastActivityAtUtc: paAgo(0),  monthlyPrice: 3999 },
+    { tenantId: 'aa000001-0000-0000-0000-000000000009', name: 'Petek Eczanesi',           code: 'PETEKEZC', plan: SubscriptionPlan.Starter,    assignedRole: '1. Kademe', status: SubscriptionStatus.Cancelled, maxUsers:  5, currentUserCount: 0,  subscriptionStartAtUtc: paAgo(30),  lastActivityAtUtc: paAgo(30), monthlyPrice: 499  },
+    { tenantId: 'aa000001-0000-0000-0000-000000000010', name: 'Ege Turizm A.Ş.',         code: 'EGETURZM', plan: SubscriptionPlan.Pro,        assignedRole: '2. Kademe', status: SubscriptionStatus.Trial,     maxUsers: 10, currentUserCount: 2,  subscriptionStartAtUtc: paAgo(7),   lastActivityAtUtc: paAgo(1),  monthlyPrice: 1499 },
+];
+
+export const DEMO_PLATFORM_OVERVIEW = {
+    totalSubscribers:            DEMO_PLATFORM_TENANTS.length,
+    activeSubscribers:           DEMO_PLATFORM_TENANTS.filter(t => t.status === SubscriptionStatus.Active).length,
+    suspendedSubscribers:        0,
+    cancelledSubscribers:        DEMO_PLATFORM_TENANTS.filter(t => t.status === SubscriptionStatus.Cancelled).length,
+    totalUsers:                  DEMO_PLATFORM_TENANTS.reduce((s, t) => s + t.currentUserCount, 0),
+    totalMonthlyRecurringRevenue:DEMO_PLATFORM_TENANTS.filter(t => t.status === SubscriptionStatus.Active).reduce((s, t) => s + t.monthlyPrice, 0),
+    todayActiveUsers:            14,
+    todayRequestCount:           340,
+};

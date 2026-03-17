@@ -1,0 +1,187 @@
+<div class="page-container">
+
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">
+                <span class="material-icons-outlined" style="font-size:28px;vertical-align:middle;margin-right:8px;">manage_search</span>
+                Aktivite Geçmişi
+            </h1>
+            <p class="page-subtitle">Hesabınızla gerçekleştirilen tüm işlemleri takip edin</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" (click)="onFilterChange()">
+                <span class="material-icons-outlined">refresh</span>
+                Yenile
+            </button>
+        </div>
+    </div>
+
+    <!-- Özet Kartlar -->
+    @if (summary()) {
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon primary"><span class="material-icons-outlined">receipt_long</span></div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ summary()!.totalCount | number }}</span>
+                    <span class="stat-label">Toplam İşlem</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon success"><span class="material-icons-outlined">today</span></div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ summary()!.todayCount | number }}</span>
+                    <span class="stat-label">Bugün</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon warning"><span class="material-icons-outlined">error_outline</span></div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ summary()!.errorCount | number }}</span>
+                    <span class="stat-label">Hata</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon gold"><span class="material-icons-outlined">speed</span></div>
+                <div class="stat-info">
+                    <span class="stat-value">{{ summary()!.averageDurationMs | number:'1.0-0' }}ms</span>
+                    <span class="stat-label">Ort. Yanıt</span>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Filtreler -->
+    <div class="filter-bar">
+        <div class="filter-group">
+            <div class="search-wrapper">
+                <span class="material-icons-outlined search-icon">search</span>
+                <input type="text" class="form-input search-input"
+                    placeholder="İşlem veya modül ara..."
+                    [(ngModel)]="searchTerm" (input)="onFilterChange()">
+            </div>
+            <input type="date" class="form-input date-input" [(ngModel)]="fromDate" (change)="onFilterChange()">
+            <input type="date" class="form-input date-input" [(ngModel)]="toDate"   (change)="onFilterChange()">
+            <button class="btn btn-sm" [class.btn-danger]="onlyErrors" [class.btn-secondary]="!onlyErrors"
+                    (click)="toggleErrors()">
+                <span class="material-icons-outlined" style="font-size:16px">{{ onlyErrors ? 'error' : 'filter_list' }}</span>
+                {{ onlyErrors ? 'Tüm İşlemler' : 'Sadece Hatalar' }}
+            </button>
+        </div>
+    </div>
+
+    <!-- Tablo -->
+    <div class="table-wrapper">
+        @if (isLoading()) {
+            <div class="loading-state">
+                <span class="material-icons-outlined spin">sync</span>
+                <span>Yükleniyor...</span>
+            </div>
+        } @else if (logs().length === 0) {
+            <div class="empty-state">
+                <span class="material-icons-outlined" style="font-size:48px;opacity:0.3">manage_search</span>
+                <p>Kayıt bulunamadı</p>
+            </div>
+        } @else {
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th style="width:155px">Tarih & Saat</th>
+                        <th style="width:130px">Modül</th>
+                        <th>İşlem</th>
+                        <th style="width:110px">Durum</th>
+                        <th style="width:80px">Süre</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (log of logs(); track log.id) {
+                        <tr class="clickable-row" [class.error-row]="log.statusCode >= 400" (click)="viewDetail(log)">
+                            <td class="date-cell">{{ log.occurredAtUtc | date:'dd.MM.yy HH:mm' }}</td>
+                            <td>
+                                <span class="module-badge" [ngClass]="getModuleClass(log.path)">
+                                    <span class="material-icons-outlined" style="font-size:13px">{{ getModuleIcon(log.path) }}</span>
+                                    {{ getModuleLabel(log.path) }}
+                                </span>
+                            </td>
+                            <td class="action-cell">{{ getActionLabel(log.httpMethod, log.path) }}</td>
+                            <td>
+                                <span class="status-chip" [ngClass]="getStatusClass(log.statusCode)">
+                                    {{ getStatusLabel(log.statusCode) }}
+                                </span>
+                            </td>
+                            <td class="duration-cell">{{ formatDuration(log.durationMs) }}</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+
+    <!-- Sayfalama -->
+    @if (logs().length >= pageSize) {
+        <div class="pagination">
+            <button class="btn btn-sm btn-secondary" [disabled]="currentPage <= 1" (click)="onPageChange(currentPage - 1)">
+                <span class="material-icons-outlined">chevron_left</span>
+            </button>
+            <span class="page-info">Sayfa {{ currentPage }}</span>
+            <button class="btn btn-sm btn-secondary" (click)="onPageChange(currentPage + 1)">
+                <span class="material-icons-outlined">chevron_right</span>
+            </button>
+        </div>
+    }
+
+    <!-- Detay Modal -->
+    @if (selected()) {
+        <div class="modal-overlay" (click)="closeDetail()">
+            <div class="modal detail-modal" (click)="$event.stopPropagation()">
+                <div class="modal-header">
+                    <div class="modal-title-area">
+                        <span class="modal-title-icon material-icons-outlined">info</span>
+                        <h3>İşlem Detayı</h3>
+                    </div>
+                    <button class="btn-icon" (click)="closeDetail()">
+                        <span class="material-icons-outlined">close</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Özet satır -->
+                    <div class="detail-summary-bar">
+                        <span class="module-badge lg" [ngClass]="getModuleClass(selected()!.path)">
+                            <span class="material-icons-outlined">{{ getModuleIcon(selected()!.path) }}</span>
+                            {{ getModuleLabel(selected()!.path) }}
+                        </span>
+                        <span class="action-title">{{ getActionLabel(selected()!.httpMethod, selected()!.path) }}</span>
+                        <span class="status-chip" [ngClass]="getStatusClass(selected()!.statusCode)">
+                            {{ selected()!.statusCode }} — {{ getStatusLabel(selected()!.statusCode) }}
+                        </span>
+                    </div>
+
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <label>Tarih & Saat</label>
+                            <span>{{ selected()!.occurredAtUtc | date:'dd.MM.yyyy HH:mm:ss' }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Yanıt Süresi</label>
+                            <span>{{ formatDuration(selected()!.durationMs) }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>IP Adresi</label>
+                            <span class="mono">{{ selected()!.ipAddress || '-' }}</span>
+                        </div>
+                        <div class="detail-item full-width">
+                            <label>Teknik Detay</label>
+                            <div class="request-info">
+                                <span class="method-badge" [ngClass]="getMethodClass(selected()!.httpMethod)">
+                                    {{ selected()!.httpMethod }}
+                                </span>
+                                <code class="path-code">{{ selected()!.path }}</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+</div>

@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { TenantService } from '../../../core/services/tenant.service';
@@ -16,6 +16,7 @@ import { PlatformAdminService } from '../../../core/services/platform-admin.serv
 import {
     AdminTenantListItemDto,
     AdminTenantDetailDto,
+    AdminActivityLogDto,
     UpdateTenantSubscriptionRequest,
 } from '../../../core/models/platform-admin.model';
 import { SubscriptionPlan, SubscriptionStatus } from '../../../core/models/user.model';
@@ -24,7 +25,7 @@ import { ConfirmService } from '../../../shared/components/confirm-dialog/confir
 @Component({
     selector: 'app-subscribers',
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterModule],
+    imports: [CommonModule, FormsModule, RouterModule, DatePipe],
     templateUrl: './subscribers.component.html',
     styleUrls: ['./subscribers.component.css', '../../../shared/styles/crud-page.css'],
 })
@@ -68,6 +69,8 @@ export class SubscribersComponent implements OnInit, OnDestroy {
     // Real API data signals
     apiTenants = signal<AdminTenantListItemDto[]>([]);
     selectedTenantDetail = signal<AdminTenantDetailDto | null>(null);
+    tenantActivities = signal<AdminActivityLogDto[]>([]);
+    isLoadingActivities = signal(false);
 
     constructor(
         private tenantService: TenantService,
@@ -152,6 +155,8 @@ export class SubscribersComponent implements OnInit, OnDestroy {
         this.pendingPlan = tenant.plan;
         this.pendingBillingCycle = tenant.billingCycle;
         this.pendingStatus = tenant.status;
+        this.tenantActivities.set([]);
+        this.loadTenantActivities(tenant.id);
         this.pendingStatusReason = '';
         this.showDetailModal.set(true);
     }
@@ -423,6 +428,43 @@ export class SubscribersComponent implements OnInit, OnDestroy {
             next: (detail) => this.selectedTenantDetail.set(detail),
             error: () => this.selectedTenantDetail.set(null)
         });
+    }
+
+    loadTenantActivities(tenantId: string): void {
+        this.isLoadingActivities.set(true);
+        this.platformAdminService.getSubscriberActivities(tenantId, undefined, undefined, 1, 20).subscribe({
+            next: (logs) => { this.tenantActivities.set(logs); this.isLoadingActivities.set(false); },
+            error: ()    => { this.isLoadingActivities.set(false); }
+        });
+    }
+
+    getActivityAction(method?: string, path?: string): string {
+        if (!method || !path) return 'İşlem';
+        const m = method.toUpperCase();
+        const p = path.toLowerCase();
+        if (p.includes('/products')       && m === 'POST')   return 'Ürün Eklendi';
+        if (p.includes('/products')       && m === 'PUT')    return 'Ürün Güncellendi';
+        if (p.includes('/products')       && m === 'DELETE') return 'Ürün Silindi';
+        if (p.includes('/products')       && m === 'GET')    return 'Ürünler Görüntülendi';
+        if (p.includes('/sales-orders')   && m === 'POST')   return 'Satış Siparişi Oluşturuldu';
+        if (p.includes('/sales-orders')   && m === 'GET')    return 'Satış Siparişleri Görüntülendi';
+        if (p.includes('/purchase-orders')&& m === 'POST')   return 'Satın Alma Oluşturuldu';
+        if (p.includes('/invoices')       && p.includes('/send')) return 'Fatura Gönderildi';
+        if (p.includes('/invoices')       && m === 'POST')   return 'Fatura Oluşturuldu';
+        if (p.includes('/invoices')       && m === 'GET')    return 'Faturalar Görüntülendi';
+        if (p.includes('/stock-movements')&& m === 'POST')   return 'Stok Hareketi Oluşturuldu';
+        if (p.includes('/finance-movements') && m === 'POST')return 'Finans Hareketi Oluşturuldu';
+        if (p.includes('/cari-accounts')  && m === 'POST')   return 'Cari Hesap Eklendi';
+        if (p.includes('/reports'))                          return 'Rapor Görüntülendi';
+        if (p.includes('/auth/login'))                       return 'Giriş Yapıldı';
+        return m === 'GET' ? 'Görüntüleme' : m === 'POST' ? 'Oluşturma' : m === 'PUT' ? 'Güncelleme' : m === 'DELETE' ? 'Silme' : 'İşlem';
+    }
+
+    getActivityStatusClass(code: number): string {
+        if (code >= 200 && code < 300) return 'act-ok';
+        if (code >= 400 && code < 500) return 'act-warn';
+        if (code >= 500)               return 'act-err';
+        return '';
     }
 
     updateSubscriptionViaApi(tenantId: string, req: UpdateTenantSubscriptionRequest): void {

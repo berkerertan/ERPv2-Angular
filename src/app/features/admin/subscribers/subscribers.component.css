@@ -735,3 +735,76 @@
     font-size: 0.75rem;
   }
 }
+
+/* ─── Tenant Aktivite Tablosu ───────────────────────────── */
+.act-loading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  padding: 12px 0;
+}
+.act-empty {
+  color: var(--text-muted);
+  font-size: 0.8125rem;
+  padding: 12px 0;
+}
+.act-table-wrap {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+.act-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+.act-table thead tr {
+  background: var(--bg-tertiary);
+}
+.act-table th {
+  padding: 8px 12px;
+  text-align: left;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border-color);
+}
+.act-table td {
+  padding: 7px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  vertical-align: middle;
+}
+.act-table tbody tr:last-child td { border-bottom: none; }
+.act-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+.act-date  { color: var(--text-muted); white-space: nowrap; }
+.act-user  { font-weight: 500; color: var(--text-secondary); }
+.act-action{ color: var(--text-primary); }
+.act-dur   { color: var(--text-muted); white-space: nowrap; }
+
+.act-status {
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: var(--font-mono, monospace);
+}
+.act-ok   { background: rgba(81,207,102,0.12); color: var(--success); }
+.act-warn { background: rgba(252,196,25,0.12);  color: var(--warning); }
+.act-err  { background: rgba(255,107,107,0.12); color: var(--danger); }
+
+.loading-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--primary-400);
+  margin-left: 6px;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+.spin-icon { animation: spin 1s linear infinite; font-size: 1rem; }
+@keyframes spin { to { transform: rotate(360deg); } }

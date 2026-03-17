@@ -473,6 +473,50 @@
       }
     </div>
 
+    <!-- Son Aktiviteler -->
+    <div class="modal-section">
+      <h4 class="section-title">
+        <span class="material-icons-outlined">manage_search</span>
+        Son Aktiviteler
+        @if (isLoadingActivities()) {
+          <span class="loading-dot"></span>
+        }
+      </h4>
+      @if (isLoadingActivities()) {
+        <div class="act-loading">
+          <span class="material-icons-outlined spin-icon">refresh</span>
+          Yükleniyor...
+        </div>
+      } @else if (tenantActivities().length === 0) {
+        <div class="act-empty">Aktivite kaydı bulunamadı.</div>
+      } @else {
+        <div class="act-table-wrap">
+          <table class="act-table">
+            <thead>
+              <tr>
+                <th>Tarih</th>
+                <th>Kullanıcı</th>
+                <th>İşlem</th>
+                <th>Durum</th>
+                <th>Süre</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (log of tenantActivities(); track log.id) {
+                <tr>
+                  <td class="act-date">{{ log.occurredAtUtc | date:'dd.MM.yy HH:mm' }}</td>
+                  <td class="act-user">{{ log.userName || '—' }}</td>
+                  <td class="act-action">{{ getActivityAction(log.httpMethod, log.path) }}</td>
+                  <td><span class="act-status" [class]="getActivityStatusClass(log.statusCode)">{{ log.statusCode }}</span></td>
+                  <td class="act-dur">{{ log.durationMs }}ms</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+
     <!-- Notes -->
     <div class="modal-section">
       <h4 class="section-title">

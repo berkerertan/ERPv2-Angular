@@ -89,6 +89,7 @@ export class SidebarComponent {
             items: [
                 { icon: 'payments', label: 'Finans', route: '/finance-movements' },
                 { icon: 'bar_chart', label: 'Raporlar', route: '/reports' },
+                { icon: 'manage_search', label: 'Aktivite Geçmişi', route: '/activity-log' },
             ]
         }
     ];
