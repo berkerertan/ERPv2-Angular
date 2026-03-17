@@ -2,7 +2,7 @@ import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { InvoiceService } from '../../../core/services/invoice.service';
-import { InvoiceType, InvoiceStatus, InvoiceCategory, CreateInvoiceRequest } from '../../../core/models/invoice.model';
+import { InvoiceType, InvoiceStatus, InvoiceCategory, CreateInvoiceRequest, InvoiceDetailDto } from '../../../core/models/invoice.model';
 import { CariAccountService } from '../../../core/services/cari-account.service';
 import { CariAccount } from '../../../core/models/cari-account.model';
 import { ProductService } from '../../../core/services/product.service';
@@ -27,7 +27,8 @@ export class InvoicesEArsivComponent implements OnInit {
     activeTab = signal<'all' | 'Draft' | 'Sent' | 'Cancelled'>('all');
     showCreateModal = signal(false);
     showDetailModal = signal(false);
-    selectedInvoice = signal<any>(null);
+    selectedInvoice = signal<InvoiceDetailDto | null>(null);
+    isLoadingDetail = signal(false);
     isSaving = signal(false);
     formError = signal('');
 
@@ -83,25 +84,25 @@ export class InvoicesEArsivComponent implements OnInit {
     }
 
     loadInvoices(): void {
-        this.invoiceService.getAll({ invoiceType: InvoiceType.EArsiv }).subscribe({
+        this.invoiceService.getEArsivList().subscribe({
             next: (data) => this.invoices.set(data.map(inv => ({
-                id: inv.id,
-                invoiceNumber: inv.invoiceNumber,
-                invoiceCategory: inv.invoiceCategory === 1 ? 'Satis' : 'Iade',
-                status: this.mapStatus(inv.status),
-                customerName: inv.cariAccountName || '—',
-                tcknVkn: inv.taxNumber || '',
-                email: '',
-                issueDate: inv.issueDate?.split('T')[0] || '',
-                grandTotal: inv.grandTotal,
-                taxTotal: inv.taxTotal,
-                currency: inv.currency || 'TRY'
+                id:              inv.id,
+                invoiceNumber:   inv.invoiceNumber,
+                invoiceCategory: inv.invoiceCategory === InvoiceCategory.Satis ? 'Satis'
+                               : inv.invoiceCategory === InvoiceCategory.Iade  ? 'Iade' : 'Standart',
+                status:          this.mapStatus(inv.status),
+                customerName:    inv.customerName || inv.supplierName || '—',
+                tcknVkn:         inv.taxNumber || '',
+                email:           '',
+                issueDate:       inv.issueDate?.split('T')[0] || '',
+                grandTotal:      inv.totalAmount,
+                taxTotal:        inv.taxTotal,
             }))),
             error: (err) => console.error('E-Arşiv faturaları yüklenemedi:', err.error?.detail || err.message)
         });
     }
 
-    private mapStatus(status: InvoiceStatus): string {
+    mapStatus(status: InvoiceStatus): string {
         switch (status) {
             case InvoiceStatus.Draft: return 'Draft';
             case InvoiceStatus.Sent: return 'Sent';
@@ -242,11 +243,27 @@ export class InvoicesEArsivComponent implements OnInit {
     }
 
     viewDetail(invoice: any): void {
-        this.selectedInvoice.set(invoice);
+        this.selectedInvoice.set(null);
+        this.isLoadingDetail.set(true);
         this.showDetailModal.set(true);
+        this.invoiceService.getDetail(invoice.id).subscribe({
+            next: (detail) => { this.selectedInvoice.set(detail); this.isLoadingDetail.set(false); },
+            error: () => { this.isLoadingDetail.set(false); this.showDetailModal.set(false); }
+        });
     }
 
-    closeDetailModal(): void { this.showDetailModal.set(false); }
+    closeDetailModal(): void { this.showDetailModal.set(false); this.selectedInvoice.set(null); }
+
+    openPreview(id: string): void {
+        this.invoiceService.getPreviewHtml(id).subscribe(html => {
+            const w = window.open('', '_blank');
+            if (w) { w.document.write(html); w.document.close(); }
+        });
+    }
+
+    getCategoryLabel(cat: string): string {
+        return cat === 'Satis' ? 'Satış' : cat === 'Iade' ? 'İade' : cat;
+    }
 
     async deleteInvoice(id: string): Promise<void> {
         const confirmed = await this.confirmService.confirm({
@@ -284,6 +301,6 @@ export class InvoicesEArsivComponent implements OnInit {
     }
 
     sendEmail(id: string): void {
-        console.log('E-posta gönder:', id);
+        this.toastService.info('Bilgi', 'E-posta gönderme özelliği yakında eklenecek.');
     }
 }

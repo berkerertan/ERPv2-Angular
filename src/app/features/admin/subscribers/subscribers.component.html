@@ -141,7 +141,7 @@
           </thead>
           <tbody>
             @for (tenant of tenants(); track trackByTenant($index, tenant)) {
-              <tr>
+              <tr class="clickable-row" (click)="openDetail(tenant)">
                 <!-- İşletme -->
                 <td>
                   <div class="tenant-name">{{ tenant.companyName }}</div>
@@ -198,7 +198,7 @@
 
                 <!-- İşlemler -->
                 <td>
-                  <div class="actions-cell">
+                  <div class="actions-cell" (click)="$event.stopPropagation()">
                     <button class="action-btn view" title="Detay" (click)="openDetail(tenant)">
                       <span class="material-icons-outlined">visibility</span>
                     </button>

@@ -92,12 +92,12 @@
             </thead>
             <tbody>
                 @for (a of filteredAccounts; track a.id) {
-                <tr>
+                <tr class="clickable-row" (click)="viewDetail(a)">
                     <td>
                         <div class="customer-cell">
                             <div class="customer-avatar supplier">{{ a.name.charAt(0) }}</div>
                             <div class="customer-info">
-                                <span class="customer-name" (click)="viewDetail(a)">{{ a.name }}</span>
+                                <span class="customer-name">{{ a.name }}</span>
                                 <span class="customer-email">{{ a.email }}</span>
                             </div>
                         </div>
@@ -130,7 +130,7 @@
                         </span>
                     </td>
                     <td>
-                        <div class="actions-cell">
+                        <div class="actions-cell" (click)="$event.stopPropagation()">
                             <button class="action-btn view" title="Detay" (click)="viewDetail(a)">
                                 <span class="material-icons-outlined">visibility</span>
                             </button>

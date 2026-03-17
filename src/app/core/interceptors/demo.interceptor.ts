@@ -167,6 +167,10 @@ export const demoInterceptor: HttpInterceptorFn = (req, next) => {
 
     // ── FATURALAR ─────────────────────────────────────────────────────────────
     if (path.startsWith('/api/invoices')) {
+        // Yeni liste endpoint'leri
+        if (path.endsWith('/e-fatura')) return ok(DEMO_EFATURA_INVOICES.map(toListDto));
+        if (path.endsWith('/e-arsiv'))  return ok(DEMO_EARSIV_INVOICES.map(toListDto));
+
         if (path.includes('/summary')) {
             const invType = req.params.get('invoiceType');
             const list = invType === String(InvoiceType.EFatura) ? DEMO_EFATURA_INVOICES
@@ -178,8 +182,25 @@ export const demoInterceptor: HttpInterceptorFn = (req, next) => {
                 sentCount:     0,
                 approvedCount: list.length,
                 rejectedCount: 0,
-                totalAmount:   list.reduce((s, i) => s + i.grandTotal, 0),
+                totalAmount:   list.reduce((s: number, i: any) => s + i.grandTotal, 0),
             });
+        }
+        // Detay endpoint: /api/invoices/{id}/detail
+        if (path.endsWith('/detail')) {
+            const invId = path.split('/')[3];
+            const inv = DEMO_ALL_INVOICES.find((i: any) => i.id === invId) ?? DEMO_ALL_INVOICES[0];
+            return ok({
+                invoice: inv,
+                items:   (inv as any).items ?? [],
+                customerCariAccountId: (inv as any).cariAccountId,
+                customerName:          (inv as any).cariAccountName,
+            });
+        }
+        // Preview HTML
+        if (path.includes('/preview-html')) {
+            const invId = path.split('/')[3];
+            const inv = DEMO_ALL_INVOICES.find((i: any) => i.id === invId) ?? DEMO_ALL_INVOICES[0];
+            return ok(buildInvoicePreviewHtml(inv as any));
         }
         if (path.includes('/items'))        return ok([]);
         if (path.includes('/pdf'))          return ok(new Blob(['mock']));
@@ -192,14 +213,14 @@ export const demoInterceptor: HttpInterceptorFn = (req, next) => {
         if (method === 'POST') {
             return ok({ ...DEMO_ALL_INVOICES[0], id: newMockId() });
         }
-        // GET /api/invoices?invoiceType=1 veya 2
+        // GET /api/invoices?invoiceType=1 veya 2 (eski endpoint uyumu)
         const invTypeParam = req.params.get('invoiceType');
         if (invTypeParam === String(InvoiceType.EFatura)) return ok(DEMO_EFATURA_INVOICES);
         if (invTypeParam === String(InvoiceType.EArsiv))  return ok(DEMO_EARSIV_INVOICES);
         // GET /api/invoices/:id
         const invId = path.replace('/api/invoices/', '').split('/')[0];
         if (invId) {
-            const found = DEMO_ALL_INVOICES.find(i => i.id === invId);
+            const found = DEMO_ALL_INVOICES.find((i: any) => i.id === invId);
             return ok(found ?? DEMO_ALL_INVOICES[0]);
         }
         return ok(DEMO_ALL_INVOICES);
@@ -245,6 +266,102 @@ export const demoInterceptor: HttpInterceptorFn = (req, next) => {
     if (method === 'POST') return ok(`"${newMockId()}"`);
     return noContent();
 };
+
+// ── Fatura liste DTO dönüştürücü ─────────────────────────────────────────────
+function toListDto(inv: any) {
+    return {
+        id:              inv.id,
+        invoiceNumber:   inv.invoiceNumber,
+        invoiceCategory: inv.invoiceCategory,
+        customerName:    inv.cariAccountName,
+        taxNumber:       inv.taxNumber || '',
+        totalAmount:     inv.grandTotal,
+        taxTotal:        inv.taxTotal,
+        status:          inv.status,
+        issueDate:       inv.issueDate,
+    };
+}
+
+// ── Fatura HTML önizleme oluşturucu ──────────────────────────────────────────
+function buildInvoicePreviewHtml(inv: any): string {
+    const typeLabel = inv.invoiceType === 1 ? 'E-FATURA' : 'E-ARŞİV FATURA';
+    const catLabel  = inv.invoiceCategory === 1 ? 'SATIŞ'
+                    : inv.invoiceCategory === 2 ? 'İADE'
+                    : inv.invoiceCategory === 3 ? 'TEVKİFATLI' : 'STANDART';
+    const items: any[] = inv.items ?? [];
+    const rows = items.map((it: any, i: number) => `
+        <tr>
+            <td>${i+1}</td>
+            <td>${it.productName}</td>
+            <td style="text-align:right">${it.quantity}</td>
+            <td>Adet</td>
+            <td style="text-align:right">₺${it.unitPrice.toLocaleString('tr-TR')}</td>
+            <td style="text-align:center">%${it.taxRate}</td>
+            <td style="text-align:right">₺${it.taxAmount.toLocaleString('tr-TR')}</td>
+            <td style="text-align:right;font-weight:600">₺${it.lineTotal.toLocaleString('tr-TR')}</td>
+        </tr>`).join('');
+    return `<!DOCTYPE html><html lang="tr"><head><meta charset="UTF-8">
+<title>Fatura – ${inv.invoiceNumber}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,sans-serif;font-size:12px;color:#1a1a1a;padding:28px}
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #1e40af}
+.co-name{font-size:18px;font-weight:700;color:#1e293b}.co-sub{color:#64748b;margin-top:4px;font-size:11px}
+.inv-title{font-size:24px;font-weight:800;color:#1e40af;text-align:right}
+.inv-num{font-size:13px;color:#334155;text-align:right;margin-top:4px}
+.inv-cat{font-size:10px;font-weight:700;letter-spacing:.1em;color:#64748b;text-align:right;margin-top:4px}
+.parties{display:flex;gap:16px;margin-bottom:20px}
+.party{flex:1;border:1px solid #e2e8f0;border-radius:6px;padding:12px}
+.party-lbl{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#94a3b8;margin-bottom:6px}
+.party-name{font-size:13px;font-weight:600;color:#1e293b;margin-bottom:4px}
+.party-sub{font-size:11px;color:#64748b}
+table{width:100%;border-collapse:collapse;margin-bottom:20px}
+thead th{background:#f8fafc;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b;padding:8px;border-bottom:2px solid #e2e8f0;text-align:left}
+tbody td{padding:7px 8px;border-bottom:1px solid #f1f5f9;font-size:12px}
+tbody tr:last-child td{border-bottom:none}
+.totals{float:right;min-width:260px;margin-bottom:24px}
+.t-row{display:flex;justify-content:space-between;padding:5px 0;font-size:12px;color:#475569}
+.t-grand{font-size:14px;font-weight:700;color:#1e293b;padding-top:8px;border-top:2px solid #1e293b;margin-top:4px}
+.footer{clear:both;font-size:10px;color:#94a3b8;text-align:center;padding-top:16px;border-top:1px solid #e2e8f0}
+@media print{body{padding:12px}.hdr{page-break-after:avoid}}
+</style></head><body>
+<div class="hdr">
+  <div>
+    <div class="co-name">Demokart Elektronik A.Ş.</div>
+    <div class="co-sub">VKN: 3820594712 · İstanbul, Türkiye</div>
+    <div class="co-sub" style="margin-top:6px">Tarih: ${inv.issueDate}${inv.dueDate && inv.invoiceCategory !== 3 ? ' &nbsp;|&nbsp; Vade: '+inv.dueDate : ''}</div>
+  </div>
+  <div>
+    <div class="inv-title">${typeLabel}</div>
+    <div class="inv-num">${inv.invoiceNumber}</div>
+    <div class="inv-cat">${catLabel} FATURASI</div>
+  </div>
+</div>
+<div class="parties">
+  <div class="party">
+    <div class="party-lbl">Satıcı</div>
+    <div class="party-name">Demokart Elektronik A.Ş.</div>
+    <div class="party-sub">VKN: 3820594712</div>
+    <div class="party-sub">İstanbul, Türkiye</div>
+  </div>
+  <div class="party">
+    <div class="party-lbl">${inv.invoiceCategory === 3 ? 'Tedarikçi' : 'Alıcı'}</div>
+    <div class="party-name">${inv.cariAccountName}</div>
+    ${inv.taxNumber ? '<div class="party-sub">VKN/TCKN: '+inv.taxNumber+'</div>' : ''}
+  </div>
+</div>
+<table>
+  <thead><tr><th>#</th><th>Ürün / Hizmet</th><th style="text-align:right">Miktar</th><th>Birim</th><th style="text-align:right">Birim Fiyat</th><th style="text-align:center">KDV%</th><th style="text-align:right">KDV Tutarı</th><th style="text-align:right">Toplam</th></tr></thead>
+  <tbody>${rows}</tbody>
+</table>
+<div class="totals">
+  <div class="t-row"><span>Ara Toplam</span><span>₺${inv.subtotal.toLocaleString('tr-TR')}</span></div>
+  <div class="t-row"><span>KDV Toplam</span><span>₺${inv.taxTotal.toLocaleString('tr-TR')}</span></div>
+  <div class="t-row t-grand"><span>Genel Toplam</span><span>₺${inv.grandTotal.toLocaleString('tr-TR')}</span></div>
+</div>
+<div class="footer">Bu belge elektronik ortamda oluşturulmuştur. Demokart Elektronik A.Ş. &copy; 2026</div>
+</body></html>`;
+}
 
 // ── Cari suggest yardımcısı ───────────────────────────────────────────────────
 function suggestCari(list: typeof DEMO_CARIS, q: string | null) {

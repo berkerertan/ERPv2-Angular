@@ -75,7 +75,7 @@ export class LandingContentComponent implements OnInit {
   });
 
   // Keep LandingContentService as fallback for rich mock data
-  constructor(private landingContentService: LandingContentService) {}
+  private landingContentService = inject(LandingContentService);
 
   ngOnInit(): void {
     // Try loading from API first
@@ -160,7 +160,9 @@ export class LandingContentComponent implements OnInit {
   saveHero(): void {
     this.isSaving.set(true);
     // Save to mock service for local state
-    this.landingContentService.updateHero(this.editingHero()).subscribe();
+    this.landingContentService.updateHero(this.editingHero()).subscribe({
+      error: (err) => console.error('Hero yerel güncelleme hatası:', err),
+    });
     // Also persist to API
     this.platformAdminService.updateLandingContent('hero', {
       title: this.editingHero().title,
@@ -368,7 +370,9 @@ export class LandingContentComponent implements OnInit {
 
   saveCta(): void {
     this.isSaving.set(true);
-    this.landingContentService.updateCta(this.editingCta()).subscribe();
+    this.landingContentService.updateCta(this.editingCta()).subscribe({
+      error: (err) => console.error('CTA yerel güncelleme hatası:', err),
+    });
     this.platformAdminService.updateLandingContent('cta', {
       title: this.editingCta().title,
       content: JSON.stringify(this.editingCta()),

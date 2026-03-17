@@ -110,3 +110,28 @@ export interface InvoiceSummary {
     rejectedCount: number;
     totalAmount: number;
 }
+
+/** InvoiceListItemDto — GET /api/invoices/e-fatura ve /e-arsiv yanıtı */
+export interface InvoiceListItemDto {
+    id: string;
+    invoiceNumber: string;
+    invoiceCategory: InvoiceCategory;
+    customerName?: string;
+    supplierName?: string;
+    taxNumber?: string;
+    totalAmount: number;
+    taxTotal: number;
+    status: InvoiceStatus;
+    statusText?: string;
+    issueDate: string;
+}
+
+/** InvoiceDetailDto — GET /api/invoices/{id}/detail yanıtı */
+export interface InvoiceDetailDto {
+    invoice: Invoice;
+    items: InvoiceItem[];
+    customerCariAccountId?: string;
+    customerName?: string;
+    supplierCariAccountId?: string;
+    supplierName?: string;
+}

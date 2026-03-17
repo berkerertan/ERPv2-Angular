@@ -90,9 +90,9 @@
             </thead>
             <tbody>
                 @for (inv of filteredInvoices; track inv.id) {
-                <tr>
+                <tr class="clickable-row" (click)="viewDetail(inv)">
                     <td>
-                        <span class="invoice-number" (click)="viewDetail(inv)">{{ inv.invoiceNumber }}</span>
+                        <span class="invoice-number">{{ inv.invoiceNumber }}</span>
                     </td>
                     <td>
                         <span class="badge" [class.badge-info]="inv.invoiceCategory === 'Satis'"
@@ -110,7 +110,7 @@
                     </td>
                     <td class="text-muted">{{ inv.issueDate }}</td>
                     <td>
-                        <div class="actions-cell">
+                        <div class="actions-cell" (click)="$event.stopPropagation()">
                             @if (inv.status === 'Draft') {
                             <button class="action-btn approve" title="GIB'e Gönder" (click)="sendInvoice(inv.id)">
                                 <span class="material-icons-outlined">send</span>
@@ -278,43 +278,162 @@
 }
 
 <!-- ─── Fatura Detay Modalı ──────────────────────────────── -->
-@if (showDetailModal() && selectedInvoice()) {
+@if (showDetailModal()) {
 <div class="overlay" (click)="closeDetailModal()"></div>
-<div class="modal invoice-detail-modal">
+<div class="modal invoice-view-modal">
     <div class="modal-header">
-        <h2>Fatura Detayı</h2>
-        <button class="modal-close" (click)="closeDetailModal()"><span
-                class="material-icons-outlined">close</span></button>
+        <h2><span class="material-icons-outlined" style="color:var(--primary-400);">receipt_long</span> E-Fatura Detayı</h2>
+        <div style="display:flex;gap:8px;align-items:center">
+            @if (selectedInvoice()) {
+            <button class="btn btn-secondary btn-sm" (click)="openPreview(selectedInvoice()!.invoice.id)">
+                <span class="material-icons-outlined">print</span> Yazdır
+            </button>
+            <button class="btn btn-secondary btn-sm" (click)="downloadPdf(selectedInvoice()!.invoice.id)">
+                <span class="material-icons-outlined">picture_as_pdf</span> PDF
+            </button>
+            }
+            <button class="modal-close" (click)="closeDetailModal()"><span class="material-icons-outlined">close</span></button>
+        </div>
     </div>
-    <div class="detail-grid">
-        <div class="detail-row"><span class="detail-label">Fatura No</span><span class="detail-value">{{
-                selectedInvoice().invoiceNumber }}</span></div>
-        <div class="detail-row"><span class="detail-label">Tür</span><span class="detail-value">{{
-                selectedInvoice().invoiceCategory === 'Satis' ? 'Satış' : 'İade' }} Faturası</span></div>
-        <div class="detail-row"><span class="detail-label">Müşteri</span><span class="detail-value">{{
-                selectedInvoice().cariAccountName }}</span></div>
-        <div class="detail-row"><span class="detail-label">VKN</span><span class="detail-value font-mono">{{
-                selectedInvoice().taxNumber }}</span></div>
-        <div class="detail-row"><span class="detail-label">Tarih</span><span class="detail-value">{{
-                selectedInvoice().issueDate }}</span></div>
-        <div class="detail-row"><span class="detail-label">Durum</span><span class="badge"
-                [ngClass]="getStatusBadge(selectedInvoice().status)">{{ getStatusLabel(selectedInvoice().status)
-                }}</span></div>
-        @if (selectedInvoice().ettn) {
-        <div class="detail-row full-width"><span class="detail-label">ETTN</span><span
-                class="detail-value font-mono text-xs">{{ selectedInvoice().ettn }}</span></div>
+
+    <!-- Yükleniyor -->
+    @if (isLoadingDetail()) {
+    <div class="inv-loading">
+        <span class="material-icons-outlined" style="font-size:32px;color:var(--text-muted);">hourglass_top</span>
+        <span style="color:var(--text-muted)">Fatura yükleniyor…</span>
+    </div>
+    }
+
+    @if (!isLoadingDetail() && selectedInvoice()) {
+    <div class="inv-doc">
+        <!-- Fatura Başlığı -->
+        <div class="inv-hdr">
+            <div class="inv-company">
+                <div class="inv-company-logo">DE</div>
+                <div>
+                    <div class="inv-company-name">Demokart Elektronik A.Ş.</div>
+                    <div class="inv-company-sub">VKN: 3820594712 · İstanbul, Türkiye</div>
+                    <div class="inv-company-sub">
+                        Tarih: {{ selectedInvoice()!.invoice.issueDate }}
+                        @if (selectedInvoice()!.invoice.dueDate) {
+                        &nbsp;·&nbsp; Vade: {{ selectedInvoice()!.invoice.dueDate }}
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="inv-meta">
+                <div class="inv-type-label">E-FATURA</div>
+                <div class="inv-number">{{ selectedInvoice()!.invoice.invoiceNumber }}</div>
+                <span class="badge" [ngClass]="getStatusBadge(mapStatus(selectedInvoice()!.invoice.status))">
+                    {{ getStatusLabel(mapStatus(selectedInvoice()!.invoice.status)) }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Taraflar -->
+        <div class="inv-parties">
+            <div class="inv-party">
+                <div class="inv-party-lbl">Satıcı</div>
+                <div class="inv-party-name">Demokart Elektronik A.Ş.</div>
+                <div class="inv-party-sub">VKN: 3820594712</div>
+                <div class="inv-party-sub">İstanbul, Türkiye</div>
+            </div>
+            <div class="inv-party">
+                <div class="inv-party-lbl">{{ selectedInvoice()!.invoice.invoiceCategory === 3 ? 'Tedarikçi' : 'Alıcı' }}</div>
+                <div class="inv-party-name">{{ selectedInvoice()!.customerName || selectedInvoice()!.invoice.cariAccountName }}</div>
+                @if (selectedInvoice()!.invoice.taxNumber) {
+                <div class="inv-party-sub">VKN/TCKN: {{ selectedInvoice()!.invoice.taxNumber }}</div>
+                }
+            </div>
+        </div>
+
+        <!-- Kalemler -->
+        <table class="inv-items-table">
+            <thead>
+                <tr>
+                    <th class="col-idx">#</th>
+                    <th>Ürün / Hizmet</th>
+                    <th class="col-num">Miktar</th>
+                    <th class="col-num">Birim Fiyat</th>
+                    <th class="col-num">KDV%</th>
+                    <th class="col-num">KDV Tutarı</th>
+                    <th class="col-num">Toplam</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (item of selectedInvoice()!.items; track item.id; let i = $index) {
+                <tr>
+                    <td class="col-idx text-muted">{{ i + 1 }}</td>
+                    <td>
+                        <div style="font-weight:500;color:var(--text-primary)">{{ item.productName }}</div>
+                        @if (item.barcode) {<div class="font-mono" style="font-size:0.75rem;color:var(--text-muted)">{{ item.barcode }}</div>}
+                    </td>
+                    <td class="col-num">{{ item.quantity }} {{ item.unit }}</td>
+                    <td class="col-num">₺{{ item.unitPrice.toLocaleString('tr-TR') }}</td>
+                    <td class="col-num">%{{ item.taxRate }}</td>
+                    <td class="col-num">₺{{ item.taxAmount.toLocaleString('tr-TR') }}</td>
+                    <td class="col-num" style="font-weight:600;color:var(--text-primary)">₺{{ item.lineTotal.toLocaleString('tr-TR') }}</td>
+                </tr>
+                }
+                @if (selectedInvoice()!.items.length === 0) {
+                <tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:16px">Kalem bulunamadı</td></tr>
+                }
+            </tbody>
+        </table>
+
+        <!-- Toplamlar -->
+        <div class="inv-totals-wrap">
+            <div class="inv-totals">
+                <div class="inv-total-row">
+                    <span>Ara Toplam</span>
+                    <span>₺{{ selectedInvoice()!.invoice.subtotal.toLocaleString('tr-TR', {minimumFractionDigits:2}) }}</span>
+                </div>
+                <div class="inv-total-row">
+                    <span>KDV Toplam</span>
+                    <span>₺{{ selectedInvoice()!.invoice.taxTotal.toLocaleString('tr-TR', {minimumFractionDigits:2}) }}</span>
+                </div>
+                @if (selectedInvoice()!.invoice.discountTotal > 0) {
+                <div class="inv-total-row" style="color:var(--success)">
+                    <span>İndirim</span>
+                    <span>-₺{{ selectedInvoice()!.invoice.discountTotal.toLocaleString('tr-TR', {minimumFractionDigits:2}) }}</span>
+                </div>
+                }
+                <div class="inv-total-row inv-grand-total">
+                    <span>Genel Toplam</span>
+                    <span>₺{{ selectedInvoice()!.invoice.grandTotal.toLocaleString('tr-TR', {minimumFractionDigits:2}) }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- GİB Bilgileri -->
+        @if (selectedInvoice()!.invoice.uuid || selectedInvoice()!.invoice.ettn) {
+        <div class="inv-gib">
+            @if (selectedInvoice()!.invoice.uuid) {
+            <div class="inv-gib-row"><span class="inv-gib-lbl">UUID</span><span class="font-mono" style="font-size:0.75rem">{{ selectedInvoice()!.invoice.uuid }}</span></div>
+            }
+            @if (selectedInvoice()!.invoice.ettn) {
+            <div class="inv-gib-row"><span class="inv-gib-lbl">ETTN</span><span class="font-mono" style="font-size:0.75rem">{{ selectedInvoice()!.invoice.ettn }}</span></div>
+            }
+        </div>
         }
-        <div class="detail-row"><span class="detail-label">KDV</span><span class="detail-value">₺{{
-                selectedInvoice().taxTotal.toLocaleString('tr-TR') }}</span></div>
-        <div class="detail-row"><span class="detail-label">Genel Toplam</span><span
-                class="detail-value amount font-semibold" style="font-size: 1.125rem;">₺{{
-                selectedInvoice().grandTotal.toLocaleString('tr-TR') }}</span></div>
+        @if (selectedInvoice()!.invoice.notes) {
+        <div class="inv-notes"><strong>Not:</strong> {{ selectedInvoice()!.invoice.notes }}</div>
+        }
     </div>
+    }
+
     <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="downloadPdf(selectedInvoice().id)"><span
-                class="material-icons-outlined">picture_as_pdf</span> PDF</button>
-        <button class="btn btn-secondary" (click)="downloadXml(selectedInvoice().id)"><span
-                class="material-icons-outlined">code</span> XML</button>
+        @if (selectedInvoice()) {
+        <button class="btn btn-secondary" (click)="openPreview(selectedInvoice()!.invoice.id)">
+            <span class="material-icons-outlined">print</span> Yazdır / Önizle
+        </button>
+        <button class="btn btn-secondary" (click)="downloadPdf(selectedInvoice()!.invoice.id)">
+            <span class="material-icons-outlined">picture_as_pdf</span> PDF
+        </button>
+        <button class="btn btn-secondary" (click)="downloadXml(selectedInvoice()!.invoice.id)">
+            <span class="material-icons-outlined">code</span> XML
+        </button>
+        }
         <button class="btn btn-primary" (click)="closeDetailModal()">Kapat</button>
     </div>
 </div>

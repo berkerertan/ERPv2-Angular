@@ -7,10 +7,13 @@ import {
     InvoiceItem,
     InvoiceType,
     InvoiceStatus,
+    InvoiceCategory,
     CreateInvoiceRequest,
     UpdateInvoiceRequest,
     CreateInvoiceFromOrderRequest,
-    InvoiceSummary
+    InvoiceSummary,
+    InvoiceListItemDto,
+    InvoiceDetailDto
 } from '../models/invoice.model';
 import { ApiQueryParams } from '../models/api.model';
 
@@ -22,7 +25,7 @@ export class InvoiceService {
 
     // ─── Liste & Detay ────────────────────────────────────────
 
-    /** Fatura listesi — type ve status filtresi */
+    /** Fatura listesi — type ve status filtresi (eski endpoint) */
     getAll(params?: ApiQueryParams & {
         invoiceType?: InvoiceType;
         status?: InvoiceStatus;
@@ -34,7 +37,27 @@ export class InvoiceService {
         });
     }
 
-    /** Fatura detayı */
+    /** E-Fatura listesi — GET /api/invoices/e-fatura */
+    getEFaturaList(params?: { invoiceCategory?: InvoiceCategory; status?: InvoiceStatus }): Observable<InvoiceListItemDto[]> {
+        return this.http.get<InvoiceListItemDto[]>(`${this.apiUrl}/e-fatura`, { params: this.buildParams(params) });
+    }
+
+    /** E-Arşiv listesi — GET /api/invoices/e-arsiv */
+    getEArsivList(params?: { invoiceCategory?: InvoiceCategory; status?: InvoiceStatus }): Observable<InvoiceListItemDto[]> {
+        return this.http.get<InvoiceListItemDto[]>(`${this.apiUrl}/e-arsiv`, { params: this.buildParams(params) });
+    }
+
+    /** Fatura başlık + kalemler tek çağrıda — GET /api/invoices/{id}/detail */
+    getDetail(id: string): Observable<InvoiceDetailDto> {
+        return this.http.get<InvoiceDetailDto>(`${this.apiUrl}/${id}/detail`);
+    }
+
+    /** Yazdırılabilir HTML önizleme — text/html döner */
+    getPreviewHtml(id: string): Observable<string> {
+        return this.http.get(`${this.apiUrl}/${id}/preview-html`, { responseType: 'text' });
+    }
+
+    /** Fatura detayı (sadece başlık) */
     getById(id: string): Observable<Invoice> {
         return this.http.get<Invoice>(`${this.apiUrl}/${id}`);
     }

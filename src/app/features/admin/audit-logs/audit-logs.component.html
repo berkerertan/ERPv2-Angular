@@ -132,7 +132,7 @@
                 </thead>
                 <tbody>
                     @for (log of logs(); track log.id) {
-                        <tr [class.error-row]="log.statusCode >= 400">
+                        <tr class="clickable-row" [class.error-row]="log.statusCode >= 400" (click)="viewDetail(log)">
                             <td class="date-cell">{{ log.occurredAtUtc | date:'dd.MM.yyyy HH:mm:ss' }}</td>
                             <td class="user-cell">
                                 <span class="user-name">{{ log.userName || '-' }}</span>
@@ -153,7 +153,7 @@
                             <td class="duration-cell">{{ formatDuration(log.durationMs) }}</td>
                             <td class="ip-cell">{{ log.ipAddress || '-' }}</td>
                             <td>
-                                <button class="btn-icon" (click)="viewDetail(log)" title="Detay">
+                                <button class="btn-icon" (click)="$event.stopPropagation(); viewDetail(log)" title="Detay">
                                     <span class="material-icons-outlined">visibility</span>
                                 </button>
                             </td>

@@ -260,11 +260,33 @@ export const DEMO_FINANCE_MOVEMENTS = [
 // 8. FATURALAR (18 adet — EFatura + EArsiv karışık)
 // ═════════════════════════════════════════════════════════════════════════════
 const mkInv = (n: number, type: InvoiceType, cat: InvoiceCategory, cariIdx: number,
-               cariName: string, items: { qty: number; price: number; tax: number }[],
+               cariName: string,
+               rawItems: { qty: number; price: number; tax: number; pIdx: number }[],
                issueDaysAgo: number, dueDaysFromNow: number) => {
-    const t = ivTotals(items);
+    const t = ivTotals(rawItems);
+    const invoiceId = ivid(n);
+    const items = rawItems.map((ri, i) => {
+        const p = DEMO_PRODUCTS[ri.pIdx - 1]!;
+        const base = ri.qty * ri.price;
+        const taxAmt = Math.round(base * ri.tax);
+        return {
+            id: `0000000a-${String(n).padStart(4,'0')}-0000-0000-${String(i+1).padStart(12,'0')}`,
+            invoiceId,
+            productId: p.id,
+            productName: p.name,
+            barcode: p.barcodeEan13 || '',
+            quantity: ri.qty,
+            unit: 'Adet',
+            unitPrice: ri.price,
+            discountRate: 0,
+            discountAmount: 0,
+            taxRate: Math.round(ri.tax * 100),
+            taxAmount: taxAmt,
+            lineTotal: base + taxAmt,
+        };
+    });
     return {
-        id: ivid(n),
+        id: invoiceId,
         invoiceNumber: `${type === InvoiceType.EFatura ? 'EF' : 'EA'}2026${String(n).padStart(6,'0')}`,
         invoiceType: type, invoiceCategory: cat,
         status: InvoiceStatus.Approved,
@@ -273,33 +295,34 @@ const mkInv = (n: number, type: InvoiceType, cat: InvoiceCategory, cariIdx: numb
         dueDate: fwd(dueDaysFromNow),
         ...t, currency: 'TRY',
         createdAt: ago(issueDaysAgo),
+        items,
     };
 };
 
 // EFatura — büyük müşteriler ve tedarikçiler
 const EF_INVOICES = [
-    mkInv( 1, InvoiceType.EFatura, InvoiceCategory.Satis,  1, 'Teknosa İç ve Dış Ticaret A.Ş.',        [{qty:10,price:59999,tax:0.20},{qty:8,price:47999,tax:0.20},{qty:5,price:27500,tax:0.20}], 71, 30),
-    mkInv( 2, InvoiceType.EFatura, InvoiceCategory.Satis,  2, 'Media Markt Turkey A.Ş.',                [{qty:5,price:79999,tax:0.20},{qty:4,price:69999,tax:0.20}], 67, 30),
-    mkInv( 3, InvoiceType.EFatura, InvoiceCategory.Satis,  4, 'Amazon Türkiye Perakende Ltd. Şti.',     [{qty:15,price:59999,tax:0.20},{qty:12,price:47999,tax:0.20},{qty:6,price:22999,tax:0.20}], 59, 30),
-    mkInv( 4, InvoiceType.EFatura, InvoiceCategory.Satis, 15, 'Turkcell Teknoloji A.Ş.',               [{qty:20,price:47999,tax:0.20},{qty:15,price:59999,tax:0.20},{qty:8,price:39999,tax:0.20}],  6, 45),
-    mkInv( 5, InvoiceType.EFatura, InvoiceCategory.Satis, 16, 'Koç Sistem Bilgi ve İletişim Hizmetleri A.Ş.', [{qty:6,price:79999,tax:0.20},{qty:4,price:69999,tax:0.20},{qty:3,price:47999,tax:0.20}],  3, 45),
-    mkInv( 6, InvoiceType.EFatura, InvoiceCategory.Iade,   4, 'Amazon Türkiye Perakende Ltd. Şti.',     [{qty:1,price:79999,tax:0.20}], 20, 15),
-    mkInv( 7, InvoiceType.EFatura, InvoiceCategory.Tevkifat, 9,  'Samsung Electronics Türkiye Ltd. Şti.',  [{qty:15,price:22000,tax:0.20},{qty:20,price:38000,tax:0.20},{qty:20,price:5500,tax:0.20}], 78, 0),
-    mkInv( 8, InvoiceType.EFatura, InvoiceCategory.Tevkifat, 10, 'Apple Distribution International Ltd.', [{qty:20,price:48000,tax:0.20},{qty:10,price:32000,tax:0.20},{qty:8,price:65000,tax:0.20}], 73, 0),
-    mkInv( 9, InvoiceType.EFatura, InvoiceCategory.Tevkifat, 11, 'Sony Türkiye Ltd.',                      [{qty:5,price:45000,tax:0.20},{qty:20,price:6500,tax:0.20}], 63, 0),
-    mkInv(10, InvoiceType.EFatura, InvoiceCategory.Tevkifat, 12, 'BSH Ev Aletleri San. ve Tic. A.Ş.',      [{qty:10,price:12000,tax:0.20}], 58, 0),
+    mkInv( 1, InvoiceType.EFatura, InvoiceCategory.Satis,  1, 'Teknosa İç ve Dış Ticaret A.Ş.',               [{qty:10,price:59999,tax:0.20,pIdx:5},{qty:8,price:47999,tax:0.20,pIdx:6},{qty:5,price:27500,tax:0.20,pIdx:1}],                    71, 30),
+    mkInv( 2, InvoiceType.EFatura, InvoiceCategory.Satis,  2, 'Media Markt Turkey A.Ş.',                       [{qty:5,price:79999,tax:0.20,pIdx:12},{qty:4,price:69999,tax:0.20,pIdx:13}],                                                    67, 30),
+    mkInv( 3, InvoiceType.EFatura, InvoiceCategory.Satis,  4, 'Amazon Türkiye Perakende Ltd. Şti.',            [{qty:15,price:59999,tax:0.20,pIdx:5},{qty:12,price:47999,tax:0.20,pIdx:6},{qty:6,price:22999,tax:0.20,pIdx:27}],               59, 30),
+    mkInv( 4, InvoiceType.EFatura, InvoiceCategory.Satis, 15, 'Turkcell Teknoloji A.Ş.',                       [{qty:20,price:47999,tax:0.20,pIdx:6},{qty:15,price:59999,tax:0.20,pIdx:5},{qty:8,price:39999,tax:0.20,pIdx:9}],                6, 45),
+    mkInv( 5, InvoiceType.EFatura, InvoiceCategory.Satis, 16, 'Koç Sistem Bilgi ve İletişim Hizmetleri A.Ş.', [{qty:6,price:79999,tax:0.20,pIdx:12},{qty:4,price:69999,tax:0.20,pIdx:13},{qty:3,price:47999,tax:0.20,pIdx:15}],               3, 45),
+    mkInv( 6, InvoiceType.EFatura, InvoiceCategory.Iade,   4, 'Amazon Türkiye Perakende Ltd. Şti.',            [{qty:1,price:79999,tax:0.20,pIdx:12}],                                                                                        20, 15),
+    mkInv( 7, InvoiceType.EFatura, InvoiceCategory.Tevkifat,  9, 'Samsung Electronics Türkiye Ltd. Şti.',      [{qty:15,price:22000,tax:0.20,pIdx:1},{qty:20,price:38000,tax:0.20,pIdx:6},{qty:20,price:5500,tax:0.20,pIdx:26}],               78,  0),
+    mkInv( 8, InvoiceType.EFatura, InvoiceCategory.Tevkifat, 10, 'Apple Distribution International Ltd.',      [{qty:20,price:48000,tax:0.20,pIdx:5},{qty:10,price:32000,tax:0.20,pIdx:9},{qty:8,price:65000,tax:0.20,pIdx:12}],              73,  0),
+    mkInv( 9, InvoiceType.EFatura, InvoiceCategory.Tevkifat, 11, 'Sony Türkiye Ltd.',                          [{qty:5,price:45000,tax:0.20,pIdx:3},{qty:20,price:6500,tax:0.20,pIdx:16}],                                                    63,  0),
+    mkInv(10, InvoiceType.EFatura, InvoiceCategory.Tevkifat, 12, 'BSH Ev Aletleri San. ve Tic. A.Ş.',         [{qty:10,price:12000,tax:0.20,pIdx:20}],                                                                                       58,  0),
 ];
 
 // EArsiv — orta/küçük müşteriler
 const EA_INVOICES = [
-    mkInv(11, InvoiceType.EArsiv, InvoiceCategory.Satis,  3, 'Vatan Bilgisayar Ticaret A.Ş.',          [{qty:6,price:39999,tax:0.20},{qty:5,price:31999,tax:0.20},{qty:20,price:1999,tax:0.10}], 64, 30),
-    mkInv(12, InvoiceType.EArsiv, InvoiceCategory.Satis,  5, 'Hepsiburada Elektronik Ticaret A.Ş.',    [{qty:8,price:27500,tax:0.20},{qty:4,price:54900,tax:0.20},{qty:10,price:7499,tax:0.20}], 54, 30),
-    mkInv(13, InvoiceType.EArsiv, InvoiceCategory.Satis,  6, 'N11 Ticaret A.Ş.',                       [{qty:12,price:8500,tax:0.20},{qty:10,price:6999,tax:0.20},{qty:20,price:2499,tax:0.20}], 49, 30),
-    mkInv(14, InvoiceType.EArsiv, InvoiceCategory.Satis,  7, 'ÇiçekSepeti E-Ticaret A.Ş.',            [{qty:15,price:3999,tax:0.20},{qty:12,price:5999,tax:0.20}], 44, 30),
-    mkInv(15, InvoiceType.EArsiv, InvoiceCategory.Satis,  8, 'Migros Ticaret A.Ş.',                    [{qty:6,price:13500,tax:0.20},{qty:8,price:5999,tax:0.20},{qty:7,price:9999,tax:0.20}], 41, 30),
-    mkInv(16, InvoiceType.EArsiv, InvoiceCategory.Satis,  1, 'Teknosa İç ve Dış Ticaret A.Ş.',        [{qty:4,price:79999,tax:0.20},{qty:3,price:47999,tax:0.20}], 37, 30),
-    mkInv(17, InvoiceType.EArsiv, InvoiceCategory.Satis,  2, 'Media Markt Turkey A.Ş.',                [{qty:6,price:27500,tax:0.20},{qty:4,price:34900,tax:0.20}], 34, 30),
-    mkInv(18, InvoiceType.EArsiv, InvoiceCategory.Iade,   1, 'Teknosa İç ve Dış Ticaret A.Ş.',        [{qty:2,price:59999,tax:0.20}], 25, 15),
+    mkInv(11, InvoiceType.EArsiv, InvoiceCategory.Satis,  3, 'Vatan Bilgisayar Ticaret A.Ş.',          [{qty:6,price:39999,tax:0.20,pIdx:9},{qty:5,price:31999,tax:0.20,pIdx:10},{qty:20,price:1999,tax:0.10,pIdx:30}],     64, 30),
+    mkInv(12, InvoiceType.EArsiv, InvoiceCategory.Satis,  5, 'Hepsiburada Elektronik Ticaret A.Ş.',    [{qty:8,price:27500,tax:0.20,pIdx:1},{qty:4,price:54900,tax:0.20,pIdx:3},{qty:10,price:7499,tax:0.20,pIdx:26}],      54, 30),
+    mkInv(13, InvoiceType.EArsiv, InvoiceCategory.Satis,  6, 'N11 Ticaret A.Ş.',                       [{qty:12,price:8500,tax:0.20,pIdx:16},{qty:10,price:6999,tax:0.20,pIdx:17},{qty:20,price:2499,tax:0.20,pIdx:18}],   49, 30),
+    mkInv(14, InvoiceType.EArsiv, InvoiceCategory.Satis,  7, 'ÇiçekSepeti E-Ticaret A.Ş.',            [{qty:15,price:3999,tax:0.20,pIdx:24},{qty:12,price:5999,tax:0.20,pIdx:22}],                                        44, 30),
+    mkInv(15, InvoiceType.EArsiv, InvoiceCategory.Satis,  8, 'Migros Ticaret A.Ş.',                    [{qty:6,price:13500,tax:0.20,pIdx:23},{qty:8,price:5999,tax:0.20,pIdx:25},{qty:7,price:9999,tax:0.20,pIdx:21}],    41, 30),
+    mkInv(16, InvoiceType.EArsiv, InvoiceCategory.Satis,  1, 'Teknosa İç ve Dış Ticaret A.Ş.',        [{qty:4,price:79999,tax:0.20,pIdx:12},{qty:3,price:47999,tax:0.20,pIdx:15}],                                        37, 30),
+    mkInv(17, InvoiceType.EArsiv, InvoiceCategory.Satis,  2, 'Media Markt Turkey A.Ş.',                [{qty:6,price:27500,tax:0.20,pIdx:1},{qty:4,price:34900,tax:0.20,pIdx:2}],                                         34, 30),
+    mkInv(18, InvoiceType.EArsiv, InvoiceCategory.Iade,   1, 'Teknosa İç ve Dış Ticaret A.Ş.',        [{qty:2,price:59999,tax:0.20,pIdx:5}],                                                                              25, 15),
 ];
 
 export const DEMO_EFATURA_INVOICES = EF_INVOICES;
