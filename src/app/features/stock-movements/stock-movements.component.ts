@@ -19,6 +19,8 @@ export class StockMovementsComponent implements OnInit {
     private toastService = inject(ToastService);
 
     searchTerm = '';
+    sortColumn = '';
+    sortDir: 'asc' | 'desc' = 'asc';
     activeTab = signal<'movements' | 'balances'>('movements');
     showModal = signal(false);
     formData = { productId: '', warehouseId: '', movementType: 'In', quantity: 0, description: '' };
@@ -57,10 +59,21 @@ export class StockMovementsComponent implements OnInit {
         });
     }
 
+    sort(col: string): void {
+        if (this.sortColumn === col) { this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc'; }
+        else { this.sortColumn = col; this.sortDir = 'asc'; }
+    }
+
     get filteredMovements() {
+        let list = this.movements();
         const term = this.searchTerm.toLowerCase();
-        if (!term) return this.movements();
-        return this.movements().filter(m => m.productName.toLowerCase().includes(term) || m.warehouseName.toLowerCase().includes(term));
+        if (term) list = list.filter(m => m.productName.toLowerCase().includes(term) || m.warehouseName.toLowerCase().includes(term));
+        if (this.sortColumn) {
+            const dir = this.sortDir === 'asc' ? 1 : -1;
+            const col = this.sortColumn;
+            list = [...list].sort((a, b) => typeof a[col] === 'number' ? dir * (a[col] - b[col]) : dir * String(a[col]).localeCompare(String(b[col]), 'tr'));
+        }
+        return list;
     }
 
     openAddModal(): void {

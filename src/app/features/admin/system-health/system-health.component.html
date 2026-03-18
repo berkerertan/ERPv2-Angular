@@ -1,0 +1,255 @@
+<div class="page-container">
+
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">
+                <span class="material-icons-outlined" style="font-size:28px;vertical-align:middle;margin-right:8px;">monitor_heart</span>
+                Sistem Sağlığı
+            </h1>
+            <p class="page-subtitle">
+                Gerçek zamanlı servis durumu, bağımlılıklar ve istek geçmişi
+                @if (lastChecked()) {
+                    — Son güncelleme: {{ formatTime(lastChecked()) }}
+                }
+            </p>
+        </div>
+        <div class="header-actions">
+            <select class="form-select" [(ngModel)]="timelineRange" (change)="onRangeChange()">
+                <option [value]="15">Son 15 dk</option>
+                <option [value]="30">Son 30 dk</option>
+                <option [value]="60">Son 60 dk</option>
+                <option [value]="120">Son 2 saat</option>
+                <option [value]="360">Son 6 saat</option>
+                <option [value]="1440">Son 24 saat</option>
+            </select>
+            <button class="btn btn-sm" [class.btn-primary]="autoRefresh()" [class.btn-secondary]="!autoRefresh()"
+                    (click)="toggleAutoRefresh()" title="Otomatik yenile (30 saniyede bir)">
+                <span class="material-icons-outlined">{{ autoRefresh() ? 'timer' : 'timer_off' }}</span>
+                {{ autoRefresh() ? 'Oto Açık' : 'Oto Kapalı' }}
+            </button>
+            <button class="btn btn-secondary" [disabled]="isLoading()" (click)="loadAll()">
+                <span class="material-icons-outlined" [class.spin]="isLoading()">refresh</span>
+                {{ isLoading() ? 'Yükleniyor...' : 'Yenile' }}
+            </button>
+        </div>
+    </div>
+
+    <!-- Overall Status Banner -->
+    <div class="status-banner" [class]="getBannerClass()">
+        <div class="banner-left">
+            <div class="banner-pulse-wrap">
+                <span class="banner-dot" [class]="'bdot-' + overallStatus()"></span>
+                @if (overallStatus() === 'online') { <span class="banner-pulse"></span> }
+            </div>
+            <div>
+                <div class="banner-title">{{ getOverallLabel() }}</div>
+                <div class="banner-subtitle">
+                    @if (overview(); as ov) {
+                        {{ ov.environment }} · v{{ ov.version }}
+                        @if (ov.authorizationEnforced) { · <span class="auth-chip">Auth Aktif</span> }
+                    } @else {
+                        Veriler yükleniyor...
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="banner-stats">
+            @if (overview(); as ov) {
+                <div class="bstat">
+                    <span class="bstat-val">{{ uptimeLabel() }}</span>
+                    <span class="bstat-lbl">Uptime</span>
+                </div>
+                <div class="bstat">
+                    <span class="bstat-val">{{ ov.requestsLastHour | number }}</span>
+                    <span class="bstat-lbl">İstek/Saat</span>
+                </div>
+                <div class="bstat" [class.bstat-warn]="ov.errorRateLastHour > 3">
+                    <span class="bstat-val">{{ ov.errorRateLastHour | number:'1.1-1' }}%</span>
+                    <span class="bstat-lbl">Hata Oranı</span>
+                </div>
+                <div class="bstat">
+                    <span class="bstat-val">{{ ov.averageDurationMs | number:'1.0-0' }}ms</span>
+                    <span class="bstat-lbl">Ort. Yanıt</span>
+                </div>
+            } @else {
+                <div class="bstat"><span class="bstat-val bstat-skeleton">—</span><span class="bstat-lbl">Uptime</span></div>
+                <div class="bstat"><span class="bstat-val bstat-skeleton">—</span><span class="bstat-lbl">İstek/Saat</span></div>
+                <div class="bstat"><span class="bstat-val bstat-skeleton">—</span><span class="bstat-lbl">Hata Oranı</span></div>
+                <div class="bstat"><span class="bstat-val bstat-skeleton">—</span><span class="bstat-lbl">Ort. Yanıt</span></div>
+            }
+        </div>
+    </div>
+
+    <!-- Error state -->
+    @if (overviewError()) {
+        <div class="error-bar">
+            <span class="material-icons-outlined">error_outline</span>
+            {{ overviewError() }}
+        </div>
+    }
+
+    <!-- Dependencies -->
+    <div class="section-label">Bağımlılıklar</div>
+    @if (deps().length === 0 && !isLoading()) {
+        <div class="deps-grid deps-empty">
+            <span class="material-icons-outlined">hub</span>
+            <span>Bağımlılık verisi alınamadı</span>
+        </div>
+    } @else {
+        <div class="deps-grid">
+            @for (dep of deps(); track dep.name) {
+                <div class="dep-card" [class]="getStatusClass(dep.status)">
+                    <div class="dep-top">
+                        <div class="dep-icon" [class]="getStatusClass(dep.status)">
+                            <span class="material-icons-outlined">{{ getDepIcon(dep.name) }}</span>
+                        </div>
+                        <span class="dep-badge" [class]="getStatusClass(dep.status)">
+                            <span class="dep-dot"></span>
+                            {{ getStatusLabel(dep.status) }}
+                        </span>
+                    </div>
+                    <div class="dep-name">{{ getDepLabel(dep.name) }}</div>
+                    <div class="dep-message">{{ dep.message }}</div>
+                    <div class="dep-meta">
+                        <span class="dep-rt">
+                            <span class="material-icons-outlined" style="font-size:13px;">speed</span>
+                            {{ dep.responseTimeMs }}ms
+                        </span>
+                        <span class="dep-checked">
+                            {{ dep.checkedAtUtc | date:'HH:mm:ss' }}
+                        </span>
+                    </div>
+                </div>
+            }
+            @if (isLoading() && deps().length === 0) {
+                @for (i of [1,2,3]; track i) {
+                    <div class="dep-card dep-skeleton"></div>
+                }
+            }
+        </div>
+    }
+
+    <!-- Bottom Row: Timeline Chart + Overview Detail -->
+    <div class="bottom-row">
+
+        <!-- Timeline Chart -->
+        <div class="info-card timeline-card">
+            <div class="icard-header">
+                <h3 class="icard-title">
+                    <span class="material-icons-outlined">bar_chart</span>
+                    İstek Yoğunluğu
+                </h3>
+                @if (timeline(); as tl) {
+                    <span class="icard-badge">{{ tl.bucketMinutes }}dk aralıklı · {{ tl.points.length }} nokta</span>
+                }
+            </div>
+
+            @if (isLoading() && !timeline()) {
+                <div class="empty-mini"><span class="material-icons-outlined spin">sync</span><span>Yükleniyor...</span></div>
+            } @else if (!timeline() || timeline()!.points.length === 0) {
+                <div class="empty-mini"><span class="material-icons-outlined">show_chart</span><span>Bu aralıkta veri yok</span></div>
+            } @else {
+                <div class="chart-wrap">
+                    <div class="chart-bars">
+                        @for (pt of timeline()!.points; track pt.bucketStartUtc) {
+                            <div class="bar-col" [title]="pt.requestCount + ' istek, ' + pt.errorCount + ' hata — ' + bucketLabel(pt)">
+                                <div class="bar-stack" [style.height.%]="(pt.requestCount / timelineMax()) * 100">
+                                    <div class="bar-ok"  [style.height.%]="100 - errorBarHeight(pt)"></div>
+                                    @if (pt.errorCount > 0) {
+                                        <div class="bar-err" [style.height.%]="errorBarHeight(pt)"></div>
+                                    }
+                                </div>
+                                <span class="bar-label">{{ bucketLabel(pt) }}</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="chart-legend">
+                    <span class="legend-item"><span class="lsq lsq-ok"></span> İstek</span>
+                    <span class="legend-item"><span class="lsq lsq-err"></span> Hata</span>
+                    <span class="legend-sep"></span>
+                    @if (totalRequests() > 0) {
+                        <span class="legend-note">Toplam {{ totalRequests() }} istek</span>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Overview Details -->
+        <div class="info-card detail-card">
+            <div class="icard-header">
+                <h3 class="icard-title">
+                    <span class="material-icons-outlined">info</span>
+                    Sistem Detayları
+                </h3>
+                @if (checkCount() > 0) {
+                    <span class="icard-badge">{{ checkCount() }}. kontrol</span>
+                }
+            </div>
+            @if (overview(); as ov) {
+                <div class="detail-grid">
+                    <div class="drow">
+                        <span class="dlabel">Durum</span>
+                        <span class="dval" [class]="'dval-' + overallStatus()">{{ getOverallLabel() }}</span>
+                    </div>
+                    <div class="drow">
+                        <span class="dlabel">Ortam</span>
+                        <span class="dval">{{ ov.environment }}</span>
+                    </div>
+                    <div class="drow">
+                        <span class="dlabel">Versiyon</span>
+                        <span class="dval mono">{{ ov.version }}</span>
+                    </div>
+                    <div class="drow">
+                        <span class="dlabel">Uptime</span>
+                        <span class="dval">{{ formatUptime(ov.uptimeSeconds) }}</span>
+                    </div>
+                    <div class="drow">
+                        <span class="dlabel">Başlangıç</span>
+                        <span class="dval mono">{{ ov.startedAtUtc | date:'dd.MM.yyyy HH:mm' }}</span>
+                    </div>
+                    <div class="drow">
+                        <span class="dlabel">Veritabanı</span>
+                        <span class="dval" [class]="ov.databaseReachable ? 'dval-online' : 'dval-offline'">
+                            {{ ov.databaseReachable ? 'Erişilebilir' : 'Erişilemiyor' }}
+                        </span>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="drow">
+                        <span class="dlabel">Son İstek</span>
+                        <span class="dval mono">{{ ov.lastRequestAtUtc | date:'HH:mm:ss' }}</span>
+                    </div>
+                    <div class="drow">
+                        <span class="dlabel">Son Hata</span>
+                        <span class="dval mono" [class]="ov.lastErrorAtUtc ? 'dval-warn' : ''">
+                            {{ ov.lastErrorAtUtc ? (ov.lastErrorAtUtc | date:'HH:mm:ss') : 'Yok' }}
+                        </span>
+                    </div>
+                    <div class="divider"></div>
+                    <div class="drow">
+                        <span class="dlabel">Aktif Kullanıcı</span>
+                        <span class="dval">{{ ov.activeUsersToday }} bugün</span>
+                    </div>
+                    <div class="drow">
+                        <span class="dlabel">Aktif Tenant</span>
+                        <span class="dval">{{ ov.activeTenantsToday }} bugün</span>
+                    </div>
+                    <div class="drow">
+                        <span class="dlabel">Hata/Saat</span>
+                        <span class="dval" [class]="ov.errorsLastHour > 0 ? 'dval-warn' : ''">
+                            {{ ov.errorsLastHour }} hata
+                        </span>
+                    </div>
+                </div>
+            } @else if (isLoading()) {
+                <div class="empty-mini"><span class="material-icons-outlined spin">sync</span><span>Yükleniyor...</span></div>
+            } @else {
+                <div class="empty-mini"><span class="material-icons-outlined">error_outline</span><span>Veri alınamadı</span></div>
+            }
+        </div>
+
+    </div>
+</div>
+
+<!-- Pipe helper (inline) - no separate pipe needed, computed in TS -->

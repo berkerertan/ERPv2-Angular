@@ -22,6 +22,8 @@ export class FinanceMovementsComponent implements OnInit {
     private toastService = inject(ToastService);
 
     searchTerm = '';
+    sortColumn = '';
+    sortDir: 'asc' | 'desc' = 'asc';
     activeTab = signal<'all' | 'Income' | 'Expense'>('all');
     showModal = signal(false);
     isSaving = signal(false);
@@ -69,11 +71,21 @@ export class FinanceMovementsComponent implements OnInit {
         });
     }
 
+    sort(col: string): void {
+        if (this.sortColumn === col) { this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc'; }
+        else { this.sortColumn = col; this.sortDir = 'asc'; }
+    }
+
     get filteredItems() {
         let list = this.items();
         if (this.activeTab() !== 'all') list = list.filter(i => i.type === this.activeTab());
         const t = this.searchTerm.toLowerCase();
         if (t) list = list.filter(i => i.description.toLowerCase().includes(t) || i.category.toLowerCase().includes(t));
+        if (this.sortColumn) {
+            const dir = this.sortDir === 'asc' ? 1 : -1;
+            const col = this.sortColumn;
+            list = [...list].sort((a, b) => typeof a[col] === 'number' ? dir * (a[col] - b[col]) : dir * String(a[col]).localeCompare(String(b[col]), 'tr'));
+        }
         return list;
     }
 

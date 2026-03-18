@@ -12,6 +12,7 @@ export const errorInterceptor: HttpInterceptorFn = (req, next) => {
                 const isAuthEndpoint = req.url.includes('/api/Auth/');
                 if (!isAuthEndpoint) {
                     localStorage.removeItem('erp_token');
+                    localStorage.removeItem('erp_refresh_token');
                     localStorage.removeItem('erp_user');
                     router.navigate(['/auth/login']);
                 }

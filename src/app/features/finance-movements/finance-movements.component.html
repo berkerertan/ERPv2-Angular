@@ -45,12 +45,12 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Tür</th>
-                    <th>Tutar</th>
+                    <th class="sortable" [class.sorted]="sortColumn==='type'" (click)="sort('type')">Tür <span class="sort-icon material-icons-outlined">{{ sortColumn==='type' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='amount'" (click)="sort('amount')">Tutar <span class="sort-icon material-icons-outlined">{{ sortColumn==='amount' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
                     <th>Açıklama</th>
                     <th>Kategori</th>
-                    <th>Cari</th>
-                    <th>Tarih</th>
+                    <th class="sortable" [class.sorted]="sortColumn==='cariAccountName'" (click)="sort('cariAccountName')">Cari <span class="sort-icon material-icons-outlined">{{ sortColumn==='cariAccountName' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='createdAt'" (click)="sort('createdAt')">Tarih <span class="sort-icon material-icons-outlined">{{ sortColumn==='createdAt' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
                     <th>İşlemler</th>
                 </tr>
             </thead>

@@ -18,6 +18,8 @@ interface ExcelUploadResult {
 })
 export class ProductsComponent implements OnDestroy {
     searchTerm = '';
+    sortColumn = '';
+    sortDir: 'asc' | 'desc' = 'asc';
     categoryFilter = signal<string>('all');
     showModal = signal(false);
     showBarcodeScanner = signal(false);
@@ -55,6 +57,11 @@ export class ProductsComponent implements OnDestroy {
         return cats.sort();
     }
 
+    sort(col: string): void {
+        if (this.sortColumn === col) { this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc'; }
+        else { this.sortColumn = col; this.sortDir = 'asc'; }
+    }
+
     get filteredProducts() {
         let items = this.products();
 
@@ -72,6 +79,11 @@ export class ProductsComponent implements OnDestroy {
                 p.categoryName.toLowerCase().includes(term) ||
                 p.unit.toLowerCase().includes(term)
             );
+        }
+        if (this.sortColumn) {
+            const dir = this.sortDir === 'asc' ? 1 : -1;
+            const col = this.sortColumn;
+            items = [...items].sort((a, b) => typeof (a as any)[col] === 'number' ? dir * ((a as any)[col] - (b as any)[col]) : dir * String((a as any)[col]).localeCompare(String((b as any)[col]), 'tr'));
         }
         return items;
     }

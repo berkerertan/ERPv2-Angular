@@ -24,6 +24,8 @@ export class InvoicesEArsivComponent implements OnInit {
     private toastService = inject(ToastService);
 
     searchTerm = '';
+    sortColumn = '';
+    sortDir: 'asc' | 'desc' = 'asc';
     activeTab = signal<'all' | 'Draft' | 'Sent' | 'Cancelled'>('all');
     showCreateModal = signal(false);
     showDetailModal = signal(false);
@@ -113,6 +115,11 @@ export class InvoicesEArsivComponent implements OnInit {
         }
     }
 
+    sort(col: string): void {
+        if (this.sortColumn === col) { this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc'; }
+        else { this.sortColumn = col; this.sortDir = 'asc'; }
+    }
+
     get filteredInvoices() {
         let items = this.invoices();
         const tab = this.activeTab();
@@ -123,6 +130,11 @@ export class InvoicesEArsivComponent implements OnInit {
             i.customerName.toLowerCase().includes(term) ||
             i.tcknVkn.includes(term)
         );
+        if (this.sortColumn) {
+            const dir = this.sortDir === 'asc' ? 1 : -1;
+            const col = this.sortColumn;
+            items = [...items].sort((a, b) => typeof a[col] === 'number' ? dir * (a[col] - b[col]) : dir * String(a[col]).localeCompare(String(b[col]), 'tr'));
+        }
         return items;
     }
 
@@ -256,8 +268,12 @@ export class InvoicesEArsivComponent implements OnInit {
 
     openPreview(id: string): void {
         this.invoiceService.getPreviewHtml(id).subscribe(html => {
-            const w = window.open('', '_blank');
-            if (w) { w.document.write(html); w.document.close(); }
+            const w = window.open('about:blank', '_blank');
+            if (w) {
+                w.document.open();
+                w.document.write('<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="script-src \'none\'"></head><body>' + html + '</body></html>');
+                w.document.close();
+            }
         });
     }
 

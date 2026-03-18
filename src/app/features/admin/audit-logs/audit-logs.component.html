@@ -111,7 +111,7 @@
                 <span class="material-icons-outlined spin">sync</span>
                 <span>Yükleniyor...</span>
             </div>
-        } @else if (logs().length === 0) {
+        } @else if (sortedLogs.length === 0) {
             <div class="empty-state">
                 <span class="material-icons-outlined" style="font-size: 48px; opacity: 0.3;">shield</span>
                 <p>Kayıt bulunamadı</p>
@@ -120,18 +120,18 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th style="width: 160px;">Tarih</th>
-                        <th style="width: 140px;">Kullanıcı</th>
-                        <th style="width: 70px;">Metod</th>
+                        <th class="sortable" [class.sorted]="sortColumn==='occurredAtUtc'" (click)="sort('occurredAtUtc')" style="width: 160px;">Tarih <span class="sort-icon material-icons-outlined">{{ sortColumn==='occurredAtUtc' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                        <th class="sortable" [class.sorted]="sortColumn==='userName'" (click)="sort('userName')" style="width: 140px;">Kullanıcı <span class="sort-icon material-icons-outlined">{{ sortColumn==='userName' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                        <th class="sortable" [class.sorted]="sortColumn==='httpMethod'" (click)="sort('httpMethod')" style="width: 70px;">Metod <span class="sort-icon material-icons-outlined">{{ sortColumn==='httpMethod' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
                         <th>Path</th>
-                        <th style="width: 70px;">Kod</th>
-                        <th style="width: 80px;">Süre</th>
-                        <th style="width: 120px;">IP Adres</th>
+                        <th class="sortable" [class.sorted]="sortColumn==='statusCode'" (click)="sort('statusCode')" style="width: 70px;">Kod <span class="sort-icon material-icons-outlined">{{ sortColumn==='statusCode' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                        <th class="sortable" [class.sorted]="sortColumn==='durationMs'" (click)="sort('durationMs')" style="width: 80px;">Süre <span class="sort-icon material-icons-outlined">{{ sortColumn==='durationMs' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                        <th class="sortable" [class.sorted]="sortColumn==='ipAddress'" (click)="sort('ipAddress')" style="width: 120px;">IP Adres <span class="sort-icon material-icons-outlined">{{ sortColumn==='ipAddress' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
                         <th style="width: 60px;">Detay</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @for (log of logs(); track log.id) {
+                    @for (log of sortedLogs; track log.id) {
                         <tr class="clickable-row" [class.error-row]="log.statusCode >= 400" (click)="viewDetail(log)">
                             <td class="date-cell">{{ log.occurredAtUtc | date:'dd.MM.yyyy HH:mm:ss' }}</td>
                             <td class="user-cell">
@@ -165,7 +165,7 @@
     </div>
 
     <!-- Pagination -->
-    @if (logs().length >= pageSize) {
+    @if (sortedLogs.length >= pageSize) {
         <div class="pagination">
             <button class="btn btn-sm btn-secondary" [disabled]="currentPage <= 1" (click)="onPageChange(currentPage - 1)">
                 <span class="material-icons-outlined">chevron_left</span>

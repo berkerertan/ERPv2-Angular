@@ -109,7 +109,7 @@
     }
 
     <!-- Empty state -->
-    @else if (tenants().length === 0) {
+    @else if (sortedTenants.length === 0) {
       <div class="empty-state">
         <span class="material-icons-outlined">people_outline</span>
         <h3>Abone Bulunamadı</h3>
@@ -129,18 +129,18 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>İşletme</th>
+              <th class="sortable" [class.sorted]="sortColumn==='companyName'" (click)="sort('companyName')">İşletme <span class="sort-icon material-icons-outlined">{{ sortColumn==='companyName' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
               <th>E-posta</th>
               <th>Plan</th>
               <th>Durum</th>
               <th>Fatura</th>
-              <th class="text-right">Aylık Gelir</th>
-              <th>Son Aktif</th>
+              <th class="text-right sortable" [class.sorted]="sortColumn==='monthlyRevenue'" (click)="sort('monthlyRevenue')">Aylık Gelir <span class="sort-icon material-icons-outlined">{{ sortColumn==='monthlyRevenue' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+              <th class="sortable" [class.sorted]="sortColumn==='lastActiveAt'" (click)="sort('lastActiveAt')">Son Aktif <span class="sort-icon material-icons-outlined">{{ sortColumn==='lastActiveAt' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
               <th class="text-center">İşlemler</th>
             </tr>
           </thead>
           <tbody>
-            @for (tenant of tenants(); track trackByTenant($index, tenant)) {
+            @for (tenant of sortedTenants; track trackByTenant($index, tenant)) {
               <tr class="clickable-row" (click)="openDetail(tenant)">
                 <!-- İşletme -->
                 <td>

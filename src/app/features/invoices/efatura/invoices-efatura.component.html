@@ -77,14 +77,14 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Fatura No</th>
-                    <th>Tür</th>
-                    <th>Müşteri / Tedarikçi</th>
+                    <th class="sortable" [class.sorted]="sortColumn==='invoiceNumber'" (click)="sort('invoiceNumber')">Fatura No <span class="sort-icon material-icons-outlined">{{ sortColumn==='invoiceNumber' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='invoiceCategory'" (click)="sort('invoiceCategory')">Tür <span class="sort-icon material-icons-outlined">{{ sortColumn==='invoiceCategory' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='cariAccountName'" (click)="sort('cariAccountName')">Müşteri / Tedarikçi <span class="sort-icon material-icons-outlined">{{ sortColumn==='cariAccountName' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
                     <th>VKN</th>
-                    <th>Tutar</th>
-                    <th>KDV</th>
-                    <th>Durum</th>
-                    <th>Tarih</th>
+                    <th class="sortable" [class.sorted]="sortColumn==='grandTotal'" (click)="sort('grandTotal')">Tutar <span class="sort-icon material-icons-outlined">{{ sortColumn==='grandTotal' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='taxTotal'" (click)="sort('taxTotal')">KDV <span class="sort-icon material-icons-outlined">{{ sortColumn==='taxTotal' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='status'" (click)="sort('status')">Durum <span class="sort-icon material-icons-outlined">{{ sortColumn==='status' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='issueDate'" (click)="sort('issueDate')">Tarih <span class="sort-icon material-icons-outlined">{{ sortColumn==='issueDate' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
                     <th>İşlemler</th>
                 </tr>
             </thead>

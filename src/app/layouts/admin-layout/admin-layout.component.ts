@@ -30,6 +30,7 @@ export class AdminLayoutComponent {
         { label: 'Sayfa İçeriği', icon: 'edit_document', route: '/admin/content' },
         { label: 'Duyurular', icon: 'campaign', route: '/admin/announcements' },
         { label: 'Denetim Kayıtları', icon: 'shield', route: '/admin/audit-logs' },
+        { label: 'Sistem Sağlığı',    icon: 'monitor_heart', route: '/admin/system-health' },
     ];
 
     constructor(

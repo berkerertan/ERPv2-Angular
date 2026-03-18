@@ -1,6 +1,7 @@
 import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { CariAccountService } from '../../../core/services/cari-account.service';
 import { ConfirmService } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ToastService } from '../../../core/services/toast.service';
@@ -24,6 +25,8 @@ export class SuppliersComponent implements OnInit {
     private toastService = inject(ToastService);
 
     searchTerm = '';
+    sortColumn = '';
+    sortDir: 'asc' | 'desc' = 'asc';
     statusFilter = signal<'all' | 'active' | 'inactive'>('all');
     showModal = signal(false);
     showDetailModal = signal(false);
@@ -45,7 +48,7 @@ export class SuppliersComponent implements OnInit {
 
     accounts = signal<any[]>([]);
 
-    constructor(private cariService: CariAccountService) {}
+    constructor(private cariService: CariAccountService, private router: Router) {}
 
     ngOnInit(): void {
         this.loadAccounts();
@@ -77,6 +80,11 @@ export class SuppliersComponent implements OnInit {
         });
     }
 
+    sort(col: string): void {
+        if (this.sortColumn === col) { this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc'; }
+        else { this.sortColumn = col; this.sortDir = 'asc'; }
+    }
+
     get filteredAccounts() {
         let items = this.accounts();
         if (this.statusFilter() === 'active') items = items.filter(a => a.isActive);
@@ -89,6 +97,11 @@ export class SuppliersComponent implements OnInit {
             a.contactPerson.toLowerCase().includes(term) ||
             a.city.toLowerCase().includes(term)
         );
+        if (this.sortColumn) {
+            const dir = this.sortDir === 'asc' ? 1 : -1;
+            const col = this.sortColumn;
+            items = [...items].sort((a, b) => typeof a[col] === 'number' ? dir * (a[col] - b[col]) : dir * String(a[col]).localeCompare(String(b[col]), 'tr'));
+        }
         return items;
     }
 
@@ -152,8 +165,7 @@ export class SuppliersComponent implements OnInit {
     }
 
     viewDetail(account: any): void {
-        this.selectedAccount.set(account);
-        this.showDetailModal.set(true);
+        this.router.navigate(['/cari-accounts/suppliers', account.id], { state: { account } });
     }
 
     closeDetailModal(): void { this.showDetailModal.set(false); }

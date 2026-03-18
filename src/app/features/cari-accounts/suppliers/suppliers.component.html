@@ -77,15 +77,15 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Firma Adı</th>
-                    <th>Yetkili</th>
+                    <th class="sortable" [class.sorted]="sortColumn==='name'" (click)="sort('name')">Firma Adı <span class="sort-icon material-icons-outlined">{{ sortColumn==='name' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='contactPerson'" (click)="sort('contactPerson')">Yetkili <span class="sort-icon material-icons-outlined">{{ sortColumn==='contactPerson' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
                     <th>Telefon</th>
-                    <th>Şehir</th>
-                    <th>Sipariş</th>
-                    <th>Toplam Tutar</th>
-                    <th>Yapılan Ödeme</th>
-                    <th>Kalan Borç</th>
-                    <th>Puan</th>
+                    <th class="sortable" [class.sorted]="sortColumn==='city'" (click)="sort('city')">Şehir <span class="sort-icon material-icons-outlined">{{ sortColumn==='city' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='orderCount'" (click)="sort('orderCount')">Sipariş <span class="sort-icon material-icons-outlined">{{ sortColumn==='orderCount' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='totalPurchase'" (click)="sort('totalPurchase')">Toplam Tutar <span class="sort-icon material-icons-outlined">{{ sortColumn==='totalPurchase' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='totalPayments'" (click)="sort('totalPayments')">Yapılan Ödeme <span class="sort-icon material-icons-outlined">{{ sortColumn==='totalPayments' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='remainingDebt'" (click)="sort('remainingDebt')">Kalan Borç <span class="sort-icon material-icons-outlined">{{ sortColumn==='remainingDebt' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='rating'" (click)="sort('rating')">Puan <span class="sort-icon material-icons-outlined">{{ sortColumn==='rating' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
                     <th>Durum</th>
                     <th>İşlemler</th>
                 </tr>

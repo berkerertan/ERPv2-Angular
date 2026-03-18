@@ -120,6 +120,54 @@ export interface UpdatePlanSettingRequest {
     features?: string[];
 }
 
+// ── System Health ──────────────────────────────────────────────────────────
+
+export interface HealthProbeDto {
+    status: string;
+    utc: string;
+    authorizationEnforced: boolean;
+}
+
+export interface SystemHealthOverviewDto {
+    status: string;                // "Healthy" | "Unhealthy" | "Degraded"
+    currentUtc: string;
+    startedAtUtc: string;
+    uptimeSeconds: number;
+    environment: string;
+    version: string;
+    authorizationEnforced: boolean;
+    databaseReachable: boolean;
+    requestsLastHour: number;
+    errorsLastHour: number;
+    errorRateLastHour: number;
+    averageDurationMs: number;
+    activeUsersToday: number;
+    activeTenantsToday: number;
+    lastRequestAtUtc: string;
+    lastErrorAtUtc: string;
+}
+
+export interface SystemHealthDependencyDto {
+    name: string;                  // "database" | "authorization" | "api"
+    status: string;                // "Healthy" | "Unhealthy" | "Degraded"
+    responseTimeMs: number;
+    message: string;
+    checkedAtUtc: string;
+}
+
+export interface SystemHealthTimelinePointDto {
+    bucketStartUtc: string;
+    requestCount: number;
+    errorCount: number;
+    averageDurationMs: number;
+}
+
+export interface SystemHealthTimelineDto {
+    rangeMinutes: number;
+    bucketMinutes: number;
+    points: SystemHealthTimelinePointDto[];
+}
+
 export interface AuditLogFilter {
     q?: string;
     tenantId?: string;

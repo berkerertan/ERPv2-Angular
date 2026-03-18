@@ -15,7 +15,11 @@ import {
     AdminRevenueSummaryDto,
     AdminAuditLogDto,
     AdminAuditLogSummaryDto,
-    AuditLogFilter
+    AuditLogFilter,
+    HealthProbeDto,
+    SystemHealthOverviewDto,
+    SystemHealthDependencyDto,
+    SystemHealthTimelineDto
 } from '../models/platform-admin.model';
 
 @Injectable({ providedIn: 'root' })
@@ -91,6 +95,26 @@ export class PlatformAdminService {
 
     getAuditLog(id: string): Observable<AdminAuditLogDto> {
         return this.http.get<AdminAuditLogDto>(`${this.apiUrl}/audit-logs/${id}`);
+    }
+
+    // ── System Health ──────────────────────────────────────────────────
+    getHealthProbe(): Observable<HealthProbeDto> {
+        return this.http.get<HealthProbeDto>(`${environment.apiUrl}/health`);
+    }
+
+    getSystemHealthOverview(): Observable<SystemHealthOverviewDto> {
+        return this.http.get<SystemHealthOverviewDto>(`${this.apiUrl}/system-health/overview`);
+    }
+
+    getSystemHealthDependencies(): Observable<SystemHealthDependencyDto[]> {
+        return this.http.get<SystemHealthDependencyDto[]>(`${this.apiUrl}/system-health/dependencies`);
+    }
+
+    getSystemHealthTimeline(minutes = 60, bucketMinutes = 5): Observable<SystemHealthTimelineDto> {
+        const params = new HttpParams()
+            .set('minutes', minutes.toString())
+            .set('bucketMinutes', bucketMinutes.toString());
+        return this.http.get<SystemHealthTimelineDto>(`${this.apiUrl}/system-health/timeline`, { params });
     }
 
     private buildParams(filter?: Record<string, any>): HttpParams {

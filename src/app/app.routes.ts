@@ -67,6 +67,10 @@ export const routes: Routes = [
                 loadComponent: () => import('./features/admin/audit-logs/audit-logs.component').then(m => m.AuditLogsComponent)
             },
             {
+                path: 'system-health',
+                loadComponent: () => import('./features/admin/system-health/system-health.component').then(m => m.SystemHealthComponent)
+            },
+            {
                 path: '',
                 redirectTo: 'dashboard',
                 pathMatch: 'full'
@@ -112,6 +116,14 @@ export const routes: Routes = [
                 loadComponent: () => import('./features/cari-accounts/suppliers/suppliers.component').then(m => m.SuppliersComponent)
             },
             {
+                path: 'cari-accounts/suppliers/:id',
+                loadComponent: () => import('./features/cari-accounts/suppliers/detail/supplier-detail.component').then(m => m.SupplierDetailComponent)
+            },
+            {
+                path: 'quotes',
+                loadComponent: () => import('./features/quotes/quotes.component').then(m => m.QuotesComponent)
+            },
+            {
                 path: 'sales-orders',
                 loadComponent: () => import('./features/sales-orders/sales-orders.component').then(m => m.SalesOrdersComponent)
             },
@@ -150,6 +162,10 @@ export const routes: Routes = [
             {
                 path: 'activity-log',
                 loadComponent: () => import('./features/activity-log/activity-log.component').then(m => m.ActivityLogComponent)
+            },
+            {
+                path: 'profile',
+                loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent)
             }
         ]
     },

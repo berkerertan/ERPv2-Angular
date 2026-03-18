@@ -1,0 +1,399 @@
+<div class="page-container">
+
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">
+                <span class="material-icons-outlined page-title-icon" style="color: var(--primary-400);">request_quote</span>
+                Teklifler
+            </h1>
+            <p class="page-subtitle">Müşteri tekliflerini oluşturun, yönetin ve yazdırın</p>
+        </div>
+        <button class="btn btn-primary" (click)="openAddModal()">
+            <span class="material-icons-outlined">add</span>
+            Yeni Teklif
+        </button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(76,110,245,0.12); color: var(--primary-400);">
+                <span class="material-icons-outlined">request_quote</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ quotes().length }}</span>
+                <span class="stat-label">Toplam Teklif</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--warning-bg); color: var(--warning);">
+                <span class="material-icons-outlined">pending</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ pendingCount }}</span>
+                <span class="stat-label">Bekleyen</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--success-bg); color: var(--success);">
+                <span class="material-icons-outlined">check_circle</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ acceptedCount }}</span>
+                <span class="stat-label">Kabul Edilen</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(76,110,245,0.12); color: var(--primary-400);">
+                <span class="material-icons-outlined">payments</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">₺{{ totalValue.toLocaleString('tr-TR', {maximumFractionDigits:0}) }}</span>
+                <span class="stat-label">Toplam Değer</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <div class="toolbar-search">
+            <span class="material-icons-outlined search-icon">search</span>
+            <input type="text" placeholder="Teklif no veya müşteri ara..." [(ngModel)]="searchTerm" />
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-container">
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th class="sortable" [class.sorted]="sortColumn==='quoteNumber'" (click)="sort('quoteNumber')">
+                            Teklif No <span class="sort-icon material-icons-outlined">{{ sortColumn==='quoteNumber' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
+                        </th>
+                        <th class="sortable" [class.sorted]="sortColumn==='customerName'" (click)="sort('customerName')">
+                            Müşteri <span class="sort-icon material-icons-outlined">{{ sortColumn==='customerName' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
+                        </th>
+                        <th class="sortable" [class.sorted]="sortColumn==='date'" (click)="sort('date')">
+                            Tarih <span class="sort-icon material-icons-outlined">{{ sortColumn==='date' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
+                        </th>
+                        <th class="sortable" [class.sorted]="sortColumn==='validUntil'" (click)="sort('validUntil')">
+                            Geçerlilik <span class="sort-icon material-icons-outlined">{{ sortColumn==='validUntil' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
+                        </th>
+                        <th class="sortable" [class.sorted]="sortColumn==='grandTotal'" (click)="sort('grandTotal')">
+                            Toplam (KDV Dahil) <span class="sort-icon material-icons-outlined">{{ sortColumn==='grandTotal' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
+                        </th>
+                        <th>Durum</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (q of filteredQuotes; track q.id) {
+                    <tr>
+                        <td>
+                            <span class="quote-number-badge">{{ q.quoteNumber }}</span>
+                        </td>
+                        <td>
+                            <div class="font-medium" style="color: var(--text-primary);">{{ q.customerName }}</div>
+                            @if (q.customerPhone) {
+                            <div class="text-muted" style="font-size: 12px;">{{ q.customerPhone }}</div>
+                            }
+                        </td>
+                        <td>{{ q.date }}</td>
+                        <td>
+                            <span [class.text-danger]="q.validUntil < today">{{ q.validUntil }}</span>
+                        </td>
+                        <td class="amount">₺{{ calcGrandTotal(q).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) }}</td>
+                        <td>
+                            <span class="badge" [ngClass]="statusClass(q.status)">{{ statusLabel(q.status) }}</span>
+                        </td>
+                        <td>
+                            <div class="actions-cell">
+                                <button class="action-btn" title="A4 PDF Yazdır" (click)="printA4(q)" style="color: var(--danger);">
+                                    <span class="material-icons-outlined">picture_as_pdf</span>
+                                </button>
+                                <button class="action-btn" title="Fiş Yazdır (80mm)" (click)="printReceipt(q)" style="color: var(--primary-400);">
+                                    <span class="material-icons-outlined">receipt_long</span>
+                                </button>
+                                <button class="action-btn edit" title="Düzenle" (click)="openEditModal(q)">
+                                    <span class="material-icons-outlined">edit</span>
+                                </button>
+                                <button class="action-btn delete" title="Sil" (click)="deleteQuote(q.id)">
+                                    <span class="material-icons-outlined">delete</span>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+            @if (filteredQuotes.length === 0) {
+            <div class="empty-state">
+                <span class="material-icons-outlined">request_quote</span>
+                <h3>Teklif bulunamadı</h3>
+                <p>Yeni bir teklif oluşturmak için "Yeni Teklif" butonunu kullanın</p>
+            </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     TEKLIF OLUSTURMA / DÜZENLEME MODALI
+══════════════════════════════════════════════════════════ -->
+@if (showModal()) {
+<div class="overlay" (click)="closeModal()"></div>
+<div class="modal quote-modal" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+        <h2>
+            <span class="material-icons-outlined" style="vertical-align:middle; margin-right:6px; color:var(--primary-400);">request_quote</span>
+            {{ editingId() ? 'Teklif Düzenle' : 'Yeni Teklif Oluştur' }}
+        </h2>
+        <button class="modal-close" (click)="closeModal()">
+            <span class="material-icons-outlined">close</span>
+        </button>
+    </div>
+
+    <div class="modal-scroll-body">
+
+        <!-- Müşteri Bilgileri -->
+        <div class="form-section">
+            <div class="form-section-title">
+                <span class="material-icons-outlined">person</span>
+                Müşteri Bilgileri
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Müşteri / Firma Adı *</label>
+                    <input class="form-input" [(ngModel)]="formData.customerName" placeholder="Müşteri veya firma adı" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Telefon</label>
+                    <input class="form-input" [(ngModel)]="formData.customerPhone" placeholder="0___ ___ __ __" />
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">E-posta</label>
+                    <input class="form-input" [(ngModel)]="formData.customerEmail" placeholder="ornek@firma.com" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Durum</label>
+                    <select class="form-input" [(ngModel)]="formData.status">
+                        <option value="draft">Taslak</option>
+                        <option value="sent">Gönderildi</option>
+                        <option value="accepted">Kabul Edildi</option>
+                        <option value="rejected">Reddedildi</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Teklif Tarihi</label>
+                    <input type="date" class="form-input" [(ngModel)]="formData.date" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Geçerlilik Tarihi</label>
+                    <input type="date" class="form-input" [(ngModel)]="formData.validUntil" />
+                </div>
+            </div>
+        </div>
+
+        <!-- Ürün Satırları -->
+        <div class="form-section">
+            <div class="form-section-title">
+                <span class="material-icons-outlined">inventory_2</span>
+                Ürünler / Hizmetler
+                <div class="section-title-actions">
+                    <button class="btn btn-sm btn-secondary" (click)="openCatalogPicker()">
+                        <span class="material-icons-outlined">add_shopping_cart</span>
+                        Katalogdan Ekle
+                    </button>
+                    <button class="btn btn-sm btn-secondary" (click)="addLine()">
+                        <span class="material-icons-outlined">add</span>
+                        Boş Satır
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tablo başlığı -->
+            <div class="lines-header">
+                <span class="col-name">Ürün / Hizmet Açıklaması</span>
+                <span class="col-unit">Birim</span>
+                <span class="col-qty">Miktar</span>
+                <span class="col-price">Birim Fiyat (₺)</span>
+                <span class="col-disc">İskonto %</span>
+                <span class="col-total">Satır Toplam</span>
+                <span class="col-del"></span>
+            </div>
+
+            @for (line of formLines(); track line.id) {
+            <div class="quote-line">
+                <div class="col-name">
+                    <input class="form-input line-input" [(ngModel)]="line.productName" placeholder="Ürün adı veya hizmet tanımı..." />
+                </div>
+                <div class="col-unit">
+                    <input class="form-input line-input" [(ngModel)]="line.unit" placeholder="Adet" />
+                </div>
+                <div class="col-qty">
+                    <input type="number" class="form-input line-input text-right" [(ngModel)]="line.quantity" min="0.01" step="0.01" />
+                </div>
+                <div class="col-price">
+                    <input type="number" class="form-input line-input text-right" [(ngModel)]="line.unitPrice" min="0" />
+                </div>
+                <div class="col-disc">
+                    <input type="number" class="form-input line-input text-right" [(ngModel)]="line.discountPercent" min="0" max="100" />
+                </div>
+                <div class="col-total line-total-cell">
+                    ₺{{ lineTotal(line).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) }}
+                </div>
+                <div class="col-del">
+                    <button class="action-btn delete" (click)="removeLine(line.id)" title="Satırı Sil">
+                        <span class="material-icons-outlined" style="font-size:16px">close</span>
+                    </button>
+                </div>
+            </div>
+            }
+
+            @if (formLines().length === 0) {
+            <div class="empty-lines">
+                <span class="material-icons-outlined">shopping_cart</span>
+                <p>Henüz ürün eklenmedi. Katalogdan seçin veya boş satır ekleyin.</p>
+            </div>
+            }
+        </div>
+
+        <!-- İskonto, KDV ve Toplamlar -->
+        <div class="form-section totals-section">
+            <div class="totals-left">
+                <div class="form-section-title">
+                    <span class="material-icons-outlined">tune</span>
+                    İskonto & KDV
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Genel İskonto (%)</label>
+                        <div class="input-with-suffix">
+                            <input type="number" class="form-input" [(ngModel)]="formData.overallDiscountPercent" min="0" max="100" />
+                            <span class="input-suffix">%</span>
+                        </div>
+                        @if (formData.overallDiscountPercent > 0) {
+                        <span class="field-hint">— ₺{{ overallDiscountAmount.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) }} indirim</span>
+                        }
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">KDV Oranı (%)</label>
+                        <div class="input-with-suffix">
+                            <select class="form-input" [(ngModel)]="formData.taxPercent">
+                                <option [value]="0">%0 (KDV Yok)</option>
+                                <option [value]="1">%1</option>
+                                <option [value]="10">%10</option>
+                                <option [value]="18">%18</option>
+                                <option [value]="20">%20</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Notlar / Koşullar</label>
+                    <textarea class="form-input" [(ngModel)]="formData.notes" rows="3"
+                        placeholder="Teslimat süresi, ödeme koşulları, özel notlar..."></textarea>
+                </div>
+            </div>
+
+            <div class="totals-summary">
+                <div class="summary-title">Teklif Özeti</div>
+                <div class="summary-row">
+                    <span>Ara Toplam</span>
+                    <span>₺{{ subtotal.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) }}</span>
+                </div>
+                @if (formData.overallDiscountPercent > 0) {
+                <div class="summary-row discount-row">
+                    <span>Genel İskonto (%{{ formData.overallDiscountPercent }})</span>
+                    <span>— ₺{{ overallDiscountAmount.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) }}</span>
+                </div>
+                }
+                @if (formData.overallDiscountPercent > 0) {
+                <div class="summary-row">
+                    <span>İskonto Sonrası</span>
+                    <span>₺{{ afterDiscount.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) }}</span>
+                </div>
+                }
+                <div class="summary-row">
+                    <span>KDV (%{{ formData.taxPercent }})</span>
+                    <span>₺{{ taxAmount.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) }}</span>
+                </div>
+                <div class="summary-row grand-row">
+                    <span>GENEL TOPLAM</span>
+                    <span>₺{{ grandTotal.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) }}</span>
+                </div>
+
+                <!-- Print buttons in modal -->
+                <div class="modal-print-btns">
+                    <button class="btn btn-sm btn-secondary print-btn" (click)="printPreview('a4')">
+                        <span class="material-icons-outlined">picture_as_pdf</span> A4 Önizleme
+                    </button>
+                    <button class="btn btn-sm btn-secondary print-btn" (click)="printPreview('receipt')">
+                        <span class="material-icons-outlined">receipt_long</span> Fiş Önizleme
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div><!-- /modal-scroll-body -->
+
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeModal()">İptal</button>
+        <button class="btn btn-primary" (click)="saveQuote()"
+            [disabled]="!formData.customerName.trim() || formLines().filter(l => l.productName.trim()).length === 0">
+            <span class="material-icons-outlined">{{ editingId() ? 'save' : 'add' }}</span>
+            {{ editingId() ? 'Güncelle' : 'Teklif Oluştur' }}
+        </button>
+    </div>
+</div>
+}
+
+<!-- ═══════════════════════════════════════════════════════
+     KATALOG SEÇİCİ MODALI
+══════════════════════════════════════════════════════════ -->
+@if (showCatalogPicker()) {
+<div class="overlay catalog-overlay" (click)="showCatalogPicker.set(false)"></div>
+<div class="modal catalog-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+        <h2>
+            <span class="material-icons-outlined" style="vertical-align:middle; margin-right:6px; color:var(--primary-400);">add_shopping_cart</span>
+            Katalogdan Ürün Seç
+        </h2>
+        <button class="modal-close" (click)="showCatalogPicker.set(false)">
+            <span class="material-icons-outlined">close</span>
+        </button>
+    </div>
+    <div class="catalog-search-wrap">
+        <span class="material-icons-outlined" style="color:var(--text-muted)">search</span>
+        <input class="form-input" [(ngModel)]="catalogSearch" placeholder="Ürün adı veya kategori ara..." autofocus />
+    </div>
+    <div class="catalog-list">
+        @for (p of filteredCatalog; track p.id) {
+        <div class="catalog-item" (click)="selectFromCatalog(p)">
+            <div>
+                <div class="catalog-name">{{ p.name }}</div>
+                <div class="catalog-cat">{{ p.categoryName }} · {{ p.unit }}</div>
+            </div>
+            <div class="catalog-price">₺{{ p.unitPrice.toLocaleString('tr-TR') }}</div>
+        </div>
+        }
+        @if (filteredCatalog.length === 0) {
+        <div class="empty-state" style="padding: 32px 16px;">
+            <span class="material-icons-outlined">search_off</span>
+            <p>Ürün bulunamadı</p>
+        </div>
+        }
+    </div>
+    <div class="catalog-hint">
+        <span class="material-icons-outlined" style="font-size:14px">info</span>
+        Aynı ürüne tıklarsanız miktar 1 artırılır
+    </div>
+</div>
+}

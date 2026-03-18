@@ -29,12 +29,12 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Ürün</th>
-                    <th>Depo</th>
-                    <th>Tür</th>
-                    <th>Miktar</th>
+                    <th class="sortable" [class.sorted]="sortColumn==='productName'" (click)="sort('productName')">Ürün <span class="sort-icon material-icons-outlined">{{ sortColumn==='productName' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='warehouseName'" (click)="sort('warehouseName')">Depo <span class="sort-icon material-icons-outlined">{{ sortColumn==='warehouseName' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='movementType'" (click)="sort('movementType')">Tür <span class="sort-icon material-icons-outlined">{{ sortColumn==='movementType' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='quantity'" (click)="sort('quantity')">Miktar <span class="sort-icon material-icons-outlined">{{ sortColumn==='quantity' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
                     <th>Açıklama</th>
-                    <th>Tarih</th>
+                    <th class="sortable" [class.sorted]="sortColumn==='createdAt'" (click)="sort('createdAt')">Tarih <span class="sort-icon material-icons-outlined">{{ sortColumn==='createdAt' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
                     <th>İşlemler</th>
                 </tr>
             </thead>

@@ -65,6 +65,7 @@ export class SidebarComponent {
             items: [
                 { icon: 'shopping_bag', label: 'Alıcılar', route: '/cari-accounts/buyers' },
                 { icon: 'local_shipping', label: 'Tedarikçiler', route: '/cari-accounts/suppliers' },
+                { icon: 'request_quote', label: 'Teklifler', route: '/quotes' },
                 { icon: 'shopping_cart', label: 'Satış Siparişleri', route: '/sales-orders' },
                 { icon: 'assignment_return', label: 'Satın Alma', route: '/purchase-orders' },
             ]

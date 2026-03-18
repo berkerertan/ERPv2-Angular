@@ -41,6 +41,11 @@ export interface BootstrapAdminRequest {
     password: string;
 }
 
+export interface ChangePasswordRequest {
+    currentPassword: string;
+    newPassword: string;
+}
+
 export interface RefreshTokenRequest {
     refreshToken: string;
 }
