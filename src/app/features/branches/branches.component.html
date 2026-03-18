@@ -15,8 +15,8 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Şube Adı</th>
-                    <th>Şirket</th>
+                    <th class="sortable" [class.sorted]="sortColumn==='name'" (click)="sort('name')">Şube Adı <span class="sort-icon material-icons-outlined">{{ sortColumn==='name' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='companyName'" (click)="sort('companyName')">Şirket <span class="sort-icon material-icons-outlined">{{ sortColumn==='companyName' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
                     <th>Adres</th>
                     <th>Telefon</th>
                     <th>Durum</th>

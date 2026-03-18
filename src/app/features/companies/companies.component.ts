@@ -14,6 +14,12 @@ export class CompaniesComponent {
     showModal = signal(false);
     editingItem = signal<any>(null);
     formData = { name: '', taxNumber: '', address: '', phone: '', email: '' };
+    sortColumn = '';
+    sortDir: 'asc' | 'desc' = 'asc';
+    sort(col: string): void {
+        if (this.sortColumn === col) { this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc'; }
+        else { this.sortColumn = col; this.sortDir = 'asc'; }
+    }
 
     items = signal([
         { id: '1', name: 'ABC Teknoloji A.Ş.', taxNumber: '1234567890', address: 'İstanbul', phone: '0212 111 22 33', email: 'info@abc.com', isActive: true },
@@ -22,8 +28,13 @@ export class CompaniesComponent {
 
     get filteredItems() {
         const term = this.searchTerm.toLowerCase();
-        if (!term) return this.items();
-        return this.items().filter(i => i.name.toLowerCase().includes(term));
+        let list = !term ? this.items() : this.items().filter(i => i.name.toLowerCase().includes(term));
+        if (this.sortColumn) {
+            const dir = this.sortDir === 'asc' ? 1 : -1;
+            const col = this.sortColumn;
+            list = [...list].sort((a, b) => typeof (a as any)[col] === 'number' ? dir * ((a as any)[col] - (b as any)[col]) : dir * String((a as any)[col]).localeCompare(String((b as any)[col]), 'tr'));
+        }
+        return list;
     }
 
     openAddModal(): void { this.editingItem.set(null); this.formData = { name: '', taxNumber: '', address: '', phone: '', email: '' }; this.showModal.set(true); }

@@ -2,7 +2,7 @@ import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PurchaseOrderService } from '../../core/services/purchase-order.service';
-import { OrderStatus, CreateSalesOrderRequest } from '../../core/models/sales-order.model';
+import { OrderStatus } from '../../core/models/sales-order.model';
 import { CreatePurchaseOrderRequest } from '../../core/models/purchase-order.model';
 import { CariAccountService } from '../../core/services/cari-account.service';
 import { CariAccount } from '../../core/models/cari-account.model';
@@ -27,6 +27,8 @@ export class PurchaseOrdersComponent implements OnInit {
     private toastService = inject(ToastService);
 
     searchTerm = '';
+    sortColumn = '';
+    sortDir: 'asc' | 'desc' = 'asc';
     activeTab = signal<'all' | 'Draft' | 'Approved' | 'Cancelled'>('all');
     showCreateModal = signal(false);
     isSaving = signal(false);
@@ -106,12 +108,22 @@ export class PurchaseOrdersComponent implements OnInit {
         }
     }
 
+    sort(col: string): void {
+        if (this.sortColumn === col) { this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc'; }
+        else { this.sortColumn = col; this.sortDir = 'asc'; }
+    }
+
     get filteredOrders() {
         let items = this.orders();
         const tab = this.activeTab();
         if (tab !== 'all') items = items.filter(o => o.status === tab);
         const term = this.searchTerm.toLowerCase();
         if (term) items = items.filter(o => o.orderNumber.toLowerCase().includes(term) || o.cariAccountName.toLowerCase().includes(term));
+        if (this.sortColumn) {
+            const dir = this.sortDir === 'asc' ? 1 : -1;
+            const col = this.sortColumn;
+            items = [...items].sort((a, b) => typeof a[col] === 'number' ? dir * (a[col] - b[col]) : dir * String(a[col]).localeCompare(String(b[col]), 'tr'));
+        }
         return items;
     }
 

@@ -77,7 +77,7 @@
                 <span class="material-icons-outlined spin">sync</span>
                 <span>Yükleniyor...</span>
             </div>
-        } @else if (logs().length === 0) {
+        } @else if (sortedLogs.length === 0) {
             <div class="empty-state">
                 <span class="material-icons-outlined" style="font-size:48px;opacity:0.3">manage_search</span>
                 <p>Kayıt bulunamadı</p>
@@ -86,15 +86,15 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th style="width:155px">Tarih & Saat</th>
+                        <th class="sortable" [class.sorted]="sortColumn==='occurredAtUtc'" (click)="sort('occurredAtUtc')" style="width:155px">Tarih & Saat <span class="sort-icon material-icons-outlined">{{ sortColumn==='occurredAtUtc' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
                         <th style="width:130px">Modül</th>
                         <th>İşlem</th>
-                        <th style="width:110px">Durum</th>
-                        <th style="width:80px">Süre</th>
+                        <th class="sortable" [class.sorted]="sortColumn==='statusCode'" (click)="sort('statusCode')" style="width:110px">Durum <span class="sort-icon material-icons-outlined">{{ sortColumn==='statusCode' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                        <th class="sortable" [class.sorted]="sortColumn==='durationMs'" (click)="sort('durationMs')" style="width:80px">Süre <span class="sort-icon material-icons-outlined">{{ sortColumn==='durationMs' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
                     </tr>
                 </thead>
                 <tbody>
-                    @for (log of logs(); track log.id) {
+                    @for (log of sortedLogs; track log.id) {
                         <tr class="clickable-row" [class.error-row]="log.statusCode >= 400" (click)="viewDetail(log)">
                             <td class="date-cell">{{ log.occurredAtUtc | date:'dd.MM.yy HH:mm' }}</td>
                             <td>
@@ -118,7 +118,7 @@
     </div>
 
     <!-- Sayfalama -->
-    @if (logs().length >= pageSize) {
+    @if (sortedLogs.length >= pageSize) {
         <div class="pagination">
             <button class="btn btn-sm btn-secondary" [disabled]="currentPage <= 1" (click)="onPageChange(currentPage - 1)">
                 <span class="material-icons-outlined">chevron_left</span>

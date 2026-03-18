@@ -109,11 +109,11 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Ürün Adı</th>
-                        <th>Barkod</th>
-                        <th>Kategori</th>
-                        <th>Birim Fiyat</th>
-                        <th>Birim</th>
+                        <th class="sortable" [class.sorted]="sortColumn==='name'" (click)="sort('name')">Ürün Adı <span class="sort-icon material-icons-outlined">{{ sortColumn==='name' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                        <th class="sortable" [class.sorted]="sortColumn==='barcode'" (click)="sort('barcode')">Barkod <span class="sort-icon material-icons-outlined">{{ sortColumn==='barcode' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                        <th class="sortable" [class.sorted]="sortColumn==='categoryName'" (click)="sort('categoryName')">Kategori <span class="sort-icon material-icons-outlined">{{ sortColumn==='categoryName' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                        <th class="sortable" [class.sorted]="sortColumn==='unitPrice'" (click)="sort('unitPrice')">Birim Fiyat <span class="sort-icon material-icons-outlined">{{ sortColumn==='unitPrice' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                        <th class="sortable" [class.sorted]="sortColumn==='unit'" (click)="sort('unit')">Birim <span class="sort-icon material-icons-outlined">{{ sortColumn==='unit' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
                         <th>Durum</th>
                         <th>İşlemler</th>
                     </tr>

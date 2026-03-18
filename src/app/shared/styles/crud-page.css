@@ -9,6 +9,31 @@ tbody tr.clickable-row:hover {
   background: rgba(76, 110, 245, 0.06) !important;
 }
 
+/* ─── Sortable Column Headers ───────────────────────── */
+th.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+th.sortable:hover {
+  color: var(--primary-400);
+}
+
+th.sortable .sort-icon {
+  font-size: 14px;
+  vertical-align: middle;
+  margin-left: 4px;
+  opacity: 0.4;
+  transition: opacity var(--transition-fast), color var(--transition-fast);
+}
+
+th.sortable:hover .sort-icon,
+th.sortable.sorted .sort-icon {
+  opacity: 1;
+  color: var(--primary-400);
+}
+
 /* ─── Modal / Overlay ────────────────────────────────── */
 .overlay {
   position: fixed;

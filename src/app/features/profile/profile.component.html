@@ -1,0 +1,191 @@
+<div class="page-container">
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div class="page-title-group">
+            <h1 class="page-title">
+                <span class="material-icons-outlined">manage_accounts</span>
+                Hesap Ayarları
+            </h1>
+            <p class="page-subtitle">Profil bilgilerinizi görüntüleyin ve şifrenizi güncelleyin</p>
+        </div>
+    </div>
+
+    @if (loading()) {
+    <div class="loading-state">
+        <span class="material-icons-outlined spin">autorenew</span>
+        <span>Yükleniyor...</span>
+    </div>
+    } @else {
+    <div class="profile-layout">
+
+        <!-- ═══ Profile Hero Card ═══ -->
+        <div class="profile-card profile-hero">
+            <div class="hero-avatar">
+                <span>{{ avatarInitials }}</span>
+            </div>
+            <div class="hero-info">
+                <h2 class="hero-name">{{ displayName }}</h2>
+                <div class="hero-meta">
+                    <span class="badge badge-role">{{ displayRole }}</span>
+                    @if (profile()?.tenantName) {
+                    <span class="hero-divider"></span>
+                    <span class="hero-detail">
+                        <span class="material-icons-outlined">business</span>
+                        {{ profile()?.tenantName }}
+                    </span>
+                    }
+                    @if (profile()?.subscriptionPlan) {
+                    <span class="hero-divider"></span>
+                    <span class="badge badge-plan">{{ planLabel }}</span>
+                    <span class="badge" [ngClass]="'badge-' + statusClass">{{ statusLabel }}</span>
+                    }
+                </div>
+                @if (profile()?.email) {
+                <div class="hero-email">
+                    <span class="material-icons-outlined">mail_outline</span>
+                    {{ profile()?.email }}
+                </div>
+                }
+            </div>
+        </div>
+
+        <!-- ═══ Bottom Cards ═══ -->
+        <div class="profile-columns">
+
+            <!-- Hesap Bilgileri -->
+            <div class="profile-card">
+                <div class="card-header">
+                    <span class="material-icons-outlined">person_outline</span>
+                    <span>Hesap Bilgileri</span>
+                </div>
+                <div class="card-body">
+                    <div class="detail-row">
+                        <div class="detail-label">
+                            <span class="material-icons-outlined">account_circle</span>
+                            Kullanıcı Adı
+                        </div>
+                        <div class="detail-value">{{ displayName }}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">
+                            <span class="material-icons-outlined">mail_outline</span>
+                            E-posta
+                        </div>
+                        <div class="detail-value">{{ profile()?.email || '—' }}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">
+                            <span class="material-icons-outlined">badge</span>
+                            Rol
+                        </div>
+                        <div class="detail-value">{{ displayRole }}</div>
+                    </div>
+                    @if (profile()?.tenantName) {
+                    <div class="detail-row">
+                        <div class="detail-label">
+                            <span class="material-icons-outlined">business</span>
+                            Şirket
+                        </div>
+                        <div class="detail-value">
+                            {{ profile()?.tenantName }}
+                            @if (profile()?.tenantCode) {
+                            <span class="code-tag">({{ profile()?.tenantCode }})</span>
+                            }
+                        </div>
+                    </div>
+                    }
+                    @if (profile()?.subscriptionPlan) {
+                    <div class="detail-row">
+                        <div class="detail-label">
+                            <span class="material-icons-outlined">workspace_premium</span>
+                            Abonelik
+                        </div>
+                        <div class="detail-value">
+                            <span class="badge badge-sm" [ngClass]="'badge-' + statusClass">{{ statusLabel }}</span>
+                            {{ planLabel }}
+                        </div>
+                    </div>
+                    }
+                    <div class="detail-row last">
+                        <div class="detail-label">
+                            <span class="material-icons-outlined">fingerprint</span>
+                            Kullanıcı ID
+                        </div>
+                        <div class="detail-value mono">{{ profile()?.userId || '—' }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Şifre Değiştir -->
+            <div class="profile-card">
+                <div class="card-header">
+                    <span class="material-icons-outlined">lock_outline</span>
+                    <span>Şifre Değiştir</span>
+                </div>
+                <div class="card-body">
+                    <div class="field">
+                        <label class="field-label">Mevcut Şifre</label>
+                        <input
+                            type="password"
+                            class="field-input"
+                            placeholder="Mevcut şifrenizi girin"
+                            [(ngModel)]="pwForm.current"
+                            autocomplete="current-password"
+                        />
+                    </div>
+                    <div class="field">
+                        <label class="field-label">Yeni Şifre</label>
+                        <input
+                            type="password"
+                            class="field-input"
+                            placeholder="En az 6 karakter"
+                            [(ngModel)]="pwForm.next"
+                            autocomplete="new-password"
+                        />
+                    </div>
+                    <div class="field">
+                        <label class="field-label">Yeni Şifre (Tekrar)</label>
+                        <input
+                            type="password"
+                            class="field-input"
+                            placeholder="Yeni şifreyi tekrar girin"
+                            [(ngModel)]="pwForm.confirm"
+                            autocomplete="new-password"
+                        />
+                    </div>
+
+                    @if (pwError()) {
+                    <div class="msg msg-error">
+                        <span class="material-icons-outlined">error_outline</span>
+                        {{ pwError() }}
+                    </div>
+                    }
+                    @if (pwSuccess()) {
+                    <div class="msg msg-success">
+                        <span class="material-icons-outlined">check_circle_outline</span>
+                        {{ pwSuccess() }}
+                    </div>
+                    }
+
+                    <button
+                        class="btn-primary btn-block"
+                        (click)="changePassword()"
+                        [disabled]="pwLoading()"
+                    >
+                        @if (pwLoading()) {
+                        <span class="material-icons-outlined spin">autorenew</span>
+                        Güncelleniyor...
+                        } @else {
+                        <span class="material-icons-outlined">lock_reset</span>
+                        Şifreyi Güncelle
+                        }
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    }
+
+</div>

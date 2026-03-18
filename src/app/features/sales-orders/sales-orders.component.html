@@ -47,11 +47,11 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th>Sipariş No</th>
-                    <th>Müşteri</th>
-                    <th>Tutar</th>
-                    <th>Durum</th>
-                    <th>Tarih</th>
+                    <th class="sortable" [class.sorted]="sortColumn==='orderNumber'" (click)="sort('orderNumber')">Sipariş No <span class="sort-icon material-icons-outlined">{{ sortColumn==='orderNumber' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='cariAccountName'" (click)="sort('cariAccountName')">Müşteri <span class="sort-icon material-icons-outlined">{{ sortColumn==='cariAccountName' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='totalAmount'" (click)="sort('totalAmount')">Tutar <span class="sort-icon material-icons-outlined">{{ sortColumn==='totalAmount' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='status'" (click)="sort('status')">Durum <span class="sort-icon material-icons-outlined">{{ sortColumn==='status' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='createdAt'" (click)="sort('createdAt')">Tarih <span class="sort-icon material-icons-outlined">{{ sortColumn==='createdAt' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
                     <th>İşlemler</th>
                 </tr>
             </thead>

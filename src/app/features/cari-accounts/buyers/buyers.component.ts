@@ -21,6 +21,8 @@ export class BuyersComponent implements OnInit {
     private toastService = inject(ToastService);
 
     searchTerm = '';
+    sortColumn = '';
+    sortDir: 'asc' | 'desc' = 'asc';
     statusFilter = signal<'all' | 'active' | 'inactive'>('all');
     showModal = signal(false);
     editingAccount = signal<any>(null);
@@ -71,6 +73,11 @@ export class BuyersComponent implements OnInit {
         });
     }
 
+    sort(col: string): void {
+        if (this.sortColumn === col) { this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc'; }
+        else { this.sortColumn = col; this.sortDir = 'asc'; }
+    }
+
     get filteredAccounts() {
         let items = this.accounts();
         if (this.statusFilter() === 'active') items = items.filter(a => a.isActive);
@@ -82,6 +89,11 @@ export class BuyersComponent implements OnInit {
             a.email.toLowerCase().includes(term) ||
             a.city.toLowerCase().includes(term)
         );
+        if (this.sortColumn) {
+            const dir = this.sortDir === 'asc' ? 1 : -1;
+            const col = this.sortColumn;
+            items = [...items].sort((a, b) => typeof a[col] === 'number' ? dir * (a[col] - b[col]) : dir * String(a[col]).localeCompare(String(b[col]), 'tr'));
+        }
         return items;
     }
 

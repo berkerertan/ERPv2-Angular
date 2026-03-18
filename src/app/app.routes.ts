@@ -112,6 +112,10 @@ export const routes: Routes = [
                 loadComponent: () => import('./features/cari-accounts/suppliers/suppliers.component').then(m => m.SuppliersComponent)
             },
             {
+                path: 'quotes',
+                loadComponent: () => import('./features/quotes/quotes.component').then(m => m.QuotesComponent)
+            },
+            {
                 path: 'sales-orders',
                 loadComponent: () => import('./features/sales-orders/sales-orders.component').then(m => m.SalesOrdersComponent)
             },
@@ -150,6 +154,10 @@ export const routes: Routes = [
             {
                 path: 'activity-log',
                 loadComponent: () => import('./features/activity-log/activity-log.component').then(m => m.ActivityLogComponent)
+            },
+            {
+                path: 'profile',
+                loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent)
             }
         ]
     },

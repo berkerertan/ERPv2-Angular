@@ -32,6 +32,24 @@ import { ConfirmService } from '../../../shared/components/confirm-dialog/confir
 export class SubscribersComponent implements OnInit, OnDestroy {
     private confirmService = inject(ConfirmService);
 
+    sortColumn = '';
+    sortDir: 'asc' | 'desc' = 'asc';
+
+    sort(col: string): void {
+        if (this.sortColumn === col) { this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc'; }
+        else { this.sortColumn = col; this.sortDir = 'asc'; }
+    }
+
+    get sortedTenants() {
+        let list = this.tenants();
+        if (this.sortColumn) {
+            const dir = this.sortDir === 'asc' ? 1 : -1;
+            const col = this.sortColumn;
+            list = [...list].sort((a, b) => typeof (a as any)[col] === 'number' ? dir * ((a as any)[col] - (b as any)[col]) : dir * String((a as any)[col]).localeCompare(String((b as any)[col]), 'tr'));
+        }
+        return list;
+    }
+
     // ─── Signals ──────────────────────────────────────────────────────────────
     tenants = signal<Tenant[]>([]);
     total = signal<number>(0);

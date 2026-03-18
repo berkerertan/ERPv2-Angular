@@ -14,6 +14,7 @@ import {
     UserRegistrationResponse,
     CurrentUserDto,
     SubscriptionPlanOptionDto,
+    ChangePasswordRequest,
     User
 } from '../models/user.model';
 
@@ -100,6 +101,11 @@ export class AuthService {
     /** Mevcut kullanıcı bilgisi */
     getMe(): Observable<CurrentUserDto> {
         return this.http.get<CurrentUserDto>(`${this.apiUrl}/me`);
+    }
+
+    /** Şifre değiştir */
+    changePassword(request: ChangePasswordRequest): Observable<void> {
+        return this.http.post<void>(`${this.apiUrl}/change-password`, request);
     }
 
     /** Abonelik planı seçenekleri */
