@@ -71,6 +71,14 @@ export const routes: Routes = [
                 loadComponent: () => import('./features/admin/system-health/system-health.component').then(m => m.SystemHealthComponent)
             },
             {
+                path: 'email-templates',
+                loadComponent: () => import('./features/admin/email-templates/email-templates.component').then(m => m.EmailTemplatesComponent)
+            },
+            {
+                path: 'members',
+                loadComponent: () => import('./features/admin/members/members.component').then(m => m.MembersComponent)
+            },
+            {
                 path: '',
                 redirectTo: 'dashboard',
                 pathMatch: 'full'

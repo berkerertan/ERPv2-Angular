@@ -133,6 +133,16 @@
                             <button class="action-btn edit" title="Düzenle" (click)="openEditModal(a)">
                                 <span class="material-icons-outlined">edit</span>
                             </button>
+                            <button class="action-btn export"
+                                [title]="exportingId() === a.id ? 'İndiriliyor...' : 'Veresiye Dışa Aktar'"
+                                (click)="exportBuyerExcel(a)"
+                                [disabled]="exportingId() === a.id">
+                                @if (exportingId() === a.id) {
+                                    <div class="spinner spinner-sm"></div>
+                                } @else {
+                                    <span class="material-icons-outlined">download</span>
+                                }
+                            </button>
                             <button class="action-btn" [title]="a.isActive ? 'Pasife Al' : 'Aktife Al'"
                                 (click)="toggleStatus(a.id)"
                                 [style.color]="a.isActive ? 'var(--warning)' : 'var(--success)'">

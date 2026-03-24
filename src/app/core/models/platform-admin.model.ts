@@ -168,6 +168,46 @@ export interface SystemHealthTimelineDto {
     points: SystemHealthTimelinePointDto[];
 }
 
+// ── Admin Users (Tüm platform kullanıcıları) ──────────────────────────────
+
+export interface AdminUserListItemDto {
+    userId: string;
+    userName: string;
+    email?: string;
+    role: string;
+    tenantId?: string;
+    tenantName?: string;
+    tenantCode?: string;
+    isActive: boolean;
+    createdAtUtc: string;
+    lastLoginAtUtc?: string;
+}
+
+export interface AdminUserDetailDto {
+    userId: string;
+    userName: string;
+    email?: string;
+    role: string;
+    tenantId?: string;
+    tenantName?: string;
+    tenantCode?: string;
+    isActive: boolean;
+    createdAtUtc: string;
+    lastLoginAtUtc?: string;
+    subscriptionPlan?: SubscriptionPlan;
+    subscriptionStatus?: SubscriptionStatus;
+    recentActivities?: AdminActivityLogDto[];
+}
+
+export interface AdminUserFilter {
+    q?: string;
+    tenantId?: string;
+    role?: string;
+    isActive?: boolean;
+    page?: number;
+    pageSize?: number;
+}
+
 export interface AuditLogFilter {
     q?: string;
     tenantId?: string;
@@ -176,6 +216,146 @@ export interface AuditLogFilter {
     fromUtc?: string;
     toUtc?: string;
     onlyErrors?: boolean;
+    page?: number;
+    pageSize?: number;
+}
+
+// ── Email Templates ────────────────────────────────────────────────────────
+
+export interface EmailTemplateDto {
+    key: string;
+    name: string;
+    subject: string;
+    bodyHtml?: string;   // backend fieldname: bodyHtml
+    body?: string;       // alternatif fieldname — component öncelikle bodyHtml, yoksa body kullanır
+    isActive: boolean;
+    updatedAtUtc?: string;
+    updatedAt?: string;  // alternatif tarih alanı
+}
+
+export interface UpdateEmailTemplateRequest {
+    subject: string;
+    bodyHtml: string;
+    isActive: boolean;
+}
+
+// ── Email Campaigns ────────────────────────────────────────────────────────
+
+export enum PlatformEmailCampaignStatus {
+    Draft             = 1,
+    Scheduled         = 2,
+    Queued            = 3,
+    Processing        = 4,
+    Completed         = 5,
+    CompletedWithErrors = 6,
+    Cancelled         = 7,
+}
+
+export enum PlatformEmailRecipientStatus {
+    Pending   = 1,
+    Sent      = 2,
+    Failed    = 3,
+    Skipped   = 4,
+    Cancelled = 5,
+}
+
+export interface CampaignPreviewRequest {
+    templateKey: string;
+    tenantIds?: string[];
+    sendToAllActiveTenants: boolean;
+    sendToAllTenantUsers: boolean;
+}
+
+export interface CampaignPreviewRecipientDto {
+    tenantId: string;
+    tenantCode: string;
+    tenantName: string;
+    recipientEmail: string;
+}
+
+export interface CampaignPreviewDto {
+    tenantCount: number;
+    recipientCount: number;
+    recipientsSample: CampaignPreviewRecipientDto[];
+}
+
+export interface CreateCampaignRequest {
+    name: string;
+    description?: string;
+    templateKey: string;
+    tenantIds?: string[];
+    sendToAllActiveTenants: boolean;
+    sendToAllTenantUsers: boolean;
+    subjectOverride?: string;
+    bodyOverride?: string;
+    variables?: Record<string, string>;
+    scheduledAtUtc?: string;
+    isHtml: boolean;
+}
+
+export interface EmailCampaignListItemDto {
+    campaignId: string;
+    name: string;
+    description?: string;
+    templateKey: string;
+    status: PlatformEmailCampaignStatus;
+    recipientCount: number;
+    sentCount: number;
+    failedCount: number;
+    scheduledAtUtc?: string;
+    createdAtUtc: string;
+    completedAtUtc?: string;
+}
+
+export interface EmailCampaignDetailDto extends EmailCampaignListItemDto {
+    sendToAllActiveTenants: boolean;
+    sendToAllTenantUsers: boolean;
+    subjectOverride?: string;
+    bodyOverride?: string;
+    variables?: Record<string, string>;
+    isHtml: boolean;
+}
+
+export interface EmailCampaignRecipientDto {
+    recipientId: string;
+    tenantId: string;
+    tenantCode?: string;
+    tenantName?: string;
+    recipientEmail: string;
+    status: PlatformEmailRecipientStatus;
+    sentAtUtc?: string;
+    errorMessage?: string;
+}
+
+export interface CampaignFilter {
+    q?: string;
+    status?: number;
+    page?: number;
+    pageSize?: number;
+}
+
+// ── Email Logs ─────────────────────────────────────────────────────────────
+
+export interface EmailLogDto {
+    id: string;
+    campaignId?: string;
+    campaignName?: string;
+    tenantId?: string;
+    tenantName?: string;
+    recipientEmail: string;
+    subject: string;
+    status: string;
+    sentAtUtc?: string;
+    errorMessage?: string;
+}
+
+export interface EmailLogFilter {
+    q?: string;
+    campaignId?: string;
+    tenantId?: string;
+    status?: string;
+    fromUtc?: string;
+    toUtc?: string;
     page?: number;
     pageSize?: number;
 }

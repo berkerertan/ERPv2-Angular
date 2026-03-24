@@ -1,0 +1,354 @@
+<div class="members-page animate-fadeInUp">
+
+    <!-- ── Header ───────────────────────────────────────────────────── -->
+    <div class="page-header">
+        <div class="header-left">
+            <h1 class="page-title">
+                <span class="material-icons-outlined title-icon">group</span>
+                Üyeler
+            </h1>
+            <p class="page-subtitle">Platformdaki tüm kullanıcı hesaplarını görüntüleyin ve yönetin</p>
+        </div>
+    </div>
+
+    <!-- ── Stats ────────────────────────────────────────────────────── -->
+    <div class="stats-grid animate-fadeInUp" style="animation-delay:.1s">
+        <div class="stat-card">
+            <div class="stat-icon-wrap primary">
+                <span class="material-icons-outlined">group</span>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ totalUsers }}</span>
+                <span class="stat-label">Toplam Üye</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon-wrap success">
+                <span class="material-icons-outlined">person_check</span>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ activeUsers }}</span>
+                <span class="stat-label">Aktif</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon-wrap warning">
+                <span class="material-icons-outlined">person_off</span>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ inactiveUsers }}</span>
+                <span class="stat-label">Pasif</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon-wrap purple">
+                <span class="material-icons-outlined">admin_panel_settings</span>
+            </div>
+            <div class="stat-content">
+                <span class="stat-value">{{ platformAdmins }}</span>
+                <span class="stat-label">Platform Admin</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Filter Bar ────────────────────────────────────────────────── -->
+    <div class="filter-bar animate-fadeInUp" style="animation-delay:.15s">
+        <div class="search-wrap">
+            <span class="material-icons-outlined search-icon">search</span>
+            <input class="form-input search-input"
+                type="text"
+                placeholder="Kullanıcı adı, e-posta veya firma ara..."
+                [(ngModel)]="searchTerm"
+                (ngModelChange)="onSearchChange()" />
+        </div>
+
+        <select class="form-input filter-select" [(ngModel)]="roleFilter" (ngModelChange)="onFilterChange()">
+            <option value="">Tüm Roller</option>
+            <option value="SuperAdmin">Süper Admin</option>
+            <option value="Admin">Admin</option>
+            <option value="1.Kademe">Başlangıç</option>
+            <option value="2.Kademe">Profesyonel</option>
+            <option value="3.Kademe">Kurumsal</option>
+        </select>
+
+        <select class="form-input filter-select" [(ngModel)]="statusFilter" (ngModelChange)="onFilterChange()">
+            <option value="all">Tüm Durumlar</option>
+            <option value="active">Aktif</option>
+            <option value="inactive">Pasif</option>
+        </select>
+
+        <div class="results-text">
+            @if (!isLoading()) {
+                <span>Toplam <strong>{{ filteredUsers.length }}</strong> üye</span>
+            } @else {
+                <span class="text-muted">Yükleniyor...</span>
+            }
+        </div>
+    </div>
+
+    <!-- ── Main Content ───────────────────────────────────────────────── -->
+    <div class="content-wrap" [class.panel-open]="showDetailPanel()">
+
+        <!-- Table -->
+        <div class="table-wrap card animate-fadeInUp" style="animation-delay:.2s">
+
+            @if (isLoading()) {
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <span>Üyeler yükleniyor...</span>
+            </div>
+            } @else if (error()) {
+            <div class="empty-state">
+                <span class="material-icons-outlined" style="color:var(--danger)">error_outline</span>
+                <h3>Hata Oluştu</h3>
+                <p>{{ error() }}</p>
+                <button class="btn btn-primary btn-sm" (click)="loadUsers()">
+                    <span class="material-icons-outlined">refresh</span>Tekrar Dene
+                </button>
+            </div>
+            } @else if (filteredUsers.length === 0) {
+            <div class="empty-state">
+                <span class="material-icons-outlined">person_search</span>
+                <h3>Üye Bulunamadı</h3>
+                <p>Arama kriterlerinize uygun kullanıcı kaydı yok.</p>
+            </div>
+            } @else {
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th class="sortable" [class.sorted]="sortColumn==='userName'" (click)="sort('userName')">
+                                Kullanıcı
+                                <span class="sort-icon material-icons-outlined">{{ sortColumn==='userName' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
+                            </th>
+                            <th>E-posta</th>
+                            <th>Rol</th>
+                            <th class="sortable" [class.sorted]="sortColumn==='tenantName'" (click)="sort('tenantName')">
+                                Firma
+                                <span class="sort-icon material-icons-outlined">{{ sortColumn==='tenantName' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
+                            </th>
+                            <th>Durum</th>
+                            <th class="sortable" [class.sorted]="sortColumn==='lastLoginAtUtc'" (click)="sort('lastLoginAtUtc')">
+                                Son Giriş
+                                <span class="sort-icon material-icons-outlined">{{ sortColumn==='lastLoginAtUtc' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
+                            </th>
+                            <th class="sortable" [class.sorted]="sortColumn==='createdAtUtc'" (click)="sort('createdAtUtc')">
+                                Kayıt Tarihi
+                                <span class="sort-icon material-icons-outlined">{{ sortColumn==='createdAtUtc' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
+                            </th>
+                            <th class="text-center">İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (u of filteredUsers; track u.userId) {
+                        <tr class="clickable-row" [class.row-selected]="selectedUser()?.userId === u.userId" (click)="openDetail(u)">
+
+                            <!-- Kullanıcı -->
+                            <td>
+                                <div class="user-cell">
+                                    <div class="user-avatar" [style.background]="avatarColor(u.userName)">
+                                        {{ avatarInitials(u.userName) }}
+                                    </div>
+                                    <div class="user-info">
+                                        <span class="user-name">{{ u.userName }}</span>
+                                        @if (u.tenantCode) {
+                                            <span class="user-code">{{ u.tenantCode }}</span>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+
+                            <!-- E-posta -->
+                            <td>
+                                <span class="user-email">{{ u.email || '—' }}</span>
+                            </td>
+
+                            <!-- Rol -->
+                            <td>
+                                <span class="role-badge" [class]="roleClass(u.role)">{{ roleLabel(u.role) }}</span>
+                            </td>
+
+                            <!-- Firma -->
+                            <td>
+                                @if (u.tenantName) {
+                                    <div class="tenant-cell">
+                                        <span class="material-icons-outlined">business</span>
+                                        {{ u.tenantName }}
+                                    </div>
+                                } @else {
+                                    <span class="text-muted">Platform</span>
+                                }
+                            </td>
+
+                            <!-- Durum -->
+                            <td>
+                                <span class="badge" [class.badge-success]="u.isActive" [class.badge-secondary]="!u.isActive">
+                                    {{ u.isActive ? 'Aktif' : 'Pasif' }}
+                                </span>
+                            </td>
+
+                            <!-- Son Giriş -->
+                            <td>
+                                <span class="date-text">{{ formatDate(u.lastLoginAtUtc) }}</span>
+                            </td>
+
+                            <!-- Kayıt Tarihi -->
+                            <td>
+                                <span class="date-text">{{ formatDate(u.createdAtUtc) }}</span>
+                            </td>
+
+                            <!-- İşlem -->
+                            <td class="text-center" (click)="$event.stopPropagation()">
+                                <button class="btn-icon"
+                                    [title]="u.isActive ? 'Pasife Al' : 'Aktif Et'"
+                                    (click)="toggleUserActive(u, $event)"
+                                    [style.color]="u.isActive ? 'var(--warning)' : 'var(--success)'">
+                                    <span class="material-icons-outlined">{{ u.isActive ? 'person_off' : 'person_check' }}</span>
+                                </button>
+                            </td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            }
+        </div>
+
+        <!-- ── Detail Panel ────────────────────────────────────────────── -->
+        @if (showDetailPanel() && selectedUser()) {
+        <div class="detail-panel animate-slideInRight">
+
+            <!-- Panel Header -->
+            <div class="panel-header">
+                <div class="panel-user-info">
+                    <div class="panel-avatar" [style.background]="avatarColor(selectedUser()!.userName)">
+                        {{ avatarInitials(selectedUser()!.userName) }}
+                    </div>
+                    <div>
+                        <h3 class="panel-user-name">{{ selectedUser()!.userName }}</h3>
+                        <span class="role-badge" [class]="roleClass(selectedUser()!.role)">
+                            {{ roleLabel(selectedUser()!.role) }}
+                        </span>
+                    </div>
+                </div>
+                <button class="btn-icon" (click)="closeDetail()" title="Kapat">
+                    <span class="material-icons-outlined">close</span>
+                </button>
+            </div>
+
+            @if (isLoadingDetail()) {
+            <div class="panel-loading">
+                <div class="spinner"></div>
+                <span>Detaylar yükleniyor...</span>
+            </div>
+            } @else {
+
+            <!-- Durum Chip -->
+            <div class="panel-status-row">
+                <span class="badge" [class.badge-success]="selectedUser()!.isActive" [class.badge-secondary]="!selectedUser()!.isActive">
+                    {{ selectedUser()!.isActive ? 'Aktif' : 'Pasif' }}
+                </span>
+                <button class="btn btn-sm"
+                    [class.btn-danger]="selectedUser()!.isActive"
+                    [class.btn-success]="!selectedUser()!.isActive"
+                    (click)="toggleUserActive(selectedUser()!, $event)">
+                    <span class="material-icons-outlined">{{ selectedUser()!.isActive ? 'person_off' : 'person_check' }}</span>
+                    {{ selectedUser()!.isActive ? 'Pasife Al' : 'Aktif Et' }}
+                </button>
+            </div>
+
+            <!-- Bilgiler -->
+            <div class="panel-section">
+                <div class="panel-section-title">
+                    <span class="material-icons-outlined">person</span>
+                    Kullanıcı Bilgileri
+                </div>
+                <div class="info-list">
+                    <div class="info-row">
+                        <span class="info-label">Kullanıcı Adı</span>
+                        <span class="info-value font-mono">{{ selectedUser()!.userName }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">E-posta</span>
+                        <span class="info-value">{{ selectedUser()!.email || '—' }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Rol</span>
+                        <span class="info-value">
+                            <span class="role-badge" [class]="roleClass(selectedUser()!.role)">{{ roleLabel(selectedUser()!.role) }}</span>
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Kayıt Tarihi</span>
+                        <span class="info-value">{{ formatDateTime(selectedUser()!.createdAtUtc) }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Son Giriş</span>
+                        <span class="info-value">{{ formatDateTime(selectedUser()!.lastLoginAtUtc) }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Firma Bilgileri -->
+            @if (selectedUser()!.tenantName) {
+            <div class="panel-section">
+                <div class="panel-section-title">
+                    <span class="material-icons-outlined">business</span>
+                    Firma Bilgileri
+                </div>
+                <div class="info-list">
+                    <div class="info-row">
+                        <span class="info-label">Firma Adı</span>
+                        <span class="info-value">{{ selectedUser()!.tenantName }}</span>
+                    </div>
+                    @if (selectedUser()!.tenantCode) {
+                    <div class="info-row">
+                        <span class="info-label">Firma Kodu</span>
+                        <span class="info-value font-mono">{{ selectedUser()!.tenantCode }}</span>
+                    </div>
+                    }
+                    @if (userDetail()?.subscriptionPlan !== undefined) {
+                    <div class="info-row">
+                        <span class="info-label">Plan</span>
+                        <span class="info-value">{{ userDetail()!.subscriptionPlan }}</span>
+                    </div>
+                    }
+                </div>
+            </div>
+            }
+
+            <!-- Son Aktiviteler -->
+            <div class="panel-section">
+                <div class="panel-section-title">
+                    <span class="material-icons-outlined">history</span>
+                    Son Aktiviteler
+                </div>
+                @if (userActivities().length === 0) {
+                <div class="act-empty">Aktivite kaydı bulunamadı.</div>
+                } @else {
+                <div class="act-list">
+                    @for (log of userActivities(); track log.id) {
+                    <div class="act-item">
+                        <div class="act-item-left">
+                            <span class="act-status-dot" [class]="actStatusClass(log.statusCode)"></span>
+                            <div class="act-item-info">
+                                <span class="act-action">{{ getActivityAction(log.httpMethod, log.path) }}</span>
+                                <span class="act-time">{{ log.occurredAtUtc | date:'dd.MM.yy HH:mm' }}</span>
+                            </div>
+                        </div>
+                        <div class="act-item-right">
+                            <span class="act-code" [class]="actStatusClass(log.statusCode)">{{ log.statusCode }}</span>
+                            <span class="act-dur">{{ log.durationMs }}ms</span>
+                        </div>
+                    </div>
+                    }
+                </div>
+                }
+            </div>
+
+            }
+        </div>
+        }
+
+    </div>
+</div>

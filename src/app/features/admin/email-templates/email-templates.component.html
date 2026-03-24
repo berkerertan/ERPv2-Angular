@@ -1,0 +1,816 @@
+<div class="email-page animate-fadeInUp">
+
+    <!-- ── Header ──────────────────────────────────────────────────── -->
+    <div class="page-header">
+        <div class="header-left">
+            <h1 class="page-title">
+                <span class="material-icons-outlined title-icon">mark_email_unread</span>
+                E-posta Yönetimi
+            </h1>
+            <p class="page-subtitle">Şablonlar, kampanyalar ve gönderim loglarını yönetin</p>
+        </div>
+    </div>
+
+    <!-- ── Tab Navigation ───────────────────────────────────────────── -->
+    <div class="tab-nav animate-fadeInUp" style="animation-delay:.05s">
+        <button class="tab-btn" [class.active]="activeTab()==='templates'" (click)="switchTab('templates')">
+            <span class="material-icons-outlined">description</span>
+            Şablonlar
+            @if (templates().length) {
+                <span class="tab-badge">{{ templates().length }}</span>
+            }
+        </button>
+        <button class="tab-btn" [class.active]="activeTab()==='builder'" (click)="switchTab('builder')">
+            <span class="material-icons-outlined">add_circle_outline</span>
+            Kampanya Oluştur
+        </button>
+        <button class="tab-btn" [class.active]="activeTab()==='campaigns'" (click)="switchTab('campaigns')">
+            <span class="material-icons-outlined">campaign</span>
+            Kampanyalar
+            @if (campaigns().length) {
+                <span class="tab-badge">{{ campaigns().length }}</span>
+            }
+        </button>
+        <button class="tab-btn" [class.active]="activeTab()==='logs'" (click)="switchTab('logs')">
+            <span class="material-icons-outlined">manage_search</span>
+            Gönderim Logları
+        </button>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- TAB: ŞABLONLAR                                                -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    @if (activeTab() === 'templates') {
+    <div class="tab-content animate-fadeInUp" style="animation-delay:.1s">
+        <div class="content-wrap" [class.panel-open]="showEditPanel()">
+
+            <!-- Template List -->
+            <div class="card">
+                @if (isLoadingTemplates()) {
+                    <div class="loading-state">
+                        <div class="spinner"></div>
+                        <span>Şablonlar yükleniyor...</span>
+                    </div>
+                } @else if (templateError()) {
+                    <div class="empty-state">
+                        <span class="material-icons-outlined" style="color:var(--danger)">error_outline</span>
+                        <h3>Hata Oluştu</h3>
+                        <p>{{ templateError() }}</p>
+                        <button class="btn btn-primary btn-sm" (click)="loadTemplates()">
+                            <span class="material-icons-outlined">refresh</span> Tekrar Dene
+                        </button>
+                    </div>
+                } @else if (templates().length === 0) {
+                    <div class="empty-state">
+                        <span class="material-icons-outlined">mail_outline</span>
+                        <h3>Şablon Bulunamadı</h3>
+                        <p>Henüz e-posta şablonu tanımlanmamış.</p>
+                    </div>
+                } @else {
+                    <div class="template-list">
+                        @for (t of templates(); track t.key) {
+                        <div class="template-row"
+                             [class.row-selected]="selectedTemplate()?.key === t.key"
+                             [class.row-inactive]="!t.isActive"
+                             (click)="openEditPanel(t)">
+                            <div class="template-row-left">
+                                <div class="template-icon-wrap">
+                                    <span class="material-icons-outlined">{{ typeIcon(t.key) }}</span>
+                                </div>
+                                <div class="template-row-info">
+                                    <span class="template-row-name">{{ t.name }}</span>
+                                    <span class="template-row-key text-muted">{{ t.key }}</span>
+                                    <span class="template-row-subject text-muted">{{ t.subject }}</span>
+                                </div>
+                            </div>
+                            <div class="template-row-right">
+                                <span class="badge" [class.badge-success]="t.isActive" [class.badge-secondary]="!t.isActive">
+                                    {{ t.isActive ? 'Aktif' : 'Pasif' }}
+                                </span>
+                                <span class="template-date text-muted">{{ formatDate(templateUpdatedAt(t)) }}</span>
+                                <span class="material-icons-outlined chevron">chevron_right</span>
+                            </div>
+                        </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- Edit Panel -->
+            @if (showEditPanel() && selectedTemplate()) {
+            <div class="edit-panel animate-slideInRight">
+                <div class="panel-header">
+                    <div class="panel-title-group">
+                        <div class="panel-avatar" style="background:var(--primary-600)">
+                            <span class="material-icons-outlined" style="font-size:20px;color:#fff">edit</span>
+                        </div>
+                        <div>
+                            <h3 class="panel-user-name">{{ selectedTemplate()!.name }}</h3>
+                            <span class="panel-key text-muted">{{ selectedTemplate()!.key }}</span>
+                        </div>
+                    </div>
+                    <button class="btn-icon" (click)="closeEditPanel()" title="Kapat">
+                        <span class="material-icons-outlined">close</span>
+                    </button>
+                </div>
+
+                <div class="panel-body">
+
+                    <!-- Variables -->
+                    <div class="var-section">
+                        <div class="var-section-label">
+                            <span class="material-icons-outlined">data_object</span>
+                            Değişkenler
+                            <span class="var-hint">(tıkla gövdeye ekle)</span>
+                        </div>
+                        <div class="var-chips">
+                            @for (v of templateVars(selectedTemplate()!.key); track v) {
+                            <span class="var-chip" (click)="insertVar(v)">{{ v }}</span>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Subject -->
+                    <div class="form-group">
+                        <label class="form-label">Konu Satırı</label>
+                        <input class="form-control" type="text" [(ngModel)]="editSubject"
+                               placeholder="E-posta konusu..." />
+                    </div>
+
+                    <!-- Body -->
+                    <div class="form-group">
+                        <label class="form-label">İçerik <span class="form-label-hint">(HTML)</span></label>
+                        <textarea class="form-control body-area" [(ngModel)]="editBodyHtml"
+                                  placeholder="<p>E-posta içeriği...</p>"></textarea>
+                    </div>
+
+                    <!-- HTML Preview -->
+                    <div class="form-group">
+                        <label class="form-label">Önizleme</label>
+                        <div class="html-preview" [innerHTML]="editBodyHtml || '<span style=\'opacity:.4\'>İçerik yok</span>'"></div>
+                    </div>
+
+                    <!-- Active -->
+                    <label class="toggle-row">
+                        <input type="checkbox" class="sr-only" [(ngModel)]="editIsActive" />
+                        <div class="toggle-track" [class.toggle-on]="editIsActive">
+                            <div class="toggle-thumb"></div>
+                        </div>
+                        <span class="toggle-label">{{ editIsActive ? 'Aktif' : 'Pasif' }}</span>
+                    </label>
+                </div>
+
+                <div class="panel-footer">
+                    <button class="btn btn-secondary" (click)="closeEditPanel()">Vazgeç</button>
+                    <button class="btn btn-primary" [disabled]="isSaving() || !editSubject.trim()" (click)="saveTemplate()">
+                        @if (isSaving()) { <div class="spinner spinner-sm"></div> }
+                        @else { <span class="material-icons-outlined">save</span> }
+                        Kaydet
+                    </button>
+                </div>
+            </div>
+            }
+
+        </div>
+    </div>
+    }
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- TAB: KAMPANYA OLUŞTUR                                         -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    @if (activeTab() === 'builder') {
+    <div class="tab-content animate-fadeInUp" style="animation-delay:.1s">
+        <div class="builder-wrap">
+
+            <!-- Left: Form -->
+            <div class="builder-form card">
+
+                @if (builderError()) {
+                <div class="alert-danger">
+                    <span class="material-icons-outlined">error_outline</span>
+                    {{ builderError() }}
+                </div>
+                }
+
+                <!-- Temel Bilgiler -->
+                <div class="section-title">
+                    <span class="material-icons-outlined">tune</span>
+                    Temel Bilgiler
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Kampanya Adı <span class="req">*</span></label>
+                    <input class="form-control" type="text" [(ngModel)]="bName"
+                           placeholder="Nisan Hatırlatma Kampanyası" />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Açıklama <span class="form-label-hint">(opsiyonel)</span></label>
+                    <input class="form-control" type="text" [(ngModel)]="bDescription"
+                           placeholder="Aylık ödeme hatırlatması..." />
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Şablon <span class="req">*</span></label>
+                    <select class="form-control" [(ngModel)]="bTemplateKey">
+                        <option value="">Şablon seçin...</option>
+                        @for (t of templates(); track t.key) {
+                            <option [value]="t.key">{{ t.name }}</option>
+                        }
+                    </select>
+                    @if (!templates().length) {
+                        <span class="form-hint">Şablonlar yüklenemedi — Şablonlar sekmesini ziyaret edin.</span>
+                    }
+                </div>
+
+                <div class="form-divider"></div>
+
+                <!-- Hedef Kitle -->
+                <div class="section-title">
+                    <span class="material-icons-outlined">group</span>
+                    Hedef Kitle
+                </div>
+
+                <label class="checkbox-row">
+                    <input type="checkbox" [(ngModel)]="bSendToAll" />
+                    <span>Tüm aktif abonelere gönder</span>
+                </label>
+
+                @if (!bSendToAll) {
+                <div class="form-group">
+                    <label class="form-label">Tenant ID'leri</label>
+                    <textarea class="form-control" rows="3" [(ngModel)]="bTenantIdsText"
+                              placeholder="GUID1&#10;GUID2&#10;GUID3 veya virgülle ayır..."></textarea>
+                    <span class="form-hint">Her satıra veya virgülle ayırarak birden fazla ID girebilirsiniz.</span>
+                </div>
+                }
+
+                <label class="checkbox-row">
+                    <input type="checkbox" [(ngModel)]="bSendToAllUsers" />
+                    <span>Tenant'taki tüm kullanıcılara gönder</span>
+                </label>
+
+                <div class="form-divider"></div>
+
+                <!-- Geçersiz Kılmalar -->
+                <div class="section-title">
+                    <span class="material-icons-outlined">edit_note</span>
+                    Geçersiz Kılmalar <span class="section-hint">(opsiyonel)</span>
+                </div>
+
+                <label class="checkbox-row">
+                    <input type="checkbox" [(ngModel)]="bUseSubjectOverride" />
+                    <span>Konu satırını özelleştir</span>
+                </label>
+                @if (bUseSubjectOverride) {
+                <div class="form-group">
+                    <input class="form-control" type="text" [(ngModel)]="bSubjectOverride"
+                           placeholder="Özel konu — örn: Hatırlatma - TenantName değişkeni" />
+                </div>
+                }
+
+                <label class="checkbox-row">
+                    <input type="checkbox" [(ngModel)]="bUseBodyOverride" />
+                    <span>İçeriği özelleştir</span>
+                </label>
+                @if (bUseBodyOverride) {
+                <div class="form-group">
+                    <textarea class="form-control" rows="4" [(ngModel)]="bBodyOverride"
+                              placeholder="<p>Özel HTML içerik buraya...</p>"></textarea>
+                </div>
+                }
+
+                <div class="form-divider"></div>
+
+                <!-- Ek Değişkenler -->
+                <div class="section-title">
+                    <span class="material-icons-outlined">data_object</span>
+                    Ek Değişkenler <span class="section-hint">(opsiyonel)</span>
+                </div>
+
+                @if (bVariables.length > 0) {
+                <div class="var-pairs">
+                    @for (v of bVariables; track $index; let i = $index) {
+                    <div class="var-pair">
+                        <span class="var-pair-key">{{ fmtVar(v.key) }}</span>
+                        <span class="var-pair-arrow">→</span>
+                        <span class="var-pair-val">{{ v.value || '(boş)' }}</span>
+                        <button class="btn-icon" style="color:var(--danger)" title="Kaldır" (click)="removeVar(i)">
+                            <span class="material-icons-outlined">close</span>
+                        </button>
+                    </div>
+                    }
+                </div>
+                }
+
+                <div class="var-add-row">
+                    <input class="form-control" type="text" [(ngModel)]="bNewVarKey"
+                           placeholder="Anahtar (PaymentLink)" style="flex:1" />
+                    <input class="form-control" type="text" [(ngModel)]="bNewVarValue"
+                           placeholder="Değer" style="flex:2" />
+                    <button class="btn btn-secondary btn-sm" (click)="addVar()" title="Ekle">
+                        <span class="material-icons-outlined">add</span>
+                    </button>
+                </div>
+
+                <div class="form-divider"></div>
+
+                <!-- Zamanlama -->
+                <div class="section-title">
+                    <span class="material-icons-outlined">schedule</span>
+                    Zamanlama
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Gönderim Zamanı <span class="form-label-hint">(opsiyonel)</span></label>
+                    <input class="form-control" type="datetime-local" [(ngModel)]="bScheduledAt" />
+                    <span class="form-hint">Boş bırakılırsa taslak oluşturulur; kuyruğa alındığında hemen gönderilir.</span>
+                </div>
+
+                <label class="checkbox-row">
+                    <input type="checkbox" [(ngModel)]="bIsHtml" />
+                    <span>HTML içerik</span>
+                </label>
+
+                <div class="form-divider"></div>
+
+                <!-- Actions -->
+                <div class="builder-actions">
+                    <button class="btn btn-secondary" [disabled]="isPreviewing() || !bTemplateKey" (click)="preview()">
+                        @if (isPreviewing()) { <div class="spinner spinner-sm"></div> }
+                        @else { <span class="material-icons-outlined">preview</span> }
+                        Önizle
+                    </button>
+                    <button class="btn btn-primary" [disabled]="isCreatingCampaign() || !bName.trim() || !bTemplateKey" (click)="createCampaign()">
+                        @if (isCreatingCampaign()) { <div class="spinner spinner-sm"></div> }
+                        @else { <span class="material-icons-outlined">save</span> }
+                        Taslak Oluştur
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right: Preview -->
+            <div class="builder-preview">
+                @if (!previewResult() && !isPreviewing()) {
+                <div class="preview-empty card">
+                    <span class="material-icons-outlined">preview</span>
+                    <p>Şablon ve hedef kitleyi belirledikten sonra<br /><strong>Önizle</strong> butonuna tıklayın.</p>
+                </div>
+                }
+
+                @if (isPreviewing()) {
+                <div class="card">
+                    <div class="loading-state">
+                        <div class="spinner"></div>
+                        <span>Alıcılar hesaplanıyor...</span>
+                    </div>
+                </div>
+                }
+
+                @if (previewResult() && !isPreviewing()) {
+                <div class="preview-result card">
+
+                    <div class="section-title" style="margin-bottom:var(--space-4)">
+                        <span class="material-icons-outlined">people</span>
+                        Kampanya Özeti
+                    </div>
+
+                    <div class="preview-stats-row">
+                        <div class="prev-stat">
+                            <span class="prev-stat-val">{{ previewResult()!.tenantCount }}</span>
+                            <span class="prev-stat-lbl">Firma</span>
+                        </div>
+                        <div class="prev-stat-sep"></div>
+                        <div class="prev-stat">
+                            <span class="prev-stat-val">{{ previewResult()!.recipientCount }}</span>
+                            <span class="prev-stat-lbl">Alıcı</span>
+                        </div>
+                    </div>
+
+                    <div class="section-title" style="margin-top:var(--space-5);margin-bottom:var(--space-3)">
+                        <span class="material-icons-outlined">contact_mail</span>
+                        Örnek Alıcılar
+                    </div>
+
+                    <div class="preview-sample-list">
+                        @for (r of previewResult()!.recipientsSample; track r.tenantId) {
+                        <div class="preview-sample-row">
+                            <div class="prev-tenant">
+                                <span class="prev-tenant-name">{{ r.tenantName }}</span>
+                                <span class="prev-tenant-code text-muted">{{ r.tenantCode }}</span>
+                            </div>
+                            <span class="prev-email text-muted">{{ r.recipientEmail }}</span>
+                        </div>
+                        }
+                        @if (previewResult()!.recipientCount > previewResult()!.recipientsSample.length) {
+                        <div class="preview-more text-muted">
+                            + {{ previewResult()!.recipientCount - previewResult()!.recipientsSample.length }} alıcı daha...
+                        </div>
+                        }
+                    </div>
+                </div>
+                }
+            </div>
+        </div>
+    </div>
+    }
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- TAB: KAMPANYALAR                                              -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    @if (activeTab() === 'campaigns') {
+    <div class="tab-content animate-fadeInUp" style="animation-delay:.1s">
+
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <div class="search-wrap">
+                <span class="material-icons-outlined search-icon">search</span>
+                <input class="form-input search-input" type="text" placeholder="Kampanya ara..."
+                       [(ngModel)]="campaignQ" (ngModelChange)="loadCampaigns()" />
+            </div>
+            <select class="form-input filter-select" [(ngModel)]="campaignStatusFilter" (ngModelChange)="loadCampaigns()">
+                <option value="">Tüm Durumlar</option>
+                <option value="1">Taslak</option>
+                <option value="2">Zamanlandı</option>
+                <option value="3">Kuyruğa Alındı</option>
+                <option value="4">İşleniyor</option>
+                <option value="5">Tamamlandı</option>
+                <option value="6">Hata ile Bitti</option>
+                <option value="7">İptal Edildi</option>
+            </select>
+            <button class="btn btn-primary btn-sm" (click)="switchTab('builder')">
+                <span class="material-icons-outlined">add</span>
+                Yeni Kampanya
+            </button>
+        </div>
+
+        <div class="content-wrap" [class.panel-open]="showCampaignDetail()">
+
+            <!-- Table -->
+            <div class="table-wrap card">
+                @if (isLoadingCampaigns()) {
+                    <div class="loading-state">
+                        <div class="spinner"></div><span>Kampanyalar yükleniyor...</span>
+                    </div>
+                } @else if (campaignError()) {
+                    <div class="empty-state">
+                        <span class="material-icons-outlined" style="color:var(--danger)">error_outline</span>
+                        <h3>Hata</h3><p>{{ campaignError() }}</p>
+                        <button class="btn btn-primary btn-sm" (click)="loadCampaigns()">Tekrar Dene</button>
+                    </div>
+                } @else if (campaigns().length === 0) {
+                    <div class="empty-state">
+                        <span class="material-icons-outlined">campaign</span>
+                        <h3>Kampanya Bulunamadı</h3>
+                        <p>Henüz kampanya oluşturulmamış.</p>
+                        <button class="btn btn-primary btn-sm" (click)="switchTab('builder')">
+                            <span class="material-icons-outlined">add</span> Kampanya Oluştur
+                        </button>
+                    </div>
+                } @else {
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Kampanya</th>
+                                <th>Şablon</th>
+                                <th>Durum</th>
+                                <th>Alıcı</th>
+                                <th>İlerleme</th>
+                                <th>Zamanlama</th>
+                                <th class="text-center">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (c of campaigns(); track c.campaignId) {
+                            <tr class="clickable-row"
+                                [class.row-selected]="selectedCampaignDetail()?.campaignId === c.campaignId"
+                                (click)="openCampaignDetail(c)">
+
+                                <td>
+                                    <div class="campaign-name-cell">
+                                        <span class="campaign-name">{{ c.name }}</span>
+                                        @if (c.description) {
+                                            <span class="campaign-desc text-muted">{{ c.description }}</span>
+                                        }
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <span class="font-mono text-muted" style="font-size:.8125rem">{{ c.templateKey }}</span>
+                                </td>
+
+                                <td>
+                                    <span class="cs-badge" [class]="campaignStatusClass(c.status)">
+                                        {{ campaignStatusLabel(c.status) }}
+                                    </span>
+                                </td>
+
+                                <td>
+                                    <span class="recipient-count">{{ c.recipientCount }}</span>
+                                </td>
+
+                                <td>
+                                    @if (c.recipientCount > 0) {
+                                    <div class="progress-wrap">
+                                        <div class="progress-bar">
+                                            <div class="progress-fill"
+                                                 [class.fill-error]="c.failedCount > 0"
+                                                 [style.width.%]="campaignProgress(c)"></div>
+                                        </div>
+                                        <span class="progress-text">{{ c.sentCount }}/{{ c.recipientCount }}</span>
+                                    </div>
+                                    } @else {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+
+                                <td>
+                                    <span class="date-text">{{ formatDateTime(c.scheduledAtUtc || c.createdAtUtc) }}</span>
+                                </td>
+
+                                <td class="text-center" (click)="$event.stopPropagation()">
+                                    @if (canQueue(c.status)) {
+                                    <button class="btn-icon" title="Kuyruğa Al"
+                                            (click)="queueCampaign(c.campaignId, $event)"
+                                            [disabled]="isQueuingCampaign()">
+                                        <span class="material-icons-outlined" style="color:var(--success)">send</span>
+                                    </button>
+                                    }
+                                    @if (canCancel(c.status)) {
+                                    <button class="btn-icon" title="İptal Et"
+                                            (click)="cancelCampaign(c.campaignId, $event)"
+                                            [disabled]="isCancellingCampaign()">
+                                        <span class="material-icons-outlined" style="color:var(--danger)">cancel</span>
+                                    </button>
+                                    }
+                                </td>
+                            </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                }
+            </div>
+
+            <!-- Campaign Detail Panel -->
+            @if (showCampaignDetail()) {
+            <div class="detail-panel animate-slideInRight">
+
+                <div class="panel-header">
+                    @if (!isLoadingCampaignDetail() && selectedCampaignDetail()) {
+                    <div class="panel-title-group" style="flex:1;min-width:0">
+                        <div>
+                            <h3 class="panel-user-name">{{ selectedCampaignDetail()!.name }}</h3>
+                            <span class="cs-badge" [class]="campaignStatusClass(selectedCampaignDetail()!.status)">
+                                {{ campaignStatusLabel(selectedCampaignDetail()!.status) }}
+                            </span>
+                        </div>
+                    </div>
+                    } @else {
+                    <div class="panel-loading-inline">
+                        <div class="spinner spinner-sm"></div>
+                        <span class="text-muted">Yükleniyor...</span>
+                    </div>
+                    }
+                    <button class="btn-icon" (click)="closeCampaignDetail()">
+                        <span class="material-icons-outlined">close</span>
+                    </button>
+                </div>
+
+                @if (!isLoadingCampaignDetail() && selectedCampaignDetail()) {
+                <div class="panel-body">
+
+                    <!-- Stats -->
+                    <div class="cp-stats">
+                        <div class="cp-stat">
+                            <span class="cp-stat-val">{{ selectedCampaignDetail()!.recipientCount }}</span>
+                            <span class="cp-stat-lbl">Toplam</span>
+                        </div>
+                        <div class="cp-stat cp-success">
+                            <span class="cp-stat-val">{{ selectedCampaignDetail()!.sentCount }}</span>
+                            <span class="cp-stat-lbl">Gönderildi</span>
+                        </div>
+                        <div class="cp-stat cp-danger">
+                            <span class="cp-stat-val">{{ selectedCampaignDetail()!.failedCount }}</span>
+                            <span class="cp-stat-lbl">Başarısız</span>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    @if (canQueue(selectedCampaignDetail()!.status) || canCancel(selectedCampaignDetail()!.status)) {
+                    <div class="cp-actions">
+                        @if (canQueue(selectedCampaignDetail()!.status)) {
+                        <button class="btn btn-success btn-sm"
+                                (click)="queueCampaign(selectedCampaignDetail()!.campaignId)"
+                                [disabled]="isQueuingCampaign()">
+                            @if (isQueuingCampaign()) { <div class="spinner spinner-sm"></div> }
+                            @else { <span class="material-icons-outlined">send</span> }
+                            Kuyruğa Al
+                        </button>
+                        }
+                        @if (canCancel(selectedCampaignDetail()!.status)) {
+                        <button class="btn btn-danger btn-sm"
+                                (click)="cancelCampaign(selectedCampaignDetail()!.campaignId)"
+                                [disabled]="isCancellingCampaign()">
+                            @if (isCancellingCampaign()) { <div class="spinner spinner-sm"></div> }
+                            @else { <span class="material-icons-outlined">cancel</span> }
+                            İptal Et
+                        </button>
+                        }
+                    </div>
+                    }
+
+                    <!-- Detail Info -->
+                    <div class="panel-section">
+                        <div class="panel-section-title">
+                            <span class="material-icons-outlined">info</span>
+                            Detaylar
+                        </div>
+                        <div class="info-list">
+                            <div class="info-row">
+                                <span class="info-label">Şablon</span>
+                                <span class="info-value font-mono">{{ selectedCampaignDetail()!.templateKey }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Hedef</span>
+                                <span class="info-value">{{ selectedCampaignDetail()!.sendToAllActiveTenants ? 'Tüm Aboneler' : 'Belirli Aboneler' }}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Oluşturulma</span>
+                                <span class="info-value">{{ formatDateTime(selectedCampaignDetail()!.createdAtUtc) }}</span>
+                            </div>
+                            @if (selectedCampaignDetail()!.scheduledAtUtc) {
+                            <div class="info-row">
+                                <span class="info-label">Zamanlama</span>
+                                <span class="info-value">{{ formatDateTime(selectedCampaignDetail()!.scheduledAtUtc) }}</span>
+                            </div>
+                            }
+                            @if (selectedCampaignDetail()!.completedAtUtc) {
+                            <div class="info-row">
+                                <span class="info-label">Tamamlanma</span>
+                                <span class="info-value">{{ formatDateTime(selectedCampaignDetail()!.completedAtUtc) }}</span>
+                            </div>
+                            }
+                            @if (selectedCampaignDetail()!.subjectOverride) {
+                            <div class="info-row">
+                                <span class="info-label">Konu (özel)</span>
+                                <span class="info-value">{{ selectedCampaignDetail()!.subjectOverride }}</span>
+                            </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Recipients -->
+                    <div class="panel-section">
+                        <div class="panel-section-title">
+                            <span class="material-icons-outlined">people</span>
+                            Alıcılar
+                            <select class="filter-select-sm" [(ngModel)]="recipientStatusFilter"
+                                (ngModelChange)="loadRecipients(selectedCampaignDetail()!.campaignId)"
+                                style="margin-left:auto">
+                                <option value="">Tümü</option>
+                                <option value="1">Bekliyor</option>
+                                <option value="2">Gönderildi</option>
+                                <option value="3">Başarısız</option>
+                                <option value="4">Atlandı</option>
+                                <option value="5">İptal</option>
+                            </select>
+                        </div>
+
+                        @if (isLoadingRecipients()) {
+                            <div style="padding:16px;text-align:center">
+                                <div class="spinner spinner-sm" style="margin:auto"></div>
+                            </div>
+                        } @else if (campaignRecipients().length === 0) {
+                            <div class="act-empty">Alıcı kaydı bulunamadı.</div>
+                        } @else {
+                        <div class="recipients-list">
+                            @for (r of campaignRecipients(); track r.recipientId) {
+                            <div class="recipient-row">
+                                <div class="recipient-info">
+                                    <span class="recipient-email">{{ r.recipientEmail }}</span>
+                                    <span class="recipient-tenant text-muted">{{ r.tenantName || r.tenantCode || r.tenantId }}</span>
+                                </div>
+                                <div class="recipient-right">
+                                    <span class="rs-badge" [class]="recipientStatusClass(r.status)">
+                                        {{ recipientStatusLabel(r.status) }}
+                                    </span>
+                                    @if (r.errorMessage) {
+                                        <span class="recipient-error" [title]="r.errorMessage">
+                                            <span class="material-icons-outlined" style="font-size:14px;color:var(--danger)">error_outline</span>
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                            }
+                        </div>
+                        }
+                    </div>
+
+                </div>
+                }
+
+            </div>
+            }
+
+        </div>
+    </div>
+    }
+
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- TAB: GÖNDERİM LOGLARI                                        -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    @if (activeTab() === 'logs') {
+    <div class="tab-content animate-fadeInUp" style="animation-delay:.1s">
+
+        <!-- Filters -->
+        <div class="filter-bar filter-bar-multi">
+            <div class="search-wrap">
+                <span class="material-icons-outlined search-icon">search</span>
+                <input class="form-input search-input" type="text" placeholder="E-posta veya konu ara..."
+                       [(ngModel)]="logQ" (ngModelChange)="onLogFilterChange()" />
+            </div>
+            <select class="form-input filter-select" [(ngModel)]="logStatus" (ngModelChange)="onLogFilterChange()">
+                <option value="">Tüm Durumlar</option>
+                <option value="Sent">Gönderildi</option>
+                <option value="Failed">Başarısız</option>
+                <option value="Pending">Bekliyor</option>
+            </select>
+            <input class="form-input" type="date" [(ngModel)]="logFrom" (ngModelChange)="onLogFilterChange()" title="Başlangıç" />
+            <input class="form-input" type="date" [(ngModel)]="logTo"   (ngModelChange)="onLogFilterChange()" title="Bitiş" />
+            <input class="form-input" type="text" [(ngModel)]="logCampaignId" (ngModelChange)="onLogFilterChange()"
+                   placeholder="Kampanya ID..." style="min-width:200px" />
+        </div>
+
+        <div class="table-wrap card">
+            @if (isLoadingLogs()) {
+                <div class="loading-state"><div class="spinner"></div><span>Loglar yükleniyor...</span></div>
+            } @else if (logError()) {
+                <div class="empty-state">
+                    <span class="material-icons-outlined" style="color:var(--danger)">error_outline</span>
+                    <h3>Hata</h3><p>{{ logError() }}</p>
+                    <button class="btn btn-primary btn-sm" (click)="loadLogs()">Tekrar Dene</button>
+                </div>
+            } @else if (logs().length === 0) {
+                <div class="empty-state">
+                    <span class="material-icons-outlined">manage_search</span>
+                    <h3>Log Bulunamadı</h3>
+                    <p>Seçili filtrelere uygun kayıt yok.</p>
+                </div>
+            } @else {
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Alıcı</th>
+                            <th>Konu</th>
+                            <th>Kampanya</th>
+                            <th>Firma</th>
+                            <th>Durum</th>
+                            <th>Gönderim Zamanı</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (log of logs(); track log.id) {
+                        <tr [class.log-error-row]="log.errorMessage">
+                            <td>
+                                <span class="font-mono" style="font-size:.8125rem">{{ log.recipientEmail }}</span>
+                            </td>
+                            <td>
+                                <span class="log-subject" [title]="log.subject">{{ log.subject }}</span>
+                            </td>
+                            <td>
+                                <span class="text-muted" style="font-size:.8125rem">{{ log.campaignName || '—' }}</span>
+                            </td>
+                            <td>
+                                <span class="text-muted" style="font-size:.8125rem">{{ log.tenantName || '—' }}</span>
+                            </td>
+                            <td>
+                                <span class="rs-badge" [class]="logStatusClass(log.status)">{{ log.status }}</span>
+                            </td>
+                            <td>
+                                <span class="date-text">{{ formatDateTime(log.sentAtUtc) }}</span>
+                            </td>
+                        </tr>
+                        @if (log.errorMessage) {
+                        <tr class="log-error-detail-row">
+                            <td colspan="6">
+                                <div class="log-error-msg">
+                                    <span class="material-icons-outlined">error_outline</span>
+                                    {{ log.errorMessage }}
+                                </div>
+                            </td>
+                        </tr>
+                        }
+                        }
+                    </tbody>
+                </table>
+            </div>
+            }
+        </div>
+
+    </div>
+    }
+
+</div>

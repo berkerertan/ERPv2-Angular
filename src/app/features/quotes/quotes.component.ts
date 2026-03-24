@@ -41,6 +41,7 @@ export class QuotesComponent {
 
     today = new Date().toISOString().split('T')[0];
 
+
     // ── Şirket bilgileri ──────────────────────────────────────────────────────
     companyName    = 'ABC Teknoloji A.Ş.';
     companyPhone   = '0212 111 22 33';
@@ -288,6 +289,7 @@ export class QuotesComponent {
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
     }
+
 
     private buildA4Html(q: Quote): string {
         const sub      = q.lines.reduce((s, l) => s + l.quantity * l.unitPrice * (1 - l.discountPercent / 100), 0);

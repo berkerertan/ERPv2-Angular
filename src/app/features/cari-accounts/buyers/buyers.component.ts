@@ -27,6 +27,9 @@ export class BuyersComponent implements OnInit {
     showModal = signal(false);
     editingAccount = signal<any>(null);
 
+    // Export state — hangi alıcı indiriliyor (id tutar, null = yok)
+    exportingId = signal<string | null>(null);
+
     // Excel upload state (veresiye ürün aktarma)
     showExcelModal = signal(false);
     excelFiles = signal<File[]>([]);
@@ -172,6 +175,35 @@ export class BuyersComponent implements OnInit {
             next: () => { this.loadAccounts(); this.toastService.success('Silindi', 'Alıcı silindi'); },
             error: (err) => this.toastService.error('Hata', err.error?.detail || 'Silme işlemi başarısız.')
         });
+    }
+
+    // ═══════════ Dışa Aktarma (Export) ═══════════
+
+    exportBuyerExcel(account: any): void {
+        if (this.exportingId() === account.id) return;
+        this.exportingId.set(account.id);
+
+        this.cariService.exportBuyerExcel(account.id).subscribe({
+            next: (blob) => {
+                // Dosya adı alıcının ismiyle aynı — import formatıyla birebir uyumlu
+                this.downloadFile(blob, `${account.name}.xlsx`);
+                this.exportingId.set(null);
+                this.toastService.success('İndirildi', `${account.name} veresiye defteri indirildi`);
+            },
+            error: (err) => {
+                this.exportingId.set(null);
+                this.toastService.error('Hata', err.error?.detail || 'Excel indirme başarısız.');
+            }
+        });
+    }
+
+    private downloadFile(blob: Blob, filename: string): void {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        window.URL.revokeObjectURL(url);
     }
 
     // ═══════════ Veresiye Excel Aktarma ═══════════

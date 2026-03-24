@@ -140,6 +140,13 @@ export class CariAccountService {
         return this.http.post<BuyerDebtItemsBatchImportResult>(`${this.apiUrl}/buyers/import-excel`, formData);
     }
 
+    /** Belirli bir alıcının veresiye verilerini Excel olarak indir (import formatıyla aynı) */
+    exportBuyerExcel(cariAccountId: string): Observable<Blob> {
+        return this.http.get(`${this.apiUrl}/${cariAccountId}/export-excel`, {
+            responseType: 'blob'
+        });
+    }
+
     /** HTTP query param builder */
     private buildParams(params?: Record<string, any>): HttpParams {
         let httpParams = new HttpParams();

@@ -19,7 +19,21 @@ import {
     HealthProbeDto,
     SystemHealthOverviewDto,
     SystemHealthDependencyDto,
-    SystemHealthTimelineDto
+    SystemHealthTimelineDto,
+    AdminUserListItemDto,
+    AdminUserDetailDto,
+    AdminUserFilter,
+    EmailTemplateDto,
+    UpdateEmailTemplateRequest,
+    CampaignPreviewRequest,
+    CampaignPreviewDto,
+    CreateCampaignRequest,
+    EmailCampaignListItemDto,
+    EmailCampaignDetailDto,
+    EmailCampaignRecipientDto,
+    CampaignFilter,
+    EmailLogDto,
+    EmailLogFilter,
 } from '../models/platform-admin.model';
 
 @Injectable({ providedIn: 'root' })
@@ -59,6 +73,21 @@ export class PlatformAdminService {
 
     updateSubscription(tenantId: string, req: UpdateTenantSubscriptionRequest): Observable<void> {
         return this.http.put<void>(`${this.apiUrl}/subscribers/${tenantId}/subscription`, req);
+    }
+
+    // ── Users ──────────────────────────────────────────────────────────
+    getUsers(filter?: AdminUserFilter): Observable<AdminUserListItemDto[]> {
+        return this.http.get<AdminUserListItemDto[]>(`${this.apiUrl}/users`, {
+            params: this.buildParams(filter)
+        });
+    }
+
+    getUserDetail(userId: string): Observable<AdminUserDetailDto> {
+        return this.http.get<AdminUserDetailDto>(`${this.apiUrl}/users/${userId}`);
+    }
+
+    toggleUserActive(userId: string): Observable<void> {
+        return this.http.post<void>(`${this.apiUrl}/users/${userId}/toggle-active`, {});
     }
 
     // ── Plans ──────────────────────────────────────────────────────────
@@ -115,6 +144,68 @@ export class PlatformAdminService {
             .set('minutes', minutes.toString())
             .set('bucketMinutes', bucketMinutes.toString());
         return this.http.get<SystemHealthTimelineDto>(`${this.apiUrl}/system-health/timeline`, { params });
+    }
+
+    // ── Email Templates ────────────────────────────────────────────────
+    getEmailTemplates(): Observable<EmailTemplateDto[]> {
+        return this.http.get<EmailTemplateDto[]>(`${this.apiUrl}/email/templates`);
+    }
+
+    getEmailTemplate(key: string): Observable<EmailTemplateDto> {
+        return this.http.get<EmailTemplateDto>(`${this.apiUrl}/email/templates/${key}`);
+    }
+
+    updateEmailTemplate(key: string, req: UpdateEmailTemplateRequest): Observable<void> {
+        return this.http.put<void>(`${this.apiUrl}/email/templates/${key}`, req);
+    }
+
+    // ── Email Campaigns ────────────────────────────────────────────────
+    previewCampaign(req: CampaignPreviewRequest): Observable<CampaignPreviewDto> {
+        return this.http.post<CampaignPreviewDto>(`${this.apiUrl}/email/campaigns/preview`, req);
+    }
+
+    createCampaign(req: CreateCampaignRequest): Observable<EmailCampaignDetailDto> {
+        return this.http.post<EmailCampaignDetailDto>(`${this.apiUrl}/email/campaigns`, req);
+    }
+
+    updateCampaign(campaignId: string, req: CreateCampaignRequest): Observable<void> {
+        return this.http.put<void>(`${this.apiUrl}/email/campaigns/${campaignId}`, req);
+    }
+
+    queueCampaign(campaignId: string): Observable<void> {
+        return this.http.post<void>(`${this.apiUrl}/email/campaigns/${campaignId}/queue`, {});
+    }
+
+    cancelCampaign(campaignId: string): Observable<void> {
+        return this.http.post<void>(`${this.apiUrl}/email/campaigns/${campaignId}/cancel`, {});
+    }
+
+    getCampaigns(filter?: CampaignFilter): Observable<EmailCampaignListItemDto[]> {
+        return this.http.get<EmailCampaignListItemDto[]>(`${this.apiUrl}/email/campaigns`, {
+            params: this.buildParams(filter)
+        });
+    }
+
+    getCampaignDetail(campaignId: string): Observable<EmailCampaignDetailDto> {
+        return this.http.get<EmailCampaignDetailDto>(`${this.apiUrl}/email/campaigns/${campaignId}`);
+    }
+
+    getCampaignRecipients(campaignId: string, status?: number, page = 1, pageSize = 100): Observable<EmailCampaignRecipientDto[]> {
+        let params = new HttpParams().set('page', page.toString()).set('pageSize', pageSize.toString());
+        if (status !== undefined) params = params.set('status', status.toString());
+        return this.http.get<EmailCampaignRecipientDto[]>(`${this.apiUrl}/email/campaigns/${campaignId}/recipients`, { params });
+    }
+
+    // ── Email Logs ─────────────────────────────────────────────────────
+    getEmailLogs(filter?: EmailLogFilter): Observable<EmailLogDto[]> {
+        return this.http.get<EmailLogDto[]>(`${this.apiUrl}/email/logs`, {
+            params: this.buildParams(filter)
+        });
+    }
+
+    // ── Legacy Quick Send ──────────────────────────────────────────────
+    quickSendEmail(req: CampaignPreviewRequest & { subjectOverride?: string; variables?: Record<string, string> }): Observable<void> {
+        return this.http.post<void>(`${this.apiUrl}/email/send`, req);
     }
 
     private buildParams(filter?: Record<string, any>): HttpParams {
