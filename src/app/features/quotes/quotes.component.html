@@ -75,12 +75,13 @@
                         <th class="sortable" [class.sorted]="sortColumn==='customerName'" (click)="sort('customerName')">
                             Müşteri <span class="sort-icon material-icons-outlined">{{ sortColumn==='customerName' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
                         </th>
-                        <th class="sortable" [class.sorted]="sortColumn==='date'" (click)="sort('date')">
-                            Tarih <span class="sort-icon material-icons-outlined">{{ sortColumn==='date' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
+                        <th class="sortable" [class.sorted]="sortColumn==='quoteDateUtc'" (click)="sort('quoteDateUtc')">
+                            Tarih <span class="sort-icon material-icons-outlined">{{ sortColumn==='quoteDateUtc' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
                         </th>
-                        <th class="sortable" [class.sorted]="sortColumn==='validUntil'" (click)="sort('validUntil')">
-                            Geçerlilik <span class="sort-icon material-icons-outlined">{{ sortColumn==='validUntil' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
+                        <th class="sortable" [class.sorted]="sortColumn==='validUntilUtc'" (click)="sort('validUntilUtc')">
+                            Geçerlilik <span class="sort-icon material-icons-outlined">{{ sortColumn==='validUntilUtc' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
                         </th>
+                        <th>Kalem</th>
                         <th class="sortable" [class.sorted]="sortColumn==='grandTotal'" (click)="sort('grandTotal')">
                             Toplam (KDV Dahil) <span class="sort-icon material-icons-outlined">{{ sortColumn==='grandTotal' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
                         </th>
@@ -96,32 +97,53 @@
                         </td>
                         <td>
                             <div class="font-medium" style="color: var(--text-primary);">{{ q.customerName }}</div>
-                            @if (q.customerPhone) {
-                            <div class="text-muted" style="font-size: 12px;">{{ q.customerPhone }}</div>
-                            }
                         </td>
-                        <td>{{ q.date }}</td>
+                        <td>{{ q.quoteDateUtc | date:'dd.MM.yyyy' }}</td>
                         <td>
-                            <span [class.text-danger]="q.validUntil < today">{{ q.validUntil }}</span>
+                            <span [class.text-danger]="q.validUntilUtc < today">{{ q.validUntilUtc | date:'dd.MM.yyyy' }}</span>
                         </td>
-                        <td class="amount">₺{{ calcGrandTotal(q).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) }}</td>
+                        <td class="text-center">{{ q.itemCount }}</td>
+                        <td class="amount">₺{{ q.grandTotal.toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) }}</td>
                         <td>
                             <span class="badge" [ngClass]="statusClass(q.status)">{{ statusLabel(q.status) }}</span>
                         </td>
                         <td>
                             <div class="actions-cell">
-                                <button class="action-btn" title="A4 PDF Yazdır" (click)="printA4(q)" style="color: var(--danger);">
+                                <!-- Status actions -->
+                                @if (q.status === QuoteStatus.Draft) {
+                                <button class="action-btn" title="Gönderildi olarak işaretle" (click)="changeStatus(q, QuoteStatus.Sent)" style="color: var(--info);">
+                                    <span class="material-icons-outlined">send</span>
+                                </button>
+                                }
+                                @if (q.status === QuoteStatus.Sent) {
+                                <button class="action-btn" title="Kabul Et" (click)="changeStatus(q, QuoteStatus.Accepted)" style="color: var(--success);">
+                                    <span class="material-icons-outlined">check_circle</span>
+                                </button>
+                                <button class="action-btn" title="Reddet" (click)="changeStatus(q, QuoteStatus.Rejected)" style="color: var(--danger);">
+                                    <span class="material-icons-outlined">cancel</span>
+                                </button>
+                                }
+                                @if (q.status === QuoteStatus.Accepted) {
+                                <button class="action-btn" title="Siparişe Dönüştür" (click)="openConvertModal(q)" style="color: var(--warning);">
+                                    <span class="material-icons-outlined">shopping_cart_checkout</span>
+                                </button>
+                                }
+                                <!-- Print -->
+                                <button class="action-btn" title="A4 PDF Yazdır" (click)="printFromList(q, 'a4')" style="color: var(--danger);">
                                     <span class="material-icons-outlined">picture_as_pdf</span>
                                 </button>
-                                <button class="action-btn" title="Fiş Yazdır (80mm)" (click)="printReceipt(q)" style="color: var(--primary-400);">
+                                <button class="action-btn" title="Fiş Yazdır (80mm)" (click)="printFromList(q, 'receipt')" style="color: var(--primary-400);">
                                     <span class="material-icons-outlined">receipt_long</span>
                                 </button>
+                                <!-- Edit / Delete -->
+                                @if (q.status !== QuoteStatus.ConvertedToOrder) {
                                 <button class="action-btn edit" title="Düzenle" (click)="openEditModal(q)">
                                     <span class="material-icons-outlined">edit</span>
                                 </button>
-                                <button class="action-btn delete" title="Sil" (click)="deleteQuote(q.id)">
+                                <button class="action-btn delete" title="Sil" (click)="deleteQuote(q)">
                                     <span class="material-icons-outlined">delete</span>
                                 </button>
+                                }
                             </div>
                         </td>
                     </tr>
@@ -158,11 +180,33 @@
 
     <div class="modal-scroll-body">
 
+        @if (formError()) {
+        <div class="alert alert-danger" style="margin-bottom: 12px; padding: 10px 14px; background: var(--danger-bg); border: 1px solid var(--danger); border-radius: 6px; color: var(--danger); font-size: 13px;">
+            <span class="material-icons-outlined" style="font-size:16px; vertical-align:middle; margin-right:4px;">error</span>
+            {{ formError() }}
+        </div>
+        }
+
         <!-- Müşteri Bilgileri -->
         <div class="form-section">
             <div class="form-section-title">
                 <span class="material-icons-outlined">person</span>
                 Müşteri Bilgileri
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Teklif No *</label>
+                    <input class="form-input" [(ngModel)]="formData.quoteNumber" placeholder="TKF-2026-001" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Cari Hesap</label>
+                    <select class="form-input" [(ngModel)]="formData.cariAccountId">
+                        <option value="">-- Seçiniz (opsiyonel) --</option>
+                        @for (c of cariAccounts(); track c.id) {
+                        <option [value]="c.id">{{ c.code }} - {{ c.name }}</option>
+                        }
+                    </select>
+                </div>
             </div>
             <div class="form-row">
                 <div class="form-group">
@@ -180,13 +224,11 @@
                     <input class="form-input" [(ngModel)]="formData.customerEmail" placeholder="ornek@firma.com" />
                 </div>
                 <div class="form-group">
+                    <!-- Status is set by backend on create; only show on edit -->
+                    @if (editingId()) {
                     <label class="form-label">Durum</label>
-                    <select class="form-input" [(ngModel)]="formData.status">
-                        <option value="draft">Taslak</option>
-                        <option value="sent">Gönderildi</option>
-                        <option value="accepted">Kabul Edildi</option>
-                        <option value="rejected">Reddedildi</option>
-                    </select>
+                    <span class="badge" [ngClass]="statusClass(formData.status)">{{ statusLabel(formData.status) }}</span>
+                    }
                 </div>
             </div>
             <div class="form-row">
@@ -229,7 +271,7 @@
                 <span class="col-del"></span>
             </div>
 
-            @for (line of formLines(); track line.id) {
+            @for (line of formLines(); track line.tempId) {
             <div class="quote-line">
                 <div class="col-name">
                     <input class="form-input line-input" [(ngModel)]="line.productName" placeholder="Ürün adı veya hizmet tanımı..." />
@@ -250,7 +292,7 @@
                     ₺{{ lineTotal(line).toLocaleString('tr-TR', {minimumFractionDigits:2, maximumFractionDigits:2}) }}
                 </div>
                 <div class="col-del">
-                    <button class="action-btn delete" (click)="removeLine(line.id)" title="Satırı Sil">
+                    <button class="action-btn delete" (click)="removeLine(line.tempId)" title="Satırı Sil">
                         <span class="material-icons-outlined" style="font-size:16px">close</span>
                     </button>
                 </div>
@@ -347,7 +389,7 @@
     <div class="modal-footer">
         <button class="btn btn-secondary" (click)="closeModal()">İptal</button>
         <button class="btn btn-primary" (click)="saveQuote()"
-            [disabled]="!formData.customerName.trim() || formLines().filter(l => l.productName.trim()).length === 0">
+            [disabled]="isSaving() || !formData.customerName.trim() || formLines().filter(l => l.productName.trim()).length === 0">
             <span class="material-icons-outlined">{{ editingId() ? 'save' : 'add' }}</span>
             {{ editingId() ? 'Güncelle' : 'Teklif Oluştur' }}
         </button>
@@ -394,6 +436,45 @@
     <div class="catalog-hint">
         <span class="material-icons-outlined" style="font-size:14px">info</span>
         Aynı ürüne tıklarsanız miktar 1 artırılır
+    </div>
+</div>
+}
+
+<!-- ═══════════════════════════════════════════════════════
+     SİPARİŞE DÖNÜŞTÜR MODALI
+══════════════════════════════════════════════════════════ -->
+@if (showConvertModal()) {
+<div class="overlay" (click)="showConvertModal.set(false)"></div>
+<div class="modal" style="max-width: 440px;" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+        <h2>
+            <span class="material-icons-outlined" style="vertical-align:middle; margin-right:6px; color:var(--warning);">shopping_cart_checkout</span>
+            Siparişe Dönüştür
+        </h2>
+        <button class="modal-close" (click)="showConvertModal.set(false)">
+            <span class="material-icons-outlined">close</span>
+        </button>
+    </div>
+    <div class="modal-body" style="padding: 20px;">
+        <p style="margin-bottom: 16px; color: var(--text-secondary); font-size: 13px;">
+            Bu teklif satış siparişine dönüştürülecektir. Lütfen hedef depoyu seçin.
+        </p>
+        <div class="form-group">
+            <label class="form-label">Depo *</label>
+            <select class="form-input" [(ngModel)]="convertWarehouseId">
+                <option value="">-- Depo Seçiniz --</option>
+                @for (w of warehouses(); track w.id) {
+                <option [value]="w.id">{{ w.name }}</option>
+                }
+            </select>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showConvertModal.set(false)">İptal</button>
+        <button class="btn btn-primary" (click)="convertToOrder()" [disabled]="!convertWarehouseId">
+            <span class="material-icons-outlined">check</span>
+            Dönüştür
+        </button>
     </div>
 </div>
 }

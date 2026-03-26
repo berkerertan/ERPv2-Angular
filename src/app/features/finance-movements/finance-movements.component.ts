@@ -67,7 +67,7 @@ export class FinanceMovementsComponent implements OnInit {
                     createdAt: m.movementDateUtc?.split('T')[0] || ''
                 })));
             },
-            error: (err) => console.error('Finans hareketleri yüklenemedi:', err.error?.detail || err.message)
+            error: () => this.toastService.error('Hata', 'Finans hareketleri yüklenemedi.')
         });
     }
 

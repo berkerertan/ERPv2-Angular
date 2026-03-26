@@ -4,6 +4,10 @@ export interface Product {
     id: string;
     code?: string | null;
     name: string;
+    /** Frontend compatibility aliases */
+    unitPrice?: number | null;
+    categoryName?: string | null;
+    barcode?: string | null;
     shortDescription?: string | null;
     brand?: string | null;
     productType?: string | null;
@@ -132,4 +136,44 @@ export interface ProductSuggestionDto {
     name?: string;
     label?: string;
     subtitle?: string;
+}
+
+export interface ProductImageUploadResponse {
+    productId: string;
+    imageUrl: string;
+    publicId: string;
+    format?: string | null;
+    width?: number | null;
+    height?: number | null;
+    bytes?: number | null;
+}
+
+export interface ProductScanMatch {
+    id: string;
+    code: string;
+    name: string;
+    barcodeEan13?: string | null;
+    qrCode?: string | null;
+    defaultSalePrice: number;
+    unit: string;
+    imageUrl?: string | null;
+    isActive: boolean;
+}
+
+export interface ProductScanDraft {
+    code: string;
+    name: string;
+    unit: string;
+    category: string;
+    barcodeEan13?: string | null;
+    qrCode?: string | null;
+    defaultSalePrice: number;
+    criticalStockLevel: number;
+}
+
+export interface ProductScanResponse {
+    barcode: string;
+    found: boolean;
+    product?: ProductScanMatch | null;
+    draft?: ProductScanDraft | null;
 }

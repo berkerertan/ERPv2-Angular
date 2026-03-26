@@ -1,0 +1,410 @@
+<div class="page-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">
+                <span class="material-icons-outlined page-title-icon" style="color: var(--primary-400);">account_balance_wallet</span>
+                Banka & Kasa Yönetimi
+            </h1>
+            <p class="page-subtitle">Banka hesapları ve kasa hareketlerini yönetin</p>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(76,110,245,0.12); color: var(--primary-400);">
+                <span class="material-icons-outlined">account_balance</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ fc(totalBankBalance()) }}</span>
+                <span class="stat-label">Banka Toplam</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--success-bg); color: var(--success);">
+                <span class="material-icons-outlined">point_of_sale</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ fc(totalCashBalance()) }}</span>
+                <span class="stat-label">Kasa Toplam</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--warning-bg); color: var(--warning);">
+                <span class="material-icons-outlined">account_balance_wallet</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ fc(totalBalance()) }}</span>
+                <span class="stat-label">Genel Toplam</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(76,110,245,0.12); color: var(--primary-400);">
+                <span class="material-icons-outlined">credit_card</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ bankAccounts().length + cashAccounts().length }}</span>
+                <span class="stat-label">Toplam Hesap</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="filter-bar">
+        <div class="tabs">
+            <button class="tab" [class.active]="activeTab() === 'bank'" (click)="activeTab.set('bank')">
+                <span class="material-icons-outlined" style="font-size:16px; vertical-align:middle; margin-right:4px;">account_balance</span>
+                Banka Hesapları
+            </button>
+            <button class="tab" [class.active]="activeTab() === 'cash'" (click)="activeTab.set('cash')">
+                <span class="material-icons-outlined" style="font-size:16px; vertical-align:middle; margin-right:4px;">point_of_sale</span>
+                Kasa Hesapları
+            </button>
+        </div>
+        @if (activeTab() === 'bank') {
+        <button class="btn btn-primary btn-sm" (click)="openAddBankModal()">
+            <span class="material-icons-outlined">add</span> Yeni Banka Hesabı
+        </button>
+        } @else {
+        <button class="btn btn-primary btn-sm" (click)="openAddCashModal()">
+            <span class="material-icons-outlined">add</span> Yeni Kasa
+        </button>
+        }
+    </div>
+
+    <!-- ═════════ BANK TAB ═════════ -->
+    @if (activeTab() === 'bank') {
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Banka</th>
+                    <th>Şube</th>
+                    <th>IBAN</th>
+                    <th>Para Birimi</th>
+                    <th>Bakiye</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (acc of bankAccounts(); track acc.id) {
+                <tr [class.selected-row]="selectedBankAccount()?.id === acc.id" (click)="selectBankAccount(acc)" style="cursor:pointer;">
+                    <td class="font-medium" style="color: var(--text-primary);">{{ acc.bankName || '—' }}</td>
+                    <td class="text-muted">{{ acc.branchName || '—' }}</td>
+                    <td class="text-muted" style="font-family: monospace; font-size: 12px;">{{ acc.iban || '—' }}</td>
+                    <td>{{ acc.currency || 'TRY' }}</td>
+                    <td>
+                        <span class="amount font-semibold" [class.positive]="acc.balance >= 0" [class.negative]="acc.balance < 0">
+                            {{ fc(acc.balance) }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="actions-cell">
+                            <button class="action-btn edit" (click)="openEditBankModal(acc); $event.stopPropagation();" title="Düzenle">
+                                <span class="material-icons-outlined">edit</span>
+                            </button>
+                            <button class="action-btn delete" (click)="deleteBankAccount(acc); $event.stopPropagation();" title="Sil">
+                                <span class="material-icons-outlined">delete</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                } @empty {
+                <tr>
+                    <td colspan="6" class="empty-state">
+                        <span class="material-icons-outlined" style="font-size:48px; color: var(--text-tertiary);">account_balance</span>
+                        <p>Henüz banka hesabı bulunmuyor.</p>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Bank Transactions -->
+    @if (selectedBankAccount()) {
+    <div style="margin-top: 24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+            <h3 style="margin:0; font-size: 16px; color: var(--text-primary);">
+                <span class="material-icons-outlined" style="font-size:18px; vertical-align:middle; margin-right:4px;">history</span>
+                {{ selectedBankAccount()!.bankName }} — Hareketler
+            </h3>
+            <button class="btn btn-primary btn-sm" (click)="openBankTxModal()">
+                <span class="material-icons-outlined">add</span> Yeni Hareket
+            </button>
+        </div>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th>Tür</th>
+                        <th>Tutar</th>
+                        <th>Açıklama</th>
+                        <th>Referans</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (tx of bankTransactions(); track tx.id) {
+                    <tr>
+                        <td class="text-muted">{{ tx.transactionDateUtc | date:'dd.MM.yyyy' }}</td>
+                        <td>
+                            <span class="badge" [class.badge-success]="tx.type === BankTransactionType.Deposit" [class.badge-danger]="tx.type === BankTransactionType.Withdrawal" [class.badge-info]="tx.type === BankTransactionType.Transfer" [class.badge-warning]="tx.type === BankTransactionType.Fee">
+                                {{ bankTxTypeLabel(tx.type) }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="amount font-semibold" [class.positive]="tx.type === BankTransactionType.Deposit" [class.negative]="tx.type !== BankTransactionType.Deposit">
+                                {{ fc(tx.amount) }}
+                            </span>
+                        </td>
+                        <td class="text-muted">{{ tx.description || '—' }}</td>
+                        <td class="text-muted" style="font-size: 12px;">{{ tx.referenceNo || '—' }}</td>
+                    </tr>
+                    } @empty {
+                    <tr>
+                        <td colspan="5" class="empty-state" style="padding: 24px;">
+                            <p>Bu hesapta henüz hareket bulunmuyor.</p>
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    }
+    }
+
+    <!-- ═════════ CASH TAB ═════════ -->
+    @if (activeTab() === 'cash') {
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Kasa Kodu</th>
+                    <th>Kasa Adı</th>
+                    <th>Para Birimi</th>
+                    <th>Bakiye</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (acc of cashAccounts(); track acc.id) {
+                <tr [class.selected-row]="selectedCashAccount()?.id === acc.id" (click)="selectCashAccount(acc)" style="cursor:pointer;">
+                    <td class="font-medium" style="color: var(--text-primary); font-family: monospace;">{{ acc.code || '—' }}</td>
+                    <td>{{ acc.name || '—' }}</td>
+                    <td>{{ acc.currency || 'TRY' }}</td>
+                    <td>
+                        <span class="amount font-semibold" [class.positive]="acc.balance >= 0" [class.negative]="acc.balance < 0">
+                            {{ fc(acc.balance) }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="actions-cell">
+                            <button class="action-btn edit" (click)="openEditCashModal(acc); $event.stopPropagation();" title="Düzenle">
+                                <span class="material-icons-outlined">edit</span>
+                            </button>
+                            <button class="action-btn delete" (click)="deleteCashAccount(acc); $event.stopPropagation();" title="Sil">
+                                <span class="material-icons-outlined">delete</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                } @empty {
+                <tr>
+                    <td colspan="5" class="empty-state">
+                        <span class="material-icons-outlined" style="font-size:48px; color: var(--text-tertiary);">point_of_sale</span>
+                        <p>Henüz kasa hesabı bulunmuyor.</p>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Cash Transactions -->
+    @if (selectedCashAccount()) {
+    <div style="margin-top: 24px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+            <h3 style="margin:0; font-size: 16px; color: var(--text-primary);">
+                <span class="material-icons-outlined" style="font-size:18px; vertical-align:middle; margin-right:4px;">history</span>
+                {{ selectedCashAccount()!.name }} — Hareketler
+            </h3>
+            <button class="btn btn-primary btn-sm" (click)="openCashTxModal()">
+                <span class="material-icons-outlined">add</span> Yeni Hareket
+            </button>
+        </div>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th>Tür</th>
+                        <th>Tutar</th>
+                        <th>Açıklama</th>
+                        <th>Referans</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (tx of cashTransactions(); track tx.id) {
+                    <tr>
+                        <td class="text-muted">{{ tx.transactionDateUtc | date:'dd.MM.yyyy' }}</td>
+                        <td>
+                            <span class="badge" [class.badge-success]="tx.type === CashTransactionType.Income" [class.badge-danger]="tx.type === CashTransactionType.Expense" [class.badge-info]="tx.type === CashTransactionType.Transfer" [class.badge-warning]="tx.type === CashTransactionType.Adjustment">
+                                {{ cashTxTypeLabel(tx.type) }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="amount font-semibold" [class.positive]="tx.type === CashTransactionType.Income" [class.negative]="tx.type !== CashTransactionType.Income">
+                                {{ fc(tx.amount) }}
+                            </span>
+                        </td>
+                        <td class="text-muted">{{ tx.description || '—' }}</td>
+                        <td class="text-muted" style="font-size: 12px;">{{ tx.referenceNo || '—' }}</td>
+                    </tr>
+                    } @empty {
+                    <tr>
+                        <td colspan="5" class="empty-state" style="padding: 24px;">
+                            <p>Bu kasada henüz hareket bulunmuyor.</p>
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    }
+    }
+</div>
+
+<!-- ═══ Bank Account Modal ═══ -->
+@if (showBankModal()) {
+<div class="overlay" (click)="showBankModal.set(false)"></div>
+<div class="modal" style="width: 480px;">
+    <div class="modal-header">
+        <h2>{{ editingBankId() ? 'Banka Hesabı Düzenle' : 'Yeni Banka Hesabı' }}</h2>
+        <button class="modal-close" (click)="showBankModal.set(false)"><span class="material-icons-outlined">close</span></button>
+    </div>
+    <div class="modal-form">
+        <div class="form-group"><label class="form-label">Banka Adı *</label><input class="form-input" [(ngModel)]="bankForm.bankName" placeholder="Banka adı" /></div>
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Şube</label><input class="form-input" [(ngModel)]="bankForm.branchName" placeholder="Şube adı" /></div>
+            <div class="form-group">
+                <label class="form-label">Para Birimi</label>
+                <select class="form-input" [(ngModel)]="bankForm.currency">
+                    <option value="TRY">TRY</option><option value="USD">USD</option><option value="EUR">EUR</option><option value="GBP">GBP</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group"><label class="form-label">IBAN</label><input class="form-input" [(ngModel)]="bankForm.iban" placeholder="TR__ ____ ____ ____ ____ ____ __" /></div>
+    </div>
+    @if (formError()) { <div style="padding: 0 1.5rem; color: var(--danger); font-size: 0.875rem;">{{ formError() }}</div> }
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showBankModal.set(false)">İptal</button>
+        <button class="btn btn-primary" (click)="saveBankAccount()" [disabled]="isSaving()">
+            <span class="material-icons-outlined">save</span> {{ isSaving() ? 'Kaydediliyor...' : 'Kaydet' }}
+        </button>
+    </div>
+</div>
+}
+
+<!-- ═══ Cash Account Modal ═══ -->
+@if (showCashModal()) {
+<div class="overlay" (click)="showCashModal.set(false)"></div>
+<div class="modal" style="width: 440px;">
+    <div class="modal-header">
+        <h2>{{ editingCashId() ? 'Kasa Düzenle' : 'Yeni Kasa' }}</h2>
+        <button class="modal-close" (click)="showCashModal.set(false)"><span class="material-icons-outlined">close</span></button>
+    </div>
+    <div class="modal-form">
+        <div class="form-row">
+            <div class="form-group"><label class="form-label">Kasa Kodu *</label><input class="form-input" [(ngModel)]="cashForm.code" placeholder="KS-001" /></div>
+            <div class="form-group">
+                <label class="form-label">Para Birimi</label>
+                <select class="form-input" [(ngModel)]="cashForm.currency">
+                    <option value="TRY">TRY</option><option value="USD">USD</option><option value="EUR">EUR</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group"><label class="form-label">Kasa Adı *</label><input class="form-input" [(ngModel)]="cashForm.name" placeholder="Ana Kasa" /></div>
+    </div>
+    @if (formError()) { <div style="padding: 0 1.5rem; color: var(--danger); font-size: 0.875rem;">{{ formError() }}</div> }
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showCashModal.set(false)">İptal</button>
+        <button class="btn btn-primary" (click)="saveCashAccount()" [disabled]="isSaving()">
+            <span class="material-icons-outlined">save</span> {{ isSaving() ? 'Kaydediliyor...' : 'Kaydet' }}
+        </button>
+    </div>
+</div>
+}
+
+<!-- ═══ Bank Transaction Modal ═══ -->
+@if (showBankTxModal()) {
+<div class="overlay" (click)="showBankTxModal.set(false)"></div>
+<div class="modal" style="width: 440px;">
+    <div class="modal-header">
+        <h2>Yeni Banka Hareketi</h2>
+        <button class="modal-close" (click)="showBankTxModal.set(false)"><span class="material-icons-outlined">close</span></button>
+    </div>
+    <div class="modal-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">İşlem Türü *</label>
+                <select class="form-input" [(ngModel)]="bankTxForm.type">
+                    <option [ngValue]="BankTransactionType.Deposit">Yatırma</option>
+                    <option [ngValue]="BankTransactionType.Withdrawal">Çekim</option>
+                    <option [ngValue]="BankTransactionType.Transfer">Transfer</option>
+                    <option [ngValue]="BankTransactionType.Fee">Masraf</option>
+                </select>
+            </div>
+            <div class="form-group"><label class="form-label">Tutar *</label><input type="number" class="form-input" [(ngModel)]="bankTxForm.amount" min="0" /></div>
+        </div>
+        <div class="form-group"><label class="form-label">Tarih</label><input type="date" class="form-input" [(ngModel)]="bankTxForm.transactionDateUtc" /></div>
+        <div class="form-group"><label class="form-label">Açıklama</label><input class="form-input" [(ngModel)]="bankTxForm.description" placeholder="İşlem açıklaması" /></div>
+        <div class="form-group"><label class="form-label">Referans No</label><input class="form-input" [(ngModel)]="bankTxForm.referenceNo" placeholder="Dekont no" /></div>
+    </div>
+    @if (formError()) { <div style="padding: 0 1.5rem; color: var(--danger); font-size: 0.875rem;">{{ formError() }}</div> }
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showBankTxModal.set(false)">İptal</button>
+        <button class="btn btn-primary" (click)="saveBankTx()" [disabled]="isSaving()">
+            <span class="material-icons-outlined">save</span> {{ isSaving() ? 'Kaydediliyor...' : 'Kaydet' }}
+        </button>
+    </div>
+</div>
+}
+
+<!-- ═══ Cash Transaction Modal ═══ -->
+@if (showCashTxModal()) {
+<div class="overlay" (click)="showCashTxModal.set(false)"></div>
+<div class="modal" style="width: 440px;">
+    <div class="modal-header">
+        <h2>Yeni Kasa Hareketi</h2>
+        <button class="modal-close" (click)="showCashTxModal.set(false)"><span class="material-icons-outlined">close</span></button>
+    </div>
+    <div class="modal-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">İşlem Türü *</label>
+                <select class="form-input" [(ngModel)]="cashTxForm.type">
+                    <option [ngValue]="CashTransactionType.Income">Gelir</option>
+                    <option [ngValue]="CashTransactionType.Expense">Gider</option>
+                    <option [ngValue]="CashTransactionType.Transfer">Transfer</option>
+                    <option [ngValue]="CashTransactionType.Adjustment">Düzeltme</option>
+                </select>
+            </div>
+            <div class="form-group"><label class="form-label">Tutar *</label><input type="number" class="form-input" [(ngModel)]="cashTxForm.amount" min="0" /></div>
+        </div>
+        <div class="form-group"><label class="form-label">Tarih</label><input type="date" class="form-input" [(ngModel)]="cashTxForm.transactionDateUtc" /></div>
+        <div class="form-group"><label class="form-label">Açıklama</label><input class="form-input" [(ngModel)]="cashTxForm.description" placeholder="İşlem açıklaması" /></div>
+        <div class="form-group"><label class="form-label">Referans No</label><input class="form-input" [(ngModel)]="cashTxForm.referenceNo" placeholder="Makbuz no" /></div>
+    </div>
+    @if (formError()) { <div style="padding: 0 1.5rem; color: var(--danger); font-size: 0.875rem;">{{ formError() }}</div> }
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showCashTxModal.set(false)">İptal</button>
+        <button class="btn btn-primary" (click)="saveCashTx()" [disabled]="isSaving()">
+            <span class="material-icons-outlined">save</span> {{ isSaving() ? 'Kaydediliyor...' : 'Kaydet' }}
+        </button>
+    </div>
+</div>
+}

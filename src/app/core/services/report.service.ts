@@ -112,6 +112,19 @@ export interface BranchProfitabilityDto {
     marginPercent: number;
 }
 
+/** Dashboard KPI özeti — GET /api/reports/dashboard-summary */
+export interface DashboardSummaryDto {
+    totalSalesAmount: number;
+    totalOrderCount: number;
+    totalProductCount: number;
+    totalActiveCariCount: number;
+    totalBankBalance: number;
+    totalCashBalance: number;
+    overdueReceivables: number;
+    overdueCheckNoteCount: number;
+    pendingQuoteCount: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class ReportService {
     private readonly apiUrl = `${environment.apiUrl}/api/reports`;
@@ -193,6 +206,11 @@ export class ReportService {
         return this.http.get<BranchProfitabilityDto[]>(`${this.apiUrl}/finance/profitability/branches`, {
             params: this.buildParams({ startDateUtc, endDateUtc })
         });
+    }
+
+    /** Dashboard KPI özeti — tüm modülleri tek seferde yükler */
+    getDashboardSummary(): Observable<DashboardSummaryDto> {
+        return this.http.get<DashboardSummaryDto>(`${this.apiUrl}/dashboard-summary`);
     }
 
     private buildParams(filter?: Record<string, any>): HttpParams {

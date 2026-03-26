@@ -364,11 +364,525 @@
 }
 
 /* ═══════════════════════════════════════════════════════════
+   SETTINGS TABS
+══════════════════════════════════════════════════════════ */
+.settings-tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 4px;
+}
+
+.settings-tab {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.settings-tab .material-icons-outlined {
+    font-size: 18px;
+}
+
+.settings-tab:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.settings-tab.active {
+    background: var(--primary-500);
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(76, 110, 245, 0.3);
+}
+
+.settings-tab.active .material-icons-outlined {
+    color: #fff;
+}
+
+/* Tab content wrapper */
+.settings-content {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.settings-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   BUTTONS (additional)
+══════════════════════════════════════════════════════════ */
+.btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-secondary:hover {
+    background: var(--bg-hover);
+}
+
+.btn-danger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 10px;
+    background: var(--danger);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-danger:hover {
+    opacity: 0.9;
+}
+
+.btn-danger-outline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 10px;
+    background: transparent;
+    color: var(--danger);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-danger-outline:hover {
+    background: rgba(239, 68, 68, 0.08);
+}
+
+.btn-danger-outline .material-icons-outlined,
+.btn-danger .material-icons-outlined {
+    font-size: 16px;
+}
+
+.btn-sm {
+    padding: 6px 12px !important;
+    font-size: 12px !important;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   2FA SECTION
+══════════════════════════════════════════════════════════ */
+.tfa-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 0;
+}
+
+.tfa-status-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.tfa-status-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.tfa-status-icon .material-icons-outlined {
+    font-size: 24px;
+}
+
+.tfa-on {
+    background: rgba(34, 197, 94, 0.12);
+    color: var(--success);
+}
+
+.tfa-off {
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+}
+
+.tfa-status-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.tfa-status-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+/* 2FA Setup Steps */
+.tfa-setup {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+.tfa-setup-step {
+    display: flex;
+    gap: 16px;
+}
+
+.step-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--primary-500);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.step-content {
+    flex: 1;
+}
+
+.step-content h4 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 6px;
+}
+
+.step-content p {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+.qr-container {
+    margin: 16px 0;
+    padding: 20px;
+    background: #fff;
+    border-radius: 12px;
+    display: inline-block;
+    border: 1px solid var(--border-color);
+}
+
+.qr-code {
+    width: 180px;
+    height: 180px;
+    display: block;
+}
+
+.tfa-manual-key {
+    margin-top: 10px !important;
+}
+
+.tfa-manual-key code {
+    display: inline-block;
+    padding: 4px 10px;
+    background: var(--bg-hover);
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--text-primary);
+    letter-spacing: 1px;
+    user-select: all;
+}
+
+.tfa-code-input {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.code-input {
+    width: 160px !important;
+    text-align: center;
+    font-size: 18px !important;
+    font-weight: 700;
+    letter-spacing: 6px;
+}
+
+/* 2FA Disable */
+.tfa-disable {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.tfa-disable-warn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: rgba(245, 158, 11, 0.08);
+    border: 1px solid rgba(245, 158, 11, 0.2);
+    border-radius: 10px;
+    color: #d97706;
+    font-size: 13px;
+    font-weight: 500;
+    margin-bottom: 16px;
+}
+
+.tfa-disable-warn .material-icons-outlined {
+    font-size: 18px;
+}
+
+/* Security Checklist */
+.security-checklist {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.check-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.check-item .material-icons-outlined {
+    font-size: 20px;
+}
+
+.check-ok { color: var(--success); }
+.check-warn { color: #d97706; }
+
+/* ═══════════════════════════════════════════════════════════
+   NOTIFICATION PREFERENCES
+══════════════════════════════════════════════════════════ */
+.notif-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.notif-row.last {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.notif-info { flex: 1; }
+
+.notif-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.notif-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Toggle Switch */
+.toggle {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    flex-shrink: 0;
+    cursor: pointer;
+}
+
+.toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
+    background-color: var(--border-color);
+    border-radius: 24px;
+    transition: all 0.25s;
+}
+
+.toggle-slider::before {
+    content: '';
+    position: absolute;
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: #fff;
+    border-radius: 50%;
+    transition: all 0.25s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.toggle input:checked + .toggle-slider {
+    background-color: var(--primary-500);
+}
+
+.toggle input:checked + .toggle-slider::before {
+    transform: translateX(20px);
+}
+
+.toggle input:disabled + .toggle-slider {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   ACTIVE SESSIONS
+══════════════════════════════════════════════════════════ */
+.session-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.session-row:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.session-current {
+    background: rgba(76, 110, 245, 0.04);
+    margin: 0 -16px;
+    padding: 16px;
+    border-radius: 10px;
+    border-bottom: none !important;
+}
+
+.session-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--bg-hover);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.session-icon .material-icons-outlined {
+    font-size: 20px;
+    color: var(--text-secondary);
+}
+
+.session-info { flex: 1; min-width: 0; }
+
+.session-device {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.session-meta {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.session-sep { opacity: 0.5; }
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+}
+
+.action-btn .material-icons-outlined { font-size: 18px; }
+
+.action-btn.delete { color: var(--danger); }
+.action-btn.delete:hover { background: rgba(239, 68, 68, 0.1); }
+
+.empty-sessions {
+    text-align: center;
+    padding: 40px 16px;
+    color: var(--text-tertiary);
+}
+
+.empty-sessions .material-icons-outlined {
+    font-size: 48px;
+    margin-bottom: 8px;
+}
+
+.empty-sessions p {
+    margin: 0;
+    font-size: 14px;
+}
+
+/* ═══════════════════════════════════════════════════════════
    RESPONSIVE
 ══════════════════════════════════════════════════════════ */
 @media (max-width: 680px) {
     .profile-columns {
         grid-template-columns: 1fr;
+    }
+
+    .settings-tabs {
+        overflow-x: auto;
+    }
+
+    .tfa-status-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .tfa-code-input {
+        flex-wrap: wrap;
     }
 }
 
@@ -392,5 +906,14 @@
 
     .hero-name {
         font-size: 18px;
+    }
+
+    .settings-tab {
+        padding: 8px 14px;
+        font-size: 12px;
+    }
+
+    .settings-tab .material-icons-outlined {
+        font-size: 16px;
     }
 }

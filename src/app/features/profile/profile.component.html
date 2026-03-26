@@ -7,7 +7,7 @@
                 <span class="material-icons-outlined">manage_accounts</span>
                 Hesap Ayarları
             </h1>
-            <p class="page-subtitle">Profil bilgilerinizi görüntüleyin ve şifrenizi güncelleyin</p>
+            <p class="page-subtitle">Profil, güvenlik ve bildirim tercihlerinizi yönetin</p>
         </div>
     </div>
 
@@ -50,7 +50,30 @@
             </div>
         </div>
 
-        <!-- ═══ Bottom Cards ═══ -->
+        <!-- ═══ Tab Navigation ═══ -->
+        <div class="settings-tabs">
+            <button class="settings-tab" [class.active]="activeTab() === 'account'" (click)="switchTab('account')">
+                <span class="material-icons-outlined">person_outline</span>
+                Hesap
+            </button>
+            <button class="settings-tab" [class.active]="activeTab() === 'security'" (click)="switchTab('security')">
+                <span class="material-icons-outlined">shield</span>
+                Güvenlik
+            </button>
+            <button class="settings-tab" [class.active]="activeTab() === 'notifications'" (click)="switchTab('notifications')">
+                <span class="material-icons-outlined">notifications_none</span>
+                Bildirimler
+            </button>
+            <button class="settings-tab" [class.active]="activeTab() === 'sessions'" (click)="switchTab('sessions')">
+                <span class="material-icons-outlined">devices</span>
+                Oturumlar
+            </button>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════
+             TAB: HESAP BİLGİLERİ
+        ═══════════════════════════════════════════════════════ -->
+        @if (activeTab() === 'account') {
         <div class="profile-columns">
 
             <!-- Hesap Bilgileri -->
@@ -126,33 +149,18 @@
                 <div class="card-body">
                     <div class="field">
                         <label class="field-label">Mevcut Şifre</label>
-                        <input
-                            type="password"
-                            class="field-input"
-                            placeholder="Mevcut şifrenizi girin"
-                            [(ngModel)]="pwForm.current"
-                            autocomplete="current-password"
-                        />
+                        <input type="password" class="field-input" placeholder="Mevcut şifrenizi girin"
+                               [(ngModel)]="pwForm.current" autocomplete="current-password" />
                     </div>
                     <div class="field">
                         <label class="field-label">Yeni Şifre</label>
-                        <input
-                            type="password"
-                            class="field-input"
-                            placeholder="En az 6 karakter"
-                            [(ngModel)]="pwForm.next"
-                            autocomplete="new-password"
-                        />
+                        <input type="password" class="field-input" placeholder="En az 6 karakter"
+                               [(ngModel)]="pwForm.next" autocomplete="new-password" />
                     </div>
                     <div class="field">
                         <label class="field-label">Yeni Şifre (Tekrar)</label>
-                        <input
-                            type="password"
-                            class="field-input"
-                            placeholder="Yeni şifreyi tekrar girin"
-                            [(ngModel)]="pwForm.confirm"
-                            autocomplete="new-password"
-                        />
+                        <input type="password" class="field-input" placeholder="Yeni şifreyi tekrar girin"
+                               [(ngModel)]="pwForm.confirm" autocomplete="new-password" />
                     </div>
 
                     @if (pwError()) {
@@ -168,11 +176,7 @@
                     </div>
                     }
 
-                    <button
-                        class="btn-primary btn-block"
-                        (click)="changePassword()"
-                        [disabled]="pwLoading()"
-                    >
+                    <button class="btn-primary btn-block" (click)="changePassword()" [disabled]="pwLoading()">
                         @if (pwLoading()) {
                         <span class="material-icons-outlined spin">autorenew</span>
                         Güncelleniyor...
@@ -185,6 +189,355 @@
             </div>
 
         </div>
+        }
+
+        <!-- ═══════════════════════════════════════════════════════
+             TAB: GÜVENLİK (2FA)
+        ═══════════════════════════════════════════════════════ -->
+        @if (activeTab() === 'security') {
+        <div class="settings-content">
+
+            <!-- 2FA Durum Kartı -->
+            <div class="profile-card">
+                <div class="card-header">
+                    <span class="material-icons-outlined">verified_user</span>
+                    <span>İki Faktörlü Kimlik Doğrulama (2FA)</span>
+                </div>
+                <div class="card-body">
+
+                    <!-- 2FA Durumu -->
+                    <div class="tfa-status-row">
+                        <div class="tfa-status-info">
+                            <span class="tfa-status-icon" [class.tfa-on]="twoFactorEnabled()" [class.tfa-off]="!twoFactorEnabled()">
+                                <span class="material-icons-outlined">{{ twoFactorEnabled() ? 'lock' : 'lock_open' }}</span>
+                            </span>
+                            <div>
+                                <div class="tfa-status-title">
+                                    {{ twoFactorEnabled() ? '2FA Etkin' : '2FA Devre Dışı' }}
+                                </div>
+                                <div class="tfa-status-desc">
+                                    {{ twoFactorEnabled()
+                                        ? 'Hesabınız iki faktörlü kimlik doğrulama ile korunuyor.'
+                                        : 'Hesabınızı daha güvenli hale getirmek için 2FA\'yı etkinleştirin.' }}
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (!twoFactorEnabled() && !twoFactorSetup()) {
+                        <button class="btn-primary" (click)="start2FASetup()" [disabled]="twoFactorLoading()">
+                            <span class="material-icons-outlined">security</span>
+                            Etkinleştir
+                        </button>
+                        }
+                        @if (twoFactorEnabled() && !showDisable2FA()) {
+                        <button class="btn-danger-outline" (click)="openDisable2FA()">
+                            <span class="material-icons-outlined">remove_moderator</span>
+                            Devre Dışı Bırak
+                        </button>
+                        }
+                    </div>
+
+                    <!-- 2FA Kurulum Akışı -->
+                    @if (twoFactorSetup()) {
+                    <div class="tfa-setup">
+                        <div class="tfa-setup-step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <h4>Authenticator Uygulamasını Açın</h4>
+                                <p>Google Authenticator, Microsoft Authenticator veya benzeri bir uygulama kullanın.</p>
+                            </div>
+                        </div>
+
+                        <div class="tfa-setup-step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <h4>QR Kodu Tarayın</h4>
+                                <div class="qr-container">
+                                    <img [src]="twoFactorSetup()!.qrCodeUri" alt="QR Code" class="qr-code" />
+                                </div>
+                                <p class="tfa-manual-key">
+                                    Manuel giriş anahtarı:
+                                    <code>{{ twoFactorSetup()!.sharedKey }}</code>
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="tfa-setup-step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <h4>Doğrulama Kodunu Girin</h4>
+                                <div class="tfa-code-input">
+                                    <input type="text" class="field-input code-input" maxlength="6"
+                                           placeholder="6 haneli kod" [(ngModel)]="twoFactorCode"
+                                           (keyup.enter)="confirm2FASetup()" />
+                                    <button class="btn-primary" (click)="confirm2FASetup()" [disabled]="twoFactorLoading()">
+                                        @if (twoFactorLoading()) {
+                                        <span class="material-icons-outlined spin">autorenew</span>
+                                        } @else {
+                                        Doğrula
+                                        }
+                                    </button>
+                                    <button class="btn-secondary" (click)="cancel2FASetup()">İptal</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    }
+
+                    <!-- 2FA Devre Dışı Bırakma -->
+                    @if (showDisable2FA()) {
+                    <div class="tfa-disable">
+                        <p class="tfa-disable-warn">
+                            <span class="material-icons-outlined">warning</span>
+                            2FA'yı devre dışı bırakmak hesabınızın güvenliğini azaltır.
+                        </p>
+                        <div class="tfa-code-input">
+                            <input type="text" class="field-input code-input" maxlength="6"
+                                   placeholder="Mevcut 2FA kodunuz" [(ngModel)]="disable2FACode"
+                                   (keyup.enter)="confirmDisable2FA()" />
+                            <button class="btn-danger" (click)="confirmDisable2FA()" [disabled]="twoFactorLoading()">
+                                @if (twoFactorLoading()) {
+                                <span class="material-icons-outlined spin">autorenew</span>
+                                } @else {
+                                Devre Dışı Bırak
+                                }
+                            </button>
+                            <button class="btn-secondary" (click)="cancelDisable2FA()">İptal</button>
+                        </div>
+                    </div>
+                    }
+
+                    @if (twoFactorError()) {
+                    <div class="msg msg-error" style="margin-top: 16px;">
+                        <span class="material-icons-outlined">error_outline</span>
+                        {{ twoFactorError() }}
+                    </div>
+                    }
+                    @if (twoFactorSuccess()) {
+                    <div class="msg msg-success" style="margin-top: 16px;">
+                        <span class="material-icons-outlined">check_circle_outline</span>
+                        {{ twoFactorSuccess() }}
+                    </div>
+                    }
+
+                </div>
+            </div>
+
+            <!-- Güvenlik İpuçları -->
+            <div class="profile-card">
+                <div class="card-header">
+                    <span class="material-icons-outlined">tips_and_updates</span>
+                    <span>Güvenlik Özeti</span>
+                </div>
+                <div class="card-body">
+                    <div class="security-checklist">
+                        <div class="check-item" [class.check-ok]="true">
+                            <span class="material-icons-outlined">{{ 'check_circle' }}</span>
+                            <span>Şifre ayarlandı</span>
+                        </div>
+                        <div class="check-item" [class.check-ok]="twoFactorEnabled()" [class.check-warn]="!twoFactorEnabled()">
+                            <span class="material-icons-outlined">{{ twoFactorEnabled() ? 'check_circle' : 'cancel' }}</span>
+                            <span>İki faktörlü kimlik doğrulama {{ twoFactorEnabled() ? 'etkin' : 'devre dışı' }}</span>
+                        </div>
+                        <div class="check-item check-ok">
+                            <span class="material-icons-outlined">check_circle</span>
+                            <span>E-posta doğrulanmış</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        }
+
+        <!-- ═══════════════════════════════════════════════════════
+             TAB: BİLDİRİM TERCİHLERİ
+        ═══════════════════════════════════════════════════════ -->
+        @if (activeTab() === 'notifications') {
+        <div class="settings-content">
+
+            @if (notifLoading()) {
+            <div class="loading-state">
+                <span class="material-icons-outlined spin">autorenew</span>
+                <span>Yükleniyor...</span>
+            </div>
+            } @else {
+
+            <!-- E-posta Bildirimleri -->
+            <div class="profile-card">
+                <div class="card-header">
+                    <span class="material-icons-outlined">mail_outline</span>
+                    <span>E-posta Bildirimleri</span>
+                </div>
+                <div class="card-body">
+                    <div class="notif-row">
+                        <div class="notif-info">
+                            <div class="notif-title">Fatura Bildirimleri</div>
+                            <div class="notif-desc">Yeni fatura oluşturulduğunda veya ödendiğinde bilgi alın.</div>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" [checked]="notifPrefs().emailInvoice" (change)="toggleNotif('emailInvoice')" />
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="notif-row">
+                        <div class="notif-info">
+                            <div class="notif-title">Ödeme Bildirimleri</div>
+                            <div class="notif-desc">Tahsilat ve ödeme işlemleri hakkında bildirim alın.</div>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" [checked]="notifPrefs().emailPayment" (change)="toggleNotif('emailPayment')" />
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="notif-row">
+                        <div class="notif-info">
+                            <div class="notif-title">Hatırlatmalar</div>
+                            <div class="notif-desc">Vade tarihi yaklaşan çek/senet ve faturaları hatırlat.</div>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" [checked]="notifPrefs().emailReminder" (change)="toggleNotif('emailReminder')" />
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="notif-row last">
+                        <div class="notif-info">
+                            <div class="notif-title">Pazarlama & Güncellemeler</div>
+                            <div class="notif-desc">Yeni özellikler ve güncellemeler hakkında e-posta alın.</div>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" [checked]="notifPrefs().emailMarketing" (change)="toggleNotif('emailMarketing')" />
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Anlık Bildirimler -->
+            <div class="profile-card">
+                <div class="card-header">
+                    <span class="material-icons-outlined">notifications_active</span>
+                    <span>Anlık Bildirimler</span>
+                </div>
+                <div class="card-body">
+                    <div class="notif-row">
+                        <div class="notif-info">
+                            <div class="notif-title">Anlık Bildirimleri Etkinleştir</div>
+                            <div class="notif-desc">Tarayıcı üzerinden anlık bildirimler alın.</div>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" [checked]="notifPrefs().pushEnabled" (change)="toggleNotif('pushEnabled')" />
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="notif-row">
+                        <div class="notif-info">
+                            <div class="notif-title">Sipariş Durumu</div>
+                            <div class="notif-desc">Sipariş durumu değişikliklerinden haberdar olun.</div>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" [checked]="notifPrefs().pushOrderStatus" (change)="toggleNotif('pushOrderStatus')"
+                                   [disabled]="!notifPrefs().pushEnabled" />
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="notif-row last">
+                        <div class="notif-info">
+                            <div class="notif-title">Stok Uyarıları</div>
+                            <div class="notif-desc">Kritik stok seviyesine düşen ürünler için uyarı alın.</div>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" [checked]="notifPrefs().pushStockAlert" (change)="toggleNotif('pushStockAlert')"
+                                   [disabled]="!notifPrefs().pushEnabled" />
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-actions">
+                <button class="btn-primary" (click)="saveNotificationPreferences()" [disabled]="notifSaving()">
+                    @if (notifSaving()) {
+                    <span class="material-icons-outlined spin">autorenew</span>
+                    Kaydediliyor...
+                    } @else {
+                    <span class="material-icons-outlined">save</span>
+                    Tercihleri Kaydet
+                    }
+                </button>
+            </div>
+
+            }
+        </div>
+        }
+
+        <!-- ═══════════════════════════════════════════════════════
+             TAB: AKTİF OTURUMLAR
+        ═══════════════════════════════════════════════════════ -->
+        @if (activeTab() === 'sessions') {
+        <div class="settings-content">
+
+            <div class="profile-card">
+                <div class="card-header">
+                    <span class="material-icons-outlined">devices</span>
+                    <span>Aktif Oturumlar</span>
+                    @if (sessions().length > 1) {
+                    <button class="btn-danger-outline btn-sm" style="margin-left: auto;" (click)="revokeOtherSessions()">
+                        <span class="material-icons-outlined">logout</span>
+                        Diğerlerini Kapat
+                    </button>
+                    }
+                </div>
+                <div class="card-body">
+
+                    @if (sessionsLoading()) {
+                    <div class="loading-state" style="padding: 20px;">
+                        <span class="material-icons-outlined spin">autorenew</span>
+                        <span>Yükleniyor...</span>
+                    </div>
+                    } @else if (sessions().length === 0) {
+                    <div class="empty-sessions">
+                        <span class="material-icons-outlined">devices_other</span>
+                        <p>Aktif oturum bilgisi bulunamadı.</p>
+                    </div>
+                    } @else {
+                    @for (session of sessions(); track session.id) {
+                    <div class="session-row" [class.session-current]="session.isCurrent">
+                        <div class="session-icon">
+                            <span class="material-icons-outlined">{{ sessionDeviceIcon(session.deviceName) }}</span>
+                        </div>
+                        <div class="session-info">
+                            <div class="session-device">
+                                {{ session.deviceName }}
+                                @if (session.isCurrent) {
+                                <span class="badge badge-sm badge-active">Bu cihaz</span>
+                                }
+                            </div>
+                            <div class="session-meta">
+                                <span>{{ session.ipAddress }}</span>
+                                @if (session.location) {
+                                <span class="session-sep">·</span>
+                                <span>{{ session.location }}</span>
+                                }
+                                <span class="session-sep">·</span>
+                                <span>{{ formatDate(session.lastActiveUtc) }}</span>
+                            </div>
+                        </div>
+                        @if (!session.isCurrent) {
+                        <button class="action-btn delete" (click)="revokeSession(session)" title="Oturumu Kapat">
+                            <span class="material-icons-outlined">close</span>
+                        </button>
+                        }
+                    </div>
+                    }
+                    }
+
+                </div>
+            </div>
+
+        </div>
+        }
+
     </div>
     }
 

@@ -1,0 +1,117 @@
+/* ─── Checks & Bills specific styles ─────────────────────────── */
+
+/* Filter bar — two tab groups side by side */
+.filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.tab-sm {
+    font-size: 0.8125rem !important;
+    padding: 6px 14px !important;
+}
+
+/* Toolbar select (status filter) */
+.toolbar-select {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    min-width: 160px;
+    cursor: pointer;
+}
+
+/* Type badges */
+.badge-type {
+    font-size: 0.7rem;
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+.badge-check {
+    background: rgba(76, 110, 245, 0.10);
+    color: var(--primary-400);
+}
+.badge-bill {
+    background: rgba(156, 85, 240, 0.10);
+    color: #9c55f0;
+}
+
+/* Direction tags */
+.direction-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+}
+.direction-received { color: var(--success); }
+.direction-given    { color: var(--danger); }
+
+/* Overdue row highlight */
+.row-overdue {
+    background: rgba(239, 68, 68, 0.04) !important;
+}
+.row-overdue:hover {
+    background: rgba(239, 68, 68, 0.08) !important;
+}
+
+.text-danger { color: var(--danger) !important; font-weight: 600; }
+
+/* Status action button */
+.action-btn.status {
+    color: var(--primary-400);
+}
+.action-btn.status:hover {
+    background: rgba(76, 110, 245, 0.10);
+}
+
+/* Status info in modal */
+.status-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--bg-hover);
+    border-radius: var(--radius-md);
+    margin-bottom: 16px;
+    font-size: 0.875rem;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 48px 16px !important;
+    color: var(--text-tertiary);
+}
+.empty-state p {
+    margin: 12px 0 0;
+    font-size: 0.9375rem;
+}
+
+/* Badge variants matching status */
+.badge-info {
+    background: rgba(76, 110, 245, 0.10);
+    color: var(--primary-400);
+}
+.badge-warning {
+    background: rgba(245, 158, 11, 0.10);
+    color: #d97706;
+}
+.badge-success {
+    background: var(--success-bg);
+    color: var(--success);
+}
+.badge-danger {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+.badge-muted {
+    background: var(--bg-hover);
+    color: var(--text-tertiary);
+}

@@ -76,7 +76,7 @@ export class SuppliersComponent implements OnInit {
                 isActive: true,
                 rating: 0
             }))),
-            error: (err) => console.error('Tedarikçiler yüklenemedi:', err.error?.detail || err.message)
+            error: () => this.toastService.error('Hata', 'Tedarikçiler yüklenemedi.')
         });
     }
 

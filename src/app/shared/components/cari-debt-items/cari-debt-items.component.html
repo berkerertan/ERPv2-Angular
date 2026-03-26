@@ -1,0 +1,157 @@
+<!-- Cari Borç Takibi — Reusable Component -->
+<div class="debt-section">
+    <!-- Header -->
+    <div class="debt-header">
+        <h3 class="debt-title">
+            <span class="material-icons-outlined" style="font-size:20px; vertical-align:middle; margin-right:6px; color:var(--primary-400);">account_balance_wallet</span>
+            Borç Takibi
+        </h3>
+        <button class="btn btn-primary btn-sm" (click)="openAddModal()">
+            <span class="material-icons-outlined">add</span> Yeni Kalem
+        </button>
+    </div>
+
+    <!-- Mini stats -->
+    <div class="debt-stats">
+        <div class="ds-item">
+            <span class="ds-label">Toplam Borç</span>
+            <span class="ds-value" style="color: var(--danger);">{{ fc(totalDebt) }}</span>
+        </div>
+        <div class="ds-item">
+            <span class="ds-label">Ödenen</span>
+            <span class="ds-value" style="color: var(--success);">{{ fc(totalPayment) }}</span>
+        </div>
+        <div class="ds-item">
+            <span class="ds-label">Kalan Bakiye</span>
+            <span class="ds-value" style="color: var(--warning);">{{ fc(totalRemaining) }}</span>
+        </div>
+        <div class="ds-item">
+            <span class="ds-label">Kalem Sayısı</span>
+            <span class="ds-value">{{ itemCount }}</span>
+        </div>
+    </div>
+
+    <!-- Search -->
+    <div class="debt-toolbar">
+        <div class="toolbar-search" style="flex:1; max-width:320px;">
+            <span class="material-icons-outlined search-icon">search</span>
+            <input type="text" placeholder="Açıklama ara..." [(ngModel)]="searchTerm" />
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="sortable" [class.sorted]="sortColumn==='transactionDate'" (click)="sort('transactionDate')">
+                        Tarih <span class="sort-icon material-icons-outlined">{{ sortColumn==='transactionDate' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
+                    </th>
+                    <th>Açıklama</th>
+                    <th class="text-center">Miktar</th>
+                    <th class="text-right">Liste Fiyat</th>
+                    <th class="text-right">Satış Fiyat</th>
+                    <th class="text-right sortable" [class.sorted]="sortColumn==='totalAmount'" (click)="sort('totalAmount')">
+                        Toplam <span class="sort-icon material-icons-outlined">{{ sortColumn==='totalAmount' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
+                    </th>
+                    <th class="text-right">Ödenen</th>
+                    <th class="text-right sortable" [class.sorted]="sortColumn==='remainingBalance'" (click)="sort('remainingBalance')">
+                        Kalan <span class="sort-icon material-icons-outlined">{{ sortColumn==='remainingBalance' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
+                    </th>
+                    <th>İşlem</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (item of filteredItems; track item.id) {
+                <tr>
+                    <td class="text-muted">{{ item.transactionDate | date:'dd.MM.yyyy' }}</td>
+                    <td>{{ item.materialDescription || '—' }}</td>
+                    <td class="text-center">{{ item.quantity }}</td>
+                    <td class="text-right text-muted">{{ fc(item.listPrice) }}</td>
+                    <td class="text-right">{{ fc(item.salePrice) }}</td>
+                    <td class="text-right font-semibold">{{ fc(item.totalAmount) }}</td>
+                    <td class="text-right" style="color: var(--success);">{{ fc(item.payment) }}</td>
+                    <td class="text-right font-semibold" [style.color]="item.remainingBalance > 0 ? 'var(--danger)' : 'var(--success)'">
+                        {{ fc(item.remainingBalance) }}
+                    </td>
+                    <td>
+                        <div class="actions-cell">
+                            <button class="action-btn edit" (click)="openEditModal(item)" title="Düzenle">
+                                <span class="material-icons-outlined">edit</span>
+                            </button>
+                            <button class="action-btn delete" (click)="deleteItem(item)" title="Sil">
+                                <span class="material-icons-outlined">delete</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                } @empty {
+                <tr>
+                    <td colspan="9" class="empty-state" style="padding: 32px;">
+                        <span class="material-icons-outlined" style="font-size:40px; color: var(--text-tertiary);">account_balance_wallet</span>
+                        <p>Henüz borç kalemi bulunmuyor.</p>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ═══ Borç Kalemi Ekleme/Düzenleme Modalı ═══ -->
+@if (showModal()) {
+<div class="overlay" (click)="showModal.set(false)"></div>
+<div class="modal" style="width: 520px;">
+    <div class="modal-header">
+        <h2>{{ editingId() ? 'Borç Kalemi Düzenle' : 'Yeni Borç Kalemi' }}</h2>
+        <button class="modal-close" (click)="showModal.set(false)"><span class="material-icons-outlined">close</span></button>
+    </div>
+    <div class="modal-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">İşlem Tarihi *</label>
+                <input type="date" class="form-input" [(ngModel)]="formData.transactionDate" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Miktar</label>
+                <input type="number" class="form-input" [(ngModel)]="formData.quantity" min="0" (ngModelChange)="recalculate()" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Açıklama</label>
+            <input class="form-input" [(ngModel)]="formData.materialDescription" placeholder="Ürün/hizmet açıklaması" />
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Liste Fiyat</label>
+                <input type="number" class="form-input" [(ngModel)]="formData.listPrice" min="0" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Satış Fiyat</label>
+                <input type="number" class="form-input" [(ngModel)]="formData.salePrice" min="0" (ngModelChange)="recalculate()" />
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Toplam Tutar</label>
+                <input type="number" class="form-input" [(ngModel)]="formData.totalAmount" min="0" (ngModelChange)="formData.remainingBalance = formData.totalAmount - formData.payment" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Ödenen</label>
+                <input type="number" class="form-input" [(ngModel)]="formData.payment" min="0" (ngModelChange)="formData.remainingBalance = formData.totalAmount - formData.payment" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Kalan Bakiye</label>
+            <input type="number" class="form-input" [(ngModel)]="formData.remainingBalance" [readonly]="true" style="background: var(--bg-secondary);" />
+        </div>
+    </div>
+    @if (formError()) { <div style="padding: 0 1.5rem; color: var(--danger); font-size: 0.875rem;">{{ formError() }}</div> }
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showModal.set(false)">İptal</button>
+        <button class="btn btn-primary" (click)="save()" [disabled]="isSaving()">
+            <span class="material-icons-outlined">save</span> {{ isSaving() ? 'Kaydediliyor...' : 'Kaydet' }}
+        </button>
+    </div>
+</div>
+}

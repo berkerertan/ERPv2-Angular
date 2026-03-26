@@ -1,12 +1,11 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { ReportService, SalesReportItem, StockReportItem } from '../../core/services/report.service';
+import { ReportService, DashboardSummaryDto } from '../../core/services/report.service';
 import { SalesOrderService } from '../../core/services/sales-order.service';
 import { CariAccountService } from '../../core/services/cari-account.service';
-import { ProductService } from '../../core/services/product.service';
 import { SalesOrder, OrderStatus } from '../../core/models/sales-order.model';
-import { forkJoin } from 'rxjs';
+import { catchError, forkJoin, of } from 'rxjs';
 
 @Component({
     selector: 'app-dashboard',
@@ -19,7 +18,6 @@ export class DashboardComponent implements OnInit {
     private reportService = inject(ReportService);
     private salesOrderService = inject(SalesOrderService);
     private cariService = inject(CariAccountService);
-    private productService = inject(ProductService);
 
     kpiCards = [
         { title: 'Toplam Satış', value: '—', change: '', changeType: 'positive', icon: 'trending_up', color: 'primary' },
@@ -30,6 +28,10 @@ export class DashboardComponent implements OnInit {
 
     recentOrders: { id: string; customer: string; amount: string; status: string; date: string }[] = [];
 
+    // Treasury & Check-Notes summary (from dashboard-summary API)
+    treasurySummary = { bankBalance: '—', cashBalance: '—', totalBalance: '—' };
+    checkNoteSummary = { receivableTotal: '—', payableTotal: '—', overdueCount: 0 };
+
     quickActions = [
         { label: 'Hızlı Satış', icon: 'point_of_sale', route: '/pos', color: 'primary' },
         { label: 'Yeni Ürün', icon: 'add_box', route: '/products', color: 'success' },
@@ -38,48 +40,56 @@ export class DashboardComponent implements OnInit {
     ];
 
     ngOnInit(): void {
-        this.loadDashboardData();
+        this.loadDashboardFromSummary();
+        this.loadRecentOrders();
     }
 
-    private loadDashboardData(): void {
-        // Load KPI data in parallel
+    /** Tüm KPI verisini tek API çağrısıyla al (GET /api/reports/dashboard-summary) */
+    private loadDashboardFromSummary(): void {
+        this.reportService.getDashboardSummary().pipe(
+            catchError(() => of(null))
+        ).subscribe(summary => {
+            if (!summary) return;
+            const fc = (n: number) => '₺' + Math.round(n).toLocaleString('tr-TR');
+
+            this.kpiCards[0].value = fc(summary.totalSalesAmount);
+            this.kpiCards[1].value = summary.totalOrderCount.toLocaleString('tr-TR');
+            this.kpiCards[2].value = summary.totalProductCount.toLocaleString('tr-TR');
+            this.kpiCards[3].value = summary.totalActiveCariCount.toLocaleString('tr-TR');
+
+            this.treasurySummary = {
+                bankBalance: fc(summary.totalBankBalance),
+                cashBalance: fc(summary.totalCashBalance),
+                totalBalance: fc(summary.totalBankBalance + summary.totalCashBalance)
+            };
+
+            this.checkNoteSummary = {
+                receivableTotal: fc(summary.overdueReceivables),
+                payableTotal: '—',
+                overdueCount: summary.overdueCheckNoteCount
+            };
+        });
+    }
+
+    /** Son siparişleri ayrıca yükle (cari adları için cariService gerekiyor) */
+    private loadRecentOrders(): void {
         forkJoin({
-            sales: this.reportService.getSalesReport(),
-            orders: this.salesOrderService.getAll(),
-            products: this.productService.getAll(),
-            caris: this.cariService.getAll()
-        }).subscribe({
-            next: ({ sales, orders, products, caris }) => {
-                // Total sales amount
-                const totalSales = sales.reduce((s, r) => s + r.totalAmount, 0);
-                this.kpiCards[0].value = '₺' + totalSales.toLocaleString('tr-TR');
+            orders: this.salesOrderService.getAll().pipe(catchError(() => of<SalesOrder[]>([]))),
+            caris: this.cariService.getAll().pipe(catchError(() => of([])))
+        }).subscribe(({ orders, caris }) => {
+            const cariMap: Record<string, string> = {};
+            caris.forEach(c => cariMap[c.id] = c.name);
 
-                // Order count
-                this.kpiCards[1].value = orders.length.toLocaleString('tr-TR');
-
-                // Product count
-                this.kpiCards[2].value = products.length.toLocaleString('tr-TR');
-
-                // Active cari count
-                this.kpiCards[3].value = caris.length.toLocaleString('tr-TR');
-
-                // Build cari ID → name map
-                const cariMap: Record<string, string> = {};
-                caris.forEach(c => cariMap[c.id] = c.name);
-
-                // Recent orders (last 5)
-                const sorted = [...orders].sort((a, b) =>
-                    new Date(b.orderDateUtc).getTime() - new Date(a.orderDateUtc).getTime()
-                );
-                this.recentOrders = sorted.slice(0, 5).map(o => ({
-                    id: o.orderNo || o.id.substring(0, 8),
-                    customer: cariMap[o.customerCariAccountId] || o.customerCariAccountId.substring(0, 8) + '...',
-                    amount: '₺' + o.totalAmount.toLocaleString('tr-TR'),
-                    status: this.mapOrderStatus(o.status),
-                    date: o.orderDateUtc.split('T')[0]
-                }));
-            },
-            error: () => {} // Keep fallback values on error
+            const sorted = [...orders].sort((a, b) =>
+                new Date(b.orderDateUtc).getTime() - new Date(a.orderDateUtc).getTime()
+            );
+            this.recentOrders = sorted.slice(0, 5).map(o => ({
+                id: o.orderNo || o.id.substring(0, 8),
+                customer: cariMap[o.customerCariAccountId] || o.customerCariAccountId.substring(0, 8) + '...',
+                amount: '₺' + o.totalAmount.toLocaleString('tr-TR'),
+                status: this.mapOrderStatus(o.status),
+                date: o.orderDateUtc.split('T')[0]
+            }));
         });
     }
 

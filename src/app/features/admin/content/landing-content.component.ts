@@ -106,11 +106,23 @@ export class LandingContentComponent implements OnInit {
         // Overlay API title/content onto default data where available
         const heroItem = contentMap.get('hero');
         if (heroItem?.content) {
-          try { Object.assign(data.hero, JSON.parse(heroItem.content)); } catch {}
+          try {
+            const parsed = JSON.parse(heroItem.content);
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+              const { __proto__, constructor, prototype, ...safe } = parsed;
+              Object.assign(data.hero, safe);
+            }
+          } catch {}
         }
         const ctaItem = contentMap.get('cta');
         if (ctaItem?.content) {
-          try { Object.assign(data.cta, JSON.parse(ctaItem.content)); } catch {}
+          try {
+            const parsed = JSON.parse(ctaItem.content);
+            if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+              const { __proto__, constructor, prototype, ...safe } = parsed;
+              Object.assign(data.cta, safe);
+            }
+          } catch {}
         }
 
         this.content.set(data);

@@ -223,20 +223,23 @@ export interface AuditLogFilter {
 // ── Email Templates ────────────────────────────────────────────────────────
 
 export interface EmailTemplateDto {
+    id?: string;
     key: string;
     name: string;
-    subject: string;
-    bodyHtml?: string;   // backend fieldname: bodyHtml
-    body?: string;       // alternatif fieldname — component öncelikle bodyHtml, yoksa body kullanır
+    description?: string;
+    subjectTemplate: string;
+    bodyTemplate: string;
     isActive: boolean;
+    createdAtUtc?: string;
     updatedAtUtc?: string;
-    updatedAt?: string;  // alternatif tarih alanı
 }
 
 export interface UpdateEmailTemplateRequest {
-    subject: string;
-    bodyHtml: string;
+    subjectTemplate: string;
+    bodyTemplate: string;
     isActive: boolean;
+    name?: string;
+    description?: string;
 }
 
 // ── Email Campaigns ────────────────────────────────────────────────────────

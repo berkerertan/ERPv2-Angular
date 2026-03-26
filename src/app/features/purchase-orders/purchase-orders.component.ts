@@ -62,7 +62,7 @@ export class PurchaseOrdersComponent implements OnInit {
                 totalAmount: o.totalAmount,
                 createdAt: o.orderDateUtc.split('T')[0]
             }))),
-            error: (err) => console.error('Satın alma siparişleri yüklenemedi:', err.error?.detail || err.message)
+            error: () => this.toastService.error('Hata', 'Satın alma siparişleri yüklenemedi.')
         });
     }
 

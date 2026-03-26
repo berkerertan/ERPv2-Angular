@@ -2,6 +2,7 @@ import { Component, OnInit, signal, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PlatformAdminService } from '../../../core/services/platform-admin.service';
+import { ToastService } from '../../../core/services/toast.service';
 import { SubscriptionPlanOptionDto } from '../../../core/models/user.model';
 import {
   SubscriptionPlan,
@@ -21,6 +22,7 @@ import {
 })
 export class PlansComponent implements OnInit {
   private platformAdminService = inject(PlatformAdminService);
+  private toastService = inject(ToastService);
 
   // ─── Signals ────────────────────────────────────────────────────────────────
   plans = signal<SubscriptionPlan[]>([]);
@@ -92,8 +94,8 @@ export class PlansComponent implements OnInit {
         this.plans.set(data.map(p => this.mapApiPlan(p)));
         this.isLoading.set(false);
       },
-      error: (err) => {
-        console.error('Planlar yüklenemedi:', err.error?.detail || err.message);
+      error: () => {
+        this.toastService.error('Hata', 'Planlar yüklenemedi.');
         this.isLoading.set(false);
       },
     });
@@ -195,7 +197,7 @@ export class PlansComponent implements OnInit {
       },
       error: (err) => {
         this.isSaving.set(false);
-        alert(err.error?.detail || 'Plan kaydedilemedi.');
+        this.toastService.error('Hata', 'Plan kaydedilemedi.');
       },
     });
   }
@@ -225,7 +227,7 @@ export class PlansComponent implements OnInit {
       isActive: !plan.isActive,
     }).subscribe({
       next: () => this.loadPlans(),
-      error: (err) => alert(err.error?.detail || 'Güncelleme başarısız.'),
+      error: () => this.toastService.error('Hata', 'Güncelleme başarısız.'),
     });
   }
 

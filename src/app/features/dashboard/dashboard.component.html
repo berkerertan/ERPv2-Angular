@@ -47,6 +47,46 @@
         </div>
     </div>
 
+    <!-- Treasury & Check-Notes Summary -->
+    <div class="kpi-grid" style="margin-top: 16px;">
+        <div class="kpi-card card">
+            <div class="kpi-header">
+                <div>
+                    <p class="kpi-label">Banka Bakiyesi</p>
+                    <h2 class="kpi-value">{{ treasurySummary.bankBalance }}</h2>
+                </div>
+                <div class="kpi-icon" data-color="primary"><span class="material-icons-outlined">account_balance</span></div>
+            </div>
+        </div>
+        <div class="kpi-card card">
+            <div class="kpi-header">
+                <div>
+                    <p class="kpi-label">Kasa Bakiyesi</p>
+                    <h2 class="kpi-value">{{ treasurySummary.cashBalance }}</h2>
+                </div>
+                <div class="kpi-icon" data-color="success"><span class="material-icons-outlined">point_of_sale</span></div>
+            </div>
+        </div>
+        <div class="kpi-card card">
+            <div class="kpi-header">
+                <div>
+                    <p class="kpi-label">Çek/Senet Alacak</p>
+                    <h2 class="kpi-value">{{ checkNoteSummary.receivableTotal }}</h2>
+                </div>
+                <div class="kpi-icon" data-color="info"><span class="material-icons-outlined">call_received</span></div>
+            </div>
+        </div>
+        <div class="kpi-card card">
+            <div class="kpi-header">
+                <div>
+                    <p class="kpi-label">Vadesi Geçmiş</p>
+                    <h2 class="kpi-value" [style.color]="checkNoteSummary.overdueCount > 0 ? 'var(--danger)' : ''">{{ checkNoteSummary.overdueCount }}</h2>
+                </div>
+                <div class="kpi-icon" data-color="warning"><span class="material-icons-outlined">warning</span></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Recent Orders -->
     <div class="section">
         <div class="section-header">

@@ -1,7 +1,10 @@
-import { Component, signal, OnInit, HostListener, ElementRef, ViewChild } from '@angular/core';
+import { Component, signal, OnInit, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { CariDebtItemsComponent } from '../../../../shared/components/cari-debt-items/cari-debt-items.component';
+import { CariAccountService } from '../../../../core/services/cari-account.service';
+import { ToastService } from '../../../../core/services/toast.service';
 
 interface BuyerProduct {
     id: string;
@@ -34,7 +37,7 @@ interface QuickAddRow {
 @Component({
     selector: 'app-buyer-detail',
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink],
+    imports: [CommonModule, FormsModule, RouterLink, CariDebtItemsComponent],
     templateUrl: './buyer-detail.component.html',
     styleUrls: ['./buyer-detail.component.css', '../../../../shared/styles/crud-page.css']
 })
@@ -179,17 +182,65 @@ export class BuyerDetailComponent implements OnInit {
         };
     }
 
+    private cariService = inject(CariAccountService);
+    private toastService = inject(ToastService);
+    isLoading = signal(false);
+    hasApiData = signal(false);
+
     constructor(private route: ActivatedRoute, private router: Router) { }
 
     ngOnInit(): void {
         this.buyerId = this.route.snapshot.paramMap.get('id') || '';
-        const buyerData = this.buyersData[this.buyerId];
-        if (buyerData) {
-            this.buyer.set(buyerData);
-            this.products.set([...(this.productsByBuyer[this.buyerId] || [])]);
-        } else {
-            this.router.navigate(['/cari-accounts/buyers']);
-        }
+        if (!this.buyerId) { this.router.navigate(['/cari-accounts/buyers']); return; }
+        this.isLoading.set(true);
+        this.cariService.getDetails(this.buyerId).subscribe({
+            next: (details) => {
+                this.hasApiData.set(true);
+                this.isLoading.set(false);
+                // Map CariAccount to buyer shape
+                const a = details.account;
+                const mockExtra = this.buyersData[this.buyerId] || {};
+                this.buyer.set({
+                    id: a.id,
+                    name: a.name,
+                    code: a.code || '',
+                    phone: mockExtra.phone || '',
+                    email: mockExtra.email || '',
+                    address: mockExtra.address || '',
+                    taxNumber: mockExtra.taxNumber || '',
+                    city: mockExtra.city || '',
+                    balance: a.currentBalance,
+                    isActive: true
+                });
+                // Map CariDebtItems -> BuyerProduct shape
+                const items = (details.items || []).map(i => ({
+                    id: i.id,
+                    productName: i.materialDescription || '—',
+                    barcode: '',
+                    category: '',
+                    quantity: i.quantity,
+                    listPrice: i.listPrice,
+                    unitPrice: i.salePrice,
+                    total: i.totalAmount,
+                    payment: i.payment,
+                    remainingBalance: i.remainingBalance,
+                    date: i.transactionDate?.split('T')[0] || '',
+                    status: (i.remainingBalance === 0 ? 'Delivered' : 'Pending') as 'Delivered' | 'Pending' | 'Cancelled'
+                }));
+                this.products.set(items);
+            },
+            error: () => {
+                // Fall back to mock data
+                this.isLoading.set(false);
+                const buyerData = this.buyersData[this.buyerId];
+                if (buyerData) {
+                    this.buyer.set(buyerData);
+                    this.products.set([...(this.productsByBuyer[this.buyerId] || [])]);
+                } else {
+                    this.router.navigate(['/cari-accounts/buyers']);
+                }
+            }
+        });
     }
 
     // ─── Keyboard Shortcuts ─────────────────────────────
