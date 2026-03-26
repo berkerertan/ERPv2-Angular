@@ -1449,3 +1449,206 @@
         padding: 14px 8px 14px 50px;
     }
 }
+/* ═══ MOBİL OPTİMİZASYON (ek kurallar) ════════════════ */
+
+/* Mobile bottom bar — sadece mobilde görünür */
+.mobile-bottom-bar {
+    display: none;
+}
+
+/* Mobile sidebar overlay */
+.mobile-sidebar-overlay {
+    display: none;
+}
+
+@media (max-width: 1024px) {
+    /* Sidebar mobilden yükarı çıkmasın — bottom sheet olarak slide */
+    .pos-sidebar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 500;
+        max-height: 85vh;
+        overflow-y: auto;
+        border-radius: 20px 20px 0 0;
+        transform: translateY(100%);
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.35);
+        padding-bottom: env(safe-area-inset-bottom, 16px);
+    }
+
+    .pos-sidebar.mobile-open {
+        transform: translateY(0);
+    }
+
+    /* Bottom sheet handle */
+    .pos-sidebar::before {
+        content: '';
+        display: block;
+        width: 40px;
+        height: 4px;
+        background: var(--border-color);
+        border-radius: 4px;
+        margin: 12px auto 8px;
+    }
+
+    /* Overlay */
+    .mobile-sidebar-overlay {
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.45);
+        z-index: 499;
+        backdrop-filter: blur(2px);
+        animation: fadeIn 0.2s ease;
+    }
+
+    /* Sticky bottom bar */
+    .mobile-bottom-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 300;
+        background: var(--bg-card);
+        border-top: 1px solid var(--border-color);
+        padding: 12px 16px;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .mobile-cart-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--text-primary);
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .mobile-cart-info .material-icons-outlined {
+        font-size: 22px;
+        color: var(--primary-400);
+    }
+
+    .mobile-cart-count {
+        color: var(--text-muted);
+        font-weight: 500;
+        font-size: 13px;
+    }
+
+    .mobile-cart-total {
+        font-size: 17px;
+        font-weight: 800;
+        color: var(--text-primary);
+    }
+
+    .mobile-pay-btn {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 11px 22px;
+        background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: opacity 0.2s;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .mobile-pay-btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+
+    .mobile-pay-btn .material-icons-outlined {
+        font-size: 20px;
+    }
+
+    /* Ana içerik — bottom bar için boşluk bırak */
+    .pos-layout {
+        padding-bottom: 80px;
+    }
+
+    /* Qty butonları mobilde daha büyük (dokunma hedefi) */
+    .qty-btn {
+        width: 38px !important;
+        height: 38px !important;
+        min-width: 38px;
+    }
+
+    .qty-input {
+        width: 44px !important;
+        height: 38px !important;
+        font-size: 16px !important;
+    }
+
+    /* Cart table yatay scroll */
+    .table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Ürün adı sütunu min genişlik */
+    .product-name {
+        min-width: 120px;
+    }
+
+    /* Barkod sütunu mobilden gizle */
+    .col-barcode, th:nth-child(3), td:nth-child(3) {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .pos-search-input {
+        font-size: 16px !important; /* iOS zoom önle */
+    }
+
+    .pos-search-bar {
+        border-radius: 14px;
+    }
+
+    .search-result-item {
+        padding: 12px 14px;
+    }
+
+    .result-name {
+        font-size: 14px;
+    }
+
+    .summary-card {
+        border-radius: 0;
+    }
+
+    /* Payment butonları eşit genişlik */
+    .payment-methods {
+        grid-template-columns: 1fr 1fr 1fr !important;
+    }
+
+    .payment-btn {
+        padding: 12px 4px !important;
+        font-size: 12px !important;
+        flex-direction: column;
+        gap: 4px !important;
+    }
+
+    /* Complete sale butonu tam genişlik */
+    .complete-sale-btn {
+        font-size: 15px;
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}

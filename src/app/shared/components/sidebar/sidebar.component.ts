@@ -89,6 +89,7 @@ export class SidebarComponent {
             title: 'Finans & Raporlar',
             items: [
                 { icon: 'payments', label: 'Finans', route: '/finance-movements' },
+                { icon: 'account_balance_wallet', label: 'Çek / Senet', route: '/checks-bills' },
                 { icon: 'bar_chart', label: 'Raporlar', route: '/reports' },
                 { icon: 'manage_search', label: 'Aktivite Geçmişi', route: '/activity-log' },
             ]

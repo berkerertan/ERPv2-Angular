@@ -1,4 +1,4 @@
-<div class="pos-layout">
+<div class="pos-layout" [class.mobile-summary-open]="mobileShowSummary()">
   <!-- ═══ LEFT: Main Area ══════════════════════════════ -->
   <div class="pos-main">
 
@@ -147,7 +147,7 @@
   </div>
 
   <!-- ═══ RIGHT: Summary & Payment ═════════════════════ -->
-  <div class="pos-sidebar">
+  <div class="pos-sidebar" [class.mobile-open]="mobileShowSummary()">
     <div class="summary-card">
       <!-- Summary header -->
       <div class="summary-header">
@@ -433,6 +433,24 @@
   </div>
 </div>
 }
+
+<!-- ═══ MOBİL: SIDEBAR OVERLAY ══════════════════════════ -->
+@if (mobileShowSummary()) {
+<div class="mobile-sidebar-overlay" (click)="closeMobileSummary()"></div>
+}
+
+<!-- ═══ MOBİL: STICKY BOTTOM BAR ════════════════════════ -->
+<div class="mobile-bottom-bar">
+  <div class="mobile-cart-info">
+    <span class="material-icons-outlined">shopping_cart</span>
+    <span class="mobile-cart-count">{{ cartItemCount }} ürün</span>
+    <span class="mobile-cart-total">₺{{ cartGrandTotal.toFixed(2) }}</span>
+  </div>
+  <button class="mobile-pay-btn" (click)="toggleMobileSummary()" [disabled]="cart().length === 0">
+    <span class="material-icons-outlined">{{ mobileShowSummary() ? 'keyboard_arrow_down' : 'payment' }}</span>
+    {{ mobileShowSummary() ? 'Kapat' : 'Ödeme Yap' }}
+  </button>
+</div>
 
 <!-- ═══ NOTIFICATION TOAST ══════════════════════════════ -->
 @if (notification()) {

@@ -67,6 +67,17 @@ export class PosComponent implements OnInit, OnDestroy, AfterViewInit {
     showReceipt = signal(false);
     lastSaleData = signal<{ items: CartItem[], total: number, tax: number, grandTotal: number, date: string, receiptNo: string, paymentMethod: string, customer: string } | null>(null);
 
+    // Mobile summary panel
+    mobileShowSummary = signal(false);
+
+    toggleMobileSummary(): void {
+        this.mobileShowSummary.update(v => !v);
+    }
+
+    closeMobileSummary(): void {
+        this.mobileShowSummary.set(false);
+    }
+
     // Notification
     notification = signal<{ message: string, type: string } | null>(null);
     private _notifTimer: any = null;
@@ -422,6 +433,7 @@ export class PosComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.showReceipt.set(true);
                 this.clearCart();
                 this.isSaving.set(false);
+                this.mobileShowSummary.set(false);
                 this.showNotification('Satış başarıyla tamamlandı!', 'success');
             },
             error: (err) => {

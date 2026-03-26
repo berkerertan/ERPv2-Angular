@@ -99,6 +99,46 @@ export interface SubscriptionPlanOptionDto {
     features?: string[];
 }
 
+/* ── 2FA ── */
+export interface TwoFactorStatusDto {
+    isEnabled: boolean;
+    hasSecret: boolean;
+}
+
+export interface TwoFactorSetupDto {
+    secretKey: string;
+    qrCodeUri: string;
+}
+
+export interface TwoFactorCodeRequest {
+    code: string;
+}
+
+/* ── Notification Preferences ── */
+export interface NotificationPreferencesDto {
+    emailOnLogin: boolean;
+    emailOnPasswordChange: boolean;
+    emailOnNewOrder: boolean;
+    pushNotifications: boolean;
+}
+
+/* ── Active Sessions ── */
+export interface ActiveSessionDto {
+    id: string;
+    deviceName: string;
+    ipAddress: string;
+    location?: string;
+    lastActiveUtc: string;
+    expiresAtUtc: string;
+    isCurrent: boolean;
+}
+
+/* ── Profile Update ── */
+export interface UpdateProfileRequest {
+    userName: string;
+    email: string;
+}
+
 /** UI tarafında kullanılacak kullanıcı bilgisi (localStorage'dan) */
 export interface User {
     userName: string;

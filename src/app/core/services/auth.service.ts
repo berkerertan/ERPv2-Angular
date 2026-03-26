@@ -15,6 +15,12 @@ import {
     CurrentUserDto,
     SubscriptionPlanOptionDto,
     ChangePasswordRequest,
+    UpdateProfileRequest,
+    TwoFactorStatusDto,
+    TwoFactorSetupDto,
+    TwoFactorCodeRequest,
+    NotificationPreferencesDto,
+    ActiveSessionDto,
     User
 } from '../models/user.model';
 
@@ -106,6 +112,50 @@ export class AuthService {
     /** Şifre değiştir */
     changePassword(request: ChangePasswordRequest): Observable<void> {
         return this.http.post<void>(`${this.apiUrl}/change-password`, request);
+    }
+
+    /** Profil güncelle (kullanıcı adı / e-posta) */
+    updateProfile(req: UpdateProfileRequest): Observable<void> {
+        return this.http.put<void>(`${this.apiUrl}/me`, req);
+    }
+
+    // ─── 2FA ───────────────────────────────────────────────
+    getTwoFactorStatus(): Observable<TwoFactorStatusDto> {
+        return this.http.get<TwoFactorStatusDto>(`${this.apiUrl}/2fa/status`);
+    }
+
+    setupTwoFactor(): Observable<TwoFactorSetupDto> {
+        return this.http.post<TwoFactorSetupDto>(`${this.apiUrl}/2fa/setup`, {});
+    }
+
+    enableTwoFactor(req: TwoFactorCodeRequest): Observable<void> {
+        return this.http.post<void>(`${this.apiUrl}/2fa/enable`, req);
+    }
+
+    disableTwoFactor(req: TwoFactorCodeRequest): Observable<void> {
+        return this.http.post<void>(`${this.apiUrl}/2fa/disable`, req);
+    }
+
+    // ─── Bildirim Tercihleri ────────────────────────────────
+    getNotificationPreferences(): Observable<NotificationPreferencesDto> {
+        return this.http.get<NotificationPreferencesDto>(`${this.apiUrl}/notification-preferences`);
+    }
+
+    updateNotificationPreferences(req: NotificationPreferencesDto): Observable<void> {
+        return this.http.put<void>(`${this.apiUrl}/notification-preferences`, req);
+    }
+
+    // ─── Aktif Oturumlar ────────────────────────────────────
+    getActiveSessions(): Observable<ActiveSessionDto[]> {
+        return this.http.get<ActiveSessionDto[]>(`${this.apiUrl}/sessions`);
+    }
+
+    revokeSession(sessionId: string): Observable<void> {
+        return this.http.delete<void>(`${this.apiUrl}/sessions/${sessionId}`);
+    }
+
+    revokeOtherSessions(): Observable<void> {
+        return this.http.post<void>(`${this.apiUrl}/sessions/revoke-others`, {});
     }
 
     /** Abonelik planı seçenekleri */
