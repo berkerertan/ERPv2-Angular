@@ -1,0 +1,77 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Bildirim Merkezi</h1>
+            <p class="page-subtitle">Tüm sistem bildirimleri ve uyarılar</p>
+        </div>
+        @if (notificationService.unreadCount > 0) {
+        <button class="btn btn-secondary" (click)="markAllRead()">
+            <span class="material-icons-outlined">done_all</span>
+            Tümünü Okundu İşaretle
+        </button>
+        }
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(76,110,245,0.12); color: var(--primary-400);"><span class="material-icons-outlined">notifications</span></div>
+            <div class="stat-info"><span class="stat-value">{{ notificationService.notifications().length }}</span><span class="stat-label">Toplam</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--danger-bg, rgba(239,68,68,0.12)); color: var(--danger);"><span class="material-icons-outlined">mark_email_unread</span></div>
+            <div class="stat-info"><span class="stat-value">{{ notificationService.unreadCount }}</span><span class="stat-label">Okunmamış</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--warning-bg); color: var(--warning);"><span class="material-icons-outlined">warning</span></div>
+            <div class="stat-info"><span class="stat-value">{{ notificationService.notifications().filter(n => n.type === 'warning' || n.type === 'danger').length }}</span><span class="stat-label">Uyarı</span></div>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab" [class.active]="activeFilter === 'all'" (click)="activeFilter = 'all'">Tümü</button>
+        <button class="tab" [class.active]="activeFilter === 'unread'" (click)="activeFilter = 'unread'">
+            Okunmamış
+            @if (notificationService.unreadCount > 0) {
+            <span class="tab-badge">{{ notificationService.unreadCount }}</span>
+            }
+        </button>
+    </div>
+
+    <div class="notif-list">
+        @for (n of filtered; track n.id) {
+        <div class="notif-row" [class.unread]="!n.isRead">
+            <div class="notif-icon-wrap type-{{ n.type }}">
+                <span class="material-icons-outlined">{{ getIcon(n.type) }}</span>
+            </div>
+            <div class="notif-body">
+                <div class="notif-top">
+                    <span class="notif-title">{{ n.title }}</span>
+                    <span class="notif-time">{{ timeAgo(n.timestamp) }}</span>
+                </div>
+                <p class="notif-message">{{ n.message }}</p>
+                @if (n.link) {
+                <a [routerLink]="n.link" class="notif-link" (click)="markRead(n.id)">
+                    <span class="material-icons-outlined">open_in_new</span> Git
+                </a>
+                }
+            </div>
+            <div class="notif-actions">
+                @if (!n.isRead) {
+                <button class="action-btn approve" title="Okundu İşaretle" (click)="markRead(n.id)">
+                    <span class="material-icons-outlined">done</span>
+                </button>
+                }
+                <button class="action-btn delete" title="Sil" (click)="delete(n.id)">
+                    <span class="material-icons-outlined">delete</span>
+                </button>
+            </div>
+        </div>
+        }
+        @empty {
+        <div class="empty-notifications">
+            <span class="material-icons-outlined">notifications_none</span>
+            <p>{{ activeFilter === 'unread' ? 'Okunmamış bildirim yok' : 'Henüz bildirim bulunmuyor' }}</p>
+        </div>
+        }
+    </div>
+</div>

@@ -1,0 +1,194 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">İade Yönetimi</h1>
+            <p class="page-subtitle">Satış ve alım iadelerini takip edin</p>
+        </div>
+        <button class="btn btn-primary" (click)="openCreateModal()">
+            <span class="material-icons-outlined">add</span> Yeni İade
+        </button>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(76,110,245,0.12); color: var(--primary-400);"><span class="material-icons-outlined">replay</span></div>
+            <div class="stat-info"><span class="stat-value">{{ returns().length }}</span><span class="stat-label">Toplam İade</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--warning-bg); color: var(--warning);"><span class="material-icons-outlined">hourglass_empty</span></div>
+            <div class="stat-info"><span class="stat-value">{{ returns().filter(r => r.status === 'Pending').length }}</span><span class="stat-label">Onay Bekliyor</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--success-bg); color: var(--success);"><span class="material-icons-outlined">check_circle</span></div>
+            <div class="stat-info"><span class="stat-value">{{ returns().filter(r => r.status === 'Approved').length }}</span><span class="stat-label">Onaylanan</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--danger-bg, rgba(239,68,68,0.12)); color: var(--danger);"><span class="material-icons-outlined">cancel</span></div>
+            <div class="stat-info"><span class="stat-value">₺{{ returns().filter(r => r.status === 'Approved').reduce((s,r) => s + r.totalAmount, 0).toLocaleString('tr-TR') }}</span><span class="stat-label">Onaylı Toplam</span></div>
+        </div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab" [class.active]="activeTab() === 'all'" (click)="activeTab.set('all')">Tümü</button>
+        <button class="tab" [class.active]="activeTab() === 'Sales'" (click)="activeTab.set('Sales')">Satış İadesi</button>
+        <button class="tab" [class.active]="activeTab() === 'Purchase'" (click)="activeTab.set('Purchase')">Alım İadesi</button>
+    </div>
+
+    <div class="toolbar">
+        <div class="toolbar-search">
+            <span class="material-icons-outlined search-icon">search</span>
+            <input type="text" placeholder="İade no, cari hesap veya neden ara..." [(ngModel)]="searchTerm" />
+        </div>
+        <select class="form-input" style="width: auto; min-width: 160px;" [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
+            <option value="all">Tüm Durumlar</option>
+            <option value="Pending">Beklemede</option>
+            <option value="Approved">Onaylanan</option>
+            <option value="Rejected">Reddedilen</option>
+        </select>
+    </div>
+
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th class="sortable" [class.sorted]="sortColumn==='returnNo'" (click)="sort('returnNo')">İade No <span class="sort-icon material-icons-outlined">{{ sortColumn==='returnNo' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th>Tür</th>
+                    <th class="sortable" [class.sorted]="sortColumn==='cariAccountName'" (click)="sort('cariAccountName')">Cari Hesap <span class="sort-icon material-icons-outlined">{{ sortColumn==='cariAccountName' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th>Neden</th>
+                    <th class="sortable" [class.sorted]="sortColumn==='totalAmount'" (click)="sort('totalAmount')">Tutar <span class="sort-icon material-icons-outlined">{{ sortColumn==='totalAmount' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th>Durum</th>
+                    <th class="sortable" [class.sorted]="sortColumn==='returnDate'" (click)="sort('returnDate')">Tarih <span class="sort-icon material-icons-outlined">{{ sortColumn==='returnDate' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (r of filteredReturns; track r.id) {
+                <tr>
+                    <td><span style="color: var(--primary-400); font-weight: 600;">{{ r.returnNo }}</span></td>
+                    <td>
+                        <span class="badge" [ngClass]="r.type === 'Sales' ? 'badge-info' : 'badge-purple'">
+                            {{ r.type === 'Sales' ? 'Satış İadesi' : 'Alım İadesi' }}
+                        </span>
+                    </td>
+                    <td class="font-medium" style="color: var(--text-primary);">{{ r.cariAccountName }}</td>
+                    <td class="text-muted" style="max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ r.reason || '—' }}</td>
+                    <td class="amount">₺{{ r.totalAmount.toLocaleString('tr-TR') }}</td>
+                    <td><span class="badge" [ngClass]="getStatusBadge(r.status)">{{ getStatusLabel(r.status) }}</span></td>
+                    <td class="text-muted">{{ r.returnDate }}</td>
+                    <td>
+                        <div class="actions-cell">
+                            @if (r.status === 'Pending') {
+                            <button class="action-btn approve" title="Onayla" (click)="approveReturn(r.id)">
+                                <span class="material-icons-outlined">check_circle</span>
+                            </button>
+                            <button class="action-btn delete" title="Reddet" (click)="rejectReturn(r.id)">
+                                <span class="material-icons-outlined">cancel</span>
+                            </button>
+                            }
+                            <button class="action-btn delete" title="Sil" (click)="deleteReturn(r.id)">
+                                <span class="material-icons-outlined">delete</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ─── İade Oluşturma Modalı ──────────────────────────── -->
+@if (showCreateModal()) {
+<div class="overlay" (click)="closeCreateModal()"></div>
+<div class="modal">
+    <div class="modal-header">
+        <h2><span class="material-icons-outlined" style="color: var(--primary-400);">replay</span> Yeni İade Talebi</h2>
+        <button class="modal-close" (click)="closeCreateModal()"><span class="material-icons-outlined">close</span></button>
+    </div>
+    <div class="modal-form">
+        <div class="form-section">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">İade Türü *</label>
+                    <select class="form-input" [(ngModel)]="formData.type" (ngModelChange)="onTypeChange()">
+                        <option [value]="ReturnType.Sales">Satış İadesi (Müşteriden)</option>
+                        <option [value]="ReturnType.Purchase">Alım İadesi (Tedarikçiye)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Depo *</label>
+                    <select class="form-input" [(ngModel)]="formData.warehouseId">
+                        <option value="">-- Depo Seçin --</option>
+                        @for (w of warehouses(); track w.id) {
+                        <option [value]="w.id">{{ w.name }}</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">{{ formData.type == ReturnType.Sales ? 'Müşteri' : 'Tedarikçi' }} *</label>
+                    <select class="form-input" [(ngModel)]="formData.cariAccountId">
+                        <option value="">-- Seçin --</option>
+                        @for (c of availableCariAccounts; track c.id) {
+                        <option [value]="c.id">{{ c.name }}{{ c.code ? ' (' + c.code + ')' : '' }}</option>
+                        }
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">İade Nedeni</label>
+                    <input class="form-input" type="text" [(ngModel)]="formData.reason" placeholder="İade gerekçesi..." />
+                </div>
+            </div>
+        </div>
+        <div class="form-section">
+            <div class="form-section-header">
+                <h3 class="form-section-title">İade Kalemleri</h3>
+                <button class="btn btn-secondary btn-sm" (click)="addItem()">
+                    <span class="material-icons-outlined">add</span> Kalem Ekle
+                </button>
+            </div>
+            <div class="invoice-items-table">
+                <div class="invoice-items-header">
+                    <span class="col-product">Ürün</span>
+                    <span class="col-qty">Miktar</span>
+                    <span class="col-price">Birim Fiyat</span>
+                    <span class="col-total">Toplam</span>
+                    <span class="col-action"></span>
+                </div>
+                @for (item of formData.items; track $index; let i = $index) {
+                <div class="invoice-item-row">
+                    <select class="form-input col-product" [ngModel]="item.productId" (ngModelChange)="onProductSelect(item, $event)">
+                        <option value="">-- Ürün Seçin --</option>
+                        @for (p of products(); track p.id) {
+                        <option [value]="p.id">{{ p.name }}</option>
+                        }
+                    </select>
+                    <input class="form-input col-qty" type="number" [(ngModel)]="item.quantity" min="1" />
+                    <input class="form-input col-price" type="number" [(ngModel)]="item.unitPrice" min="0" step="0.01" />
+                    <span class="col-total item-total">₺{{ (item.quantity * item.unitPrice).toLocaleString('tr-TR', {minimumFractionDigits: 2}) }}</span>
+                    <button class="action-btn delete col-action" (click)="removeItem(i)" [disabled]="formData.items.length === 1">
+                        <span class="material-icons-outlined">close</span>
+                    </button>
+                </div>
+                }
+            </div>
+        </div>
+        <div class="invoice-totals">
+            <div class="total-row grand-total">
+                <span>Genel Toplam</span>
+                <span>₺{{ getFormTotal().toLocaleString('tr-TR', {minimumFractionDigits: 2}) }}</span>
+            </div>
+        </div>
+    </div>
+    @if (formError()) {
+    <div class="form-error" style="padding: 0 1.5rem; color: var(--danger); font-size: 0.875rem;">{{ formError() }}</div>
+    }
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeCreateModal()">İptal</button>
+        <button class="btn btn-primary" (click)="saveReturn()" [disabled]="isSaving()">
+            <span class="material-icons-outlined">save</span> {{ isSaving() ? 'Kaydediliyor...' : 'İade Talebi Oluştur' }}
+        </button>
+    </div>
+</div>
+}

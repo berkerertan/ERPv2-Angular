@@ -7,6 +7,8 @@ import {
     CreateProductRequest,
     UpdateProductRequest,
     ProductSuggestionDto,
+    ProductScanResponse,
+    ProductImageUploadResponse,
     BulkProductPriceUpdateRequest,
     BulkProductPriceUpdateResponse,
     BulkProductStockUpdateRequest,
@@ -38,6 +40,13 @@ export class ProductService {
         });
     }
 
+    /** Barkod okutma sonucu urun bulunursa dondurur; bulunamazsa hizli taslak dondurur */
+    scanBarcode(barcode: string): Observable<ProductScanResponse> {
+        return this.http.get<ProductScanResponse>(`${this.apiUrl}/scan`, {
+            params: { barcode }
+        });
+    }
+
     /** Yeni ürün oluştur — 201 Created: uuid döner */
     create(product: CreateProductRequest): Observable<string> {
         return this.http.post<string>(this.apiUrl, product);
@@ -51,6 +60,21 @@ export class ProductService {
     /** Ürünü soft delete — 204 No Content */
     delete(id: string): Observable<void> {
         return this.http.delete<void>(`${this.apiUrl}/${id}`);
+    }
+
+    /** Urun gorselini cloud depoya yukler ve imageUrl gunceller */
+    uploadImage(id: string, file: File, deletePrevious: boolean = true): Observable<ProductImageUploadResponse> {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        return this.http.post<ProductImageUploadResponse>(`${this.apiUrl}/${id}/image`, formData, {
+            params: new HttpParams().set('deletePrevious', String(deletePrevious))
+        });
+    }
+
+    /** Urun gorselini cloud depodan siler ve imageUrl temizler */
+    removeImage(id: string): Observable<void> {
+        return this.http.delete<void>(`${this.apiUrl}/${id}/image`);
     }
 
     /** Toplu fiyat güncelleme */

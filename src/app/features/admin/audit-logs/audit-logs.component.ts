@@ -2,6 +2,7 @@ import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PlatformAdminService } from '../../../core/services/platform-admin.service';
+import { ToastService } from '../../../core/services/toast.service';
 import {
     AdminAuditLogDto,
     AdminAuditLogSummaryDto,
@@ -17,6 +18,7 @@ import {
 })
 export class AuditLogsComponent implements OnInit {
     private adminService = inject(PlatformAdminService);
+    private toastService = inject(ToastService);
 
     isLoading = signal(false);
     logs = signal<AdminAuditLogDto[]>([]);
@@ -62,7 +64,7 @@ export class AuditLogsComponent implements OnInit {
             toUtc: this.toDate || undefined
         }).subscribe({
             next: (data) => this.summary.set(data),
-            error: (err) => console.error('Audit log özet yüklenemedi:', err.error?.detail || err.message)
+            error: () => this.toastService.error('Hata', 'Audit log özeti yüklenemedi.')
         });
     }
 
@@ -82,7 +84,7 @@ export class AuditLogsComponent implements OnInit {
                 this.logs.set(data);
                 this.isLoading.set(false);
             },
-            error: (err) => { this.isLoading.set(false); console.error('Audit loglar yüklenemedi:', err.error?.detail || err.message); }
+            error: () => { this.isLoading.set(false); this.toastService.error('Hata', 'Audit loglar yüklenemedi.'); }
         });
     }
 

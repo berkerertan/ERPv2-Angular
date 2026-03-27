@@ -132,6 +132,22 @@ export const routes: Routes = [
                 loadComponent: () => import('./features/quotes/quotes.component').then(m => m.QuotesComponent)
             },
             {
+                path: 'waybills',
+                loadComponent: () => import('./features/waybills/waybills.component').then(m => m.WaybillsComponent)
+            },
+            {
+                path: 'returns',
+                loadComponent: () => import('./features/returns/returns.component').then(m => m.ReturnsComponent)
+            },
+            {
+                path: 'price-lists',
+                loadComponent: () => import('./features/price-lists/price-lists.component').then(m => m.PriceListsComponent)
+            },
+            {
+                path: 'notifications',
+                loadComponent: () => import('./features/notifications/notifications.component').then(m => m.NotificationsComponent)
+            },
+            {
                 path: 'sales-orders',
                 loadComponent: () => import('./features/sales-orders/sales-orders.component').then(m => m.SalesOrdersComponent)
             },
@@ -152,12 +168,20 @@ export const routes: Routes = [
                 loadComponent: () => import('./features/warehouses/warehouses.component').then(m => m.WarehousesComponent)
             },
             {
+                path: 'finance-movements',
+                loadComponent: () => import('./features/finance-movements/finance-movements.component').then(m => m.FinanceMovementsComponent)
+            },
+            {
                 path: 'checks-bills',
                 loadComponent: () => import('./features/checks-bills/checks-bills.component').then(m => m.ChecksBillsComponent)
             },
             {
-                path: 'finance-movements',
-                loadComponent: () => import('./features/finance-movements/finance-movements.component').then(m => m.FinanceMovementsComponent)
+                path: 'treasury',
+                loadComponent: () => import('./features/treasury/treasury.component').then(m => m.TreasuryComponent)
+            },
+            {
+                path: 'chart-of-accounts',
+                loadComponent: () => import('./features/chart-of-accounts/chart-of-accounts.component').then(m => m.ChartOfAccountsComponent)
             },
             {
                 path: 'invoices/efatura',
@@ -174,6 +198,10 @@ export const routes: Routes = [
             {
                 path: 'activity-log',
                 loadComponent: () => import('./features/activity-log/activity-log.component').then(m => m.ActivityLogComponent)
+            },
+            {
+                path: 'excel-import',
+                loadComponent: () => import('./features/excel-import/excel-import.component').then(m => m.ExcelImportComponent)
             },
             {
                 path: 'profile',

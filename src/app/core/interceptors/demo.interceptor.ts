@@ -19,6 +19,8 @@ import {
     DEMO_ACTIVITY_LOGS, DEMO_ACTIVITY_SUMMARY,
     DEMO_MY_ACTIVITY_LOGS, DEMO_MY_ACTIVITY_SUMMARY,
     DEMO_PLATFORM_TENANTS, DEMO_PLATFORM_OVERVIEW,
+    DEMO_DASHBOARD_SUMMARY,
+    DEMO_WAYBILLS, DEMO_RETURNS, DEMO_PRICE_LISTS, DEMO_NOTIFICATIONS,
 } from '../mock/demo-data';
 import { InvoiceType } from '../models/invoice.model';
 
@@ -231,6 +233,7 @@ export const demoInterceptor: HttpInterceptorFn = (req, next) => {
 
     // ── RAPORLAR ─────────────────────────────────────────────────────────────
     if (path.startsWith('/api/reports')) {
+        if (path.includes('/dashboard-summary'))                  return ok(DEMO_DASHBOARD_SUMMARY);
         if (path.includes('/sales'))                              return ok(DEMO_SALES_REPORT);
         if (path.includes('/purchases'))                          return ok(DEMO_PURCHASES_REPORT);
         if (path.includes('/stock'))                              return ok(DEMO_STOCK_REPORT);
@@ -333,6 +336,51 @@ export const demoInterceptor: HttpInterceptorFn = (req, next) => {
     // ── Muhasebe ─────────────────────────────────────────────────────────────
     if (path.startsWith('/api/accounting')) {
         return ok([]);
+    }
+
+    // ── İRSALİYELER ──────────────────────────────────────────────────────────
+    if (path.startsWith('/api/waybills')) {
+        if (method === 'POST') {
+            if (path.includes('/ship') || path.includes('/deliver') || path.includes('/cancel')) return noContent();
+            return ok(`"${newMockId()}"`);
+        }
+        const wbId = path.replace('/api/waybills/', '').split('/')[0];
+        if (wbId) {
+            const found = DEMO_WAYBILLS.find(w => w.id === wbId);
+            return ok(found ?? DEMO_WAYBILLS[0]);
+        }
+        return ok(DEMO_WAYBILLS);
+    }
+
+    // ── İADE YÖNETİMİ ────────────────────────────────────────────────────────
+    if (path.startsWith('/api/returns')) {
+        if (method === 'POST') {
+            if (path.includes('/approve') || path.includes('/reject')) return noContent();
+            return ok(`"${newMockId()}"`);
+        }
+        const rtId = path.replace('/api/returns/', '').split('/')[0];
+        if (rtId) {
+            const found = DEMO_RETURNS.find(r => r.id === rtId);
+            return ok(found ?? DEMO_RETURNS[0]);
+        }
+        return ok(DEMO_RETURNS);
+    }
+
+    // ── FİYAT LİSTELERİ ──────────────────────────────────────────────────────
+    if (path.startsWith('/api/price-lists')) {
+        if (method === 'POST') return ok(`"${newMockId()}"`);
+        const plId = path.replace('/api/price-lists/', '').split('/')[0];
+        if (plId) {
+            const found = DEMO_PRICE_LISTS.find(p => p.id === plId);
+            return ok(found ?? DEMO_PRICE_LISTS[0]);
+        }
+        return ok(DEMO_PRICE_LISTS);
+    }
+
+    // ── BİLDİRİMLER ──────────────────────────────────────────────────────────
+    if (path.startsWith('/api/notifications')) {
+        if (method === 'POST') return noContent();
+        return ok(DEMO_NOTIFICATIONS);
     }
 
     // ── Bilinmeyen GET → boş dizi; POST → sahte UUID ──────────────────────────

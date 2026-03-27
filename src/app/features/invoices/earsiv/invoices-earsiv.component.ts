@@ -100,7 +100,7 @@ export class InvoicesEArsivComponent implements OnInit {
                 grandTotal:      inv.totalAmount,
                 taxTotal:        inv.taxTotal,
             }))),
-            error: (err) => console.error('E-Arşiv faturaları yüklenemedi:', err.error?.detail || err.message)
+            error: () => this.toastService.error('Hata', 'E-Arşiv faturaları yüklenemedi.')
         });
     }
 

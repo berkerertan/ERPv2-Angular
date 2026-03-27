@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Location } from '@angular/common';
+import { CariDebtItemsComponent } from '../../../../shared/components/cari-debt-items/cari-debt-items.component';
 
 export interface SupplierPurchase {
     id: string;
@@ -40,7 +41,7 @@ interface QuickAddRow {
 @Component({
     selector: 'app-supplier-detail',
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterLink],
+    imports: [CommonModule, FormsModule, RouterLink, CariDebtItemsComponent],
     templateUrl: './supplier-detail.component.html',
     styleUrls: ['./supplier-detail.component.css', '../../../../shared/styles/crud-page.css']
 })

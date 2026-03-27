@@ -68,6 +68,9 @@ export class SidebarComponent {
                 { icon: 'request_quote', label: 'Teklifler', route: '/quotes' },
                 { icon: 'shopping_cart', label: 'Satış Siparişleri', route: '/sales-orders' },
                 { icon: 'assignment_return', label: 'Satın Alma', route: '/purchase-orders' },
+                { icon: 'article', label: 'İrsaliyeler', route: '/waybills' },
+                { icon: 'replay', label: 'İadeler', route: '/returns' },
+                { icon: 'sell', label: 'Fiyat Listeleri', route: '/price-lists' },
             ]
         },
         {
@@ -86,12 +89,27 @@ export class SidebarComponent {
             ]
         },
         {
-            title: 'Finans & Raporlar',
+            title: 'Finans & Muhasebe',
             items: [
                 { icon: 'payments', label: 'Finans', route: '/finance-movements' },
-                { icon: 'account_balance_wallet', label: 'Çek / Senet', route: '/checks-bills' },
+                { icon: 'receipt_long', label: 'Çek/Senet Takibi', route: '/checks-bills' },
+                { icon: 'account_balance_wallet', label: 'Banka & Kasa', route: '/treasury' },
+                { icon: 'account_tree', label: 'Hesap Planı', route: '/chart-of-accounts' },
+            ]
+        },
+        {
+            title: 'Raporlar',
+            items: [
                 { icon: 'bar_chart', label: 'Raporlar', route: '/reports' },
+                { icon: 'upload_file', label: 'Excel Import', route: '/excel-import' },
                 { icon: 'manage_search', label: 'Aktivite Geçmişi', route: '/activity-log' },
+            ]
+        },
+        {
+            title: 'Hesap',
+            items: [
+                { icon: 'notifications', label: 'Bildirimler', route: '/notifications' },
+                { icon: 'manage_accounts', label: 'Profil & Ayarlar', route: '/profile' },
             ]
         }
     ];

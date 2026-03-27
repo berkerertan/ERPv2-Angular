@@ -1,5 +1,5 @@
 export const environment = {
     production: false,
-    apiUrl: 'http://localhost:5058',
+    apiUrl: '',  // proxy.conf.json ile /api istekleri localhost:5058'e yönlendiriliyor
     appName: 'ERPv2'
 };

@@ -1,29 +1,35 @@
-// Enums — backend ile birebir eşleşiyor
+/** Çek/Senet Takibi — Backend API DTO eşleştirmesi */
+
+/** Belge türü: Çek veya Senet */
 export enum CheckNoteType {
-    Check = 1,           // Çek
-    PromissoryNote = 2   // Senet
+    Check          = 1,   // Çek
+    PromissoryNote = 2    // Senet
 }
 
+/** Belge yönü: Alacak veya Borç */
 export enum CheckNoteDirection {
-    Receivable = 1,  // Tahsil (alacaklı)
-    Payable = 2      // Ödeme (borçlu)
+    Receivable = 1,  // Alacak (müşteriden alınan)
+    Payable    = 2   // Borç   (tedarikçiye verilen)
 }
 
+/** Belge durumu */
 export enum CheckNoteStatus {
-    Portfolio = 1,   // Portföyde
-    Endorsed = 2,    // Ciro edildi
-    Protested = 3,   // Protesto edildi
-    Collected = 4,   // Tahsil edildi
-    Paid = 5,        // Ödendi
-    Cancelled = 6    // İptal
+    Portfolio  = 1,  // Portföyde
+    Endorsed   = 2,  // Ciro edildi
+    Protested  = 3,  // Protestolu
+    Collected  = 4,  // Tahsil edildi
+    Paid       = 5,  // Ödendi
+    Cancelled  = 6   // İptal
 }
 
+/** Tahsilat / ödeme kanalı */
 export enum TreasuryChannel {
     Cash = 1,
     Bank = 2
 }
 
-export interface CheckNoteDto {
+/** Response DTO — Backend CheckNoteDto */
+export interface CheckNote {
     id: string;
     code: string;
     type: CheckNoteType;
@@ -47,7 +53,8 @@ export interface CheckNoteDto {
     createdAtUtc: string;
 }
 
-export interface CheckNoteDueListItemDto {
+/** Vadeye yaklaşan çek/senet listesi */
+export interface CheckNoteDueListItem {
     id: string;
     code: string;
     type: CheckNoteType;
@@ -62,13 +69,14 @@ export interface CheckNoteDueListItemDto {
     remainingDays: number;
 }
 
+/** Çek/Senet oluşturma / güncelleme isteği — Backend UpsertCheckNoteRequest */
 export interface UpsertCheckNoteRequest {
     code: string;
     type: CheckNoteType;
     direction: CheckNoteDirection;
     cariAccountId: string;
     amount: number;
-    currency: string;
+    currency?: string;
     issueDateUtc: string;
     dueDateUtc: string;
     bankName?: string;
@@ -78,11 +86,13 @@ export interface UpsertCheckNoteRequest {
     description?: string;
 }
 
+/** Durum değişikliği isteği — Backend UpdateCheckNoteStatusRequest */
 export interface UpdateCheckNoteStatusRequest {
     status: CheckNoteStatus;
     note?: string;
 }
 
+/** Tahsilat / ödeme tamamlama isteği — Backend SettleCheckNoteRequest */
 export interface SettleCheckNoteRequest {
     channel: TreasuryChannel;
     treasuryAccountId: string;
@@ -91,7 +101,8 @@ export interface SettleCheckNoteRequest {
     referenceNo?: string;
 }
 
-export interface SettleCheckNoteResultDto {
+/** Settle sonucu */
+export interface SettleCheckNoteResult {
     checkNoteId: string;
     status: CheckNoteStatus;
     financeMovementId: string;

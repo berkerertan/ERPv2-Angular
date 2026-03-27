@@ -5,6 +5,7 @@ import { ProductService } from '../../core/services/product.service';
 import { WarehouseService } from '../../core/services/warehouse.service';
 import { CariAccountService } from '../../core/services/cari-account.service';
 import { SalesOrderService } from '../../core/services/sales-order.service';
+import { ToastService } from '../../core/services/toast.service';
 import { Product } from '../../core/models/product.model';
 import { Warehouse } from '../../core/models/warehouse.model';
 import { CariAccount } from '../../core/models/cari-account.model';
@@ -39,6 +40,7 @@ export class PosComponent implements OnInit, OnDestroy, AfterViewInit {
     private warehouseService = inject(WarehouseService);
     private cariAccountService = inject(CariAccountService);
     private salesOrderService = inject(SalesOrderService);
+    private toastService = inject(ToastService);
     // Search
     searchTerm = '';
     private _searchTimer: any = null;
@@ -67,16 +69,8 @@ export class PosComponent implements OnInit, OnDestroy, AfterViewInit {
     showReceipt = signal(false);
     lastSaleData = signal<{ items: CartItem[], total: number, tax: number, grandTotal: number, date: string, receiptNo: string, paymentMethod: string, customer: string } | null>(null);
 
-    // Mobile summary panel
+    // Mobile summary sheet
     mobileShowSummary = signal(false);
-
-    toggleMobileSummary(): void {
-        this.mobileShowSummary.update(v => !v);
-    }
-
-    closeMobileSummary(): void {
-        this.mobileShowSummary.set(false);
-    }
 
     // Notification
     notification = signal<{ message: string, type: string } | null>(null);
@@ -100,7 +94,7 @@ export class PosComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.warehouses = data.map(w => ({ id: w.id, name: w.name }));
                 if (this.warehouses.length > 0) this.selectedWarehouseId = this.warehouses[0].id;
             },
-            error: (err) => console.error('Depolar yüklenemedi:', err.error?.detail || err.message)
+            error: () => this.toastService.error('Hata', 'Depolar yüklenemedi.')
         });
     }
 
@@ -114,7 +108,7 @@ export class PosComponent implements OnInit, OnDestroy, AfterViewInit {
                     balance: b.currentBalance || 0
                 }));
             },
-            error: (err) => console.error('Alıcılar yüklenemedi:', err.error?.detail || err.message)
+            error: () => this.toastService.error('Hata', 'Alıcılar yüklenemedi.')
         });
     }
 
@@ -130,7 +124,7 @@ export class PosComponent implements OnInit, OnDestroy, AfterViewInit {
                     unit: p.unit || 'Adet'
                 }));
             },
-            error: (err) => console.error('Ürünler yüklenemedi:', err.error?.detail || err.message)
+            error: () => this.toastService.error('Hata', 'Ürünler yüklenemedi.')
         });
     }
 
@@ -433,7 +427,6 @@ export class PosComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.showReceipt.set(true);
                 this.clearCart();
                 this.isSaving.set(false);
-                this.mobileShowSummary.set(false);
                 this.showNotification('Satış başarıyla tamamlandı!', 'success');
             },
             error: (err) => {
@@ -441,6 +434,14 @@ export class PosComponent implements OnInit, OnDestroy, AfterViewInit {
                 this.showNotification(err.error?.detail || 'Satış kaydedilemedi!', 'error');
             }
         });
+    }
+
+    toggleMobileSummary(): void {
+        this.mobileShowSummary.update(v => !v);
+    }
+
+    closeMobileSummary(): void {
+        this.mobileShowSummary.set(false);
     }
 
     closeReceipt(): void {

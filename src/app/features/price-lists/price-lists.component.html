@@ -1,0 +1,233 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Fiyat Listeleri</h1>
+            <p class="page-subtitle">Müşteri gruplarına özel fiyatlandırma kuralları</p>
+        </div>
+        <button class="btn btn-primary" (click)="openCreateModal()">
+            <span class="material-icons-outlined">add</span> Yeni Fiyat Listesi
+        </button>
+    </div>
+
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(76,110,245,0.12); color: var(--primary-400);"><span class="material-icons-outlined">sell</span></div>
+            <div class="stat-info"><span class="stat-value">{{ priceLists().length }}</span><span class="stat-label">Toplam Liste</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--success-bg); color: var(--success);"><span class="material-icons-outlined">toggle_on</span></div>
+            <div class="stat-info"><span class="stat-value">{{ priceLists().filter(pl => pl.isActive).length }}</span><span class="stat-label">Aktif Liste</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--warning-bg); color: var(--warning);"><span class="material-icons-outlined">toggle_off</span></div>
+            <div class="stat-info"><span class="stat-value">{{ priceLists().filter(pl => !pl.isActive).length }}</span><span class="stat-label">Pasif Liste</span></div>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <div class="toolbar-search">
+            <span class="material-icons-outlined search-icon">search</span>
+            <input type="text" placeholder="Liste adı veya açıklama ara..." [(ngModel)]="searchTerm" />
+        </div>
+    </div>
+
+    <div class="price-list-grid">
+        @for (pl of filteredLists; track pl.id) {
+        <div class="price-list-card" [class.inactive]="!pl.isActive">
+            <div class="plc-header">
+                <div class="plc-title-group">
+                    <h3 class="plc-name">{{ pl.name }}</h3>
+                    <span class="badge" [ngClass]="pl.isActive ? 'badge-success' : 'badge-muted'">{{ pl.isActive ? 'Aktif' : 'Pasif' }}</span>
+                </div>
+                <div class="plc-actions">
+                    <button class="action-btn" [title]="pl.isActive ? 'Pasif Yap' : 'Aktif Yap'" (click)="toggleActive(pl)">
+                        <span class="material-icons-outlined">{{ pl.isActive ? 'toggle_on' : 'toggle_off' }}</span>
+                    </button>
+                    <button class="action-btn edit" title="Ürünleri Gör" (click)="openDetailModal(pl)">
+                        <span class="material-icons-outlined">visibility</span>
+                    </button>
+                    <button class="action-btn delete" title="Sil" (click)="deleteList(pl.id)">
+                        <span class="material-icons-outlined">delete</span>
+                    </button>
+                </div>
+            </div>
+            @if (pl.description) {
+            <p class="plc-desc">{{ pl.description }}</p>
+            }
+            <div class="plc-meta">
+                <span class="plc-meta-item">
+                    <span class="material-icons-outlined">calendar_today</span>
+                    {{ pl.startDate }} → {{ pl.endDate }}
+                </span>
+                @if (pl.discountRate > 0) {
+                <span class="plc-discount">%{{ pl.discountRate }} indirim</span>
+                }
+            </div>
+            <div class="plc-footer">
+                <span class="plc-item-count">
+                    <span class="material-icons-outlined">inventory_2</span>
+                    {{ (pl.items?.length || 0) }} ürün
+                </span>
+            </div>
+        </div>
+        }
+        @empty {
+        <div class="empty-state" style="grid-column: 1 / -1;">
+            <span class="material-icons-outlined">sell</span>
+            <p>Henüz fiyat listesi oluşturulmadı</p>
+        </div>
+        }
+    </div>
+</div>
+
+<!-- ─── Detay Modalı ──────────────────────────── -->
+@if (showDetailModal() && selectedList()) {
+<div class="overlay" (click)="closeDetailModal()"></div>
+<div class="modal">
+    <div class="modal-header">
+        <h2><span class="material-icons-outlined" style="color: var(--primary-400);">sell</span> {{ selectedList()!.name }}</h2>
+        <button class="modal-close" (click)="closeDetailModal()"><span class="material-icons-outlined">close</span></button>
+    </div>
+    <div class="modal-form">
+        <div class="detail-meta">
+            <span>{{ selectedList()!.startDate }} → {{ selectedList()!.endDate }}</span>
+            @if (selectedList()!.discountRate > 0) {
+            <span class="plc-discount">%{{ selectedList()!.discountRate }} indirim</span>
+            }
+        </div>
+        @if (selectedList()!.description) {
+        <p class="text-muted" style="margin: 0 0 1rem;">{{ selectedList()!.description }}</p>
+        }
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Ürün</th>
+                    <th>Standart Fiyat</th>
+                    <th>Liste Fiyatı</th>
+                    <th>İndirim</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (item of selectedList()!.items; track item.productId) {
+                <tr>
+                    <td class="font-medium">{{ item.productName }}</td>
+                    <td class="text-muted">₺{{ item.originalPrice.toLocaleString('tr-TR') }}</td>
+                    <td class="amount">₺{{ item.customPrice.toLocaleString('tr-TR') }}</td>
+                    <td>
+                        @if (item.originalPrice > item.customPrice) {
+                        <span class="badge badge-success">%{{ ((1 - item.customPrice / item.originalPrice) * 100).toFixed(0) }}</span>
+                        } @else {
+                        <span class="text-muted">—</span>
+                        }
+                    </td>
+                </tr>
+                }
+                @empty {
+                <tr><td colspan="4" style="text-align: center; color: var(--text-muted);">Bu listede ürün bulunmuyor</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeDetailModal()">Kapat</button>
+    </div>
+</div>
+}
+
+<!-- ─── Oluşturma Modalı ──────────────────────────── -->
+@if (showCreateModal()) {
+<div class="overlay" (click)="closeCreateModal()"></div>
+<div class="modal modal-wide">
+    <div class="modal-header">
+        <h2><span class="material-icons-outlined" style="color: var(--primary-400);">sell</span> Yeni Fiyat Listesi</h2>
+        <button class="modal-close" (click)="closeCreateModal()"><span class="material-icons-outlined">close</span></button>
+    </div>
+    <div class="modal-form">
+        <div class="form-section">
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Liste Adı *</label>
+                    <input class="form-input" type="text" [(ngModel)]="formData.name" placeholder="Örn: Kurumsal Müşteri Fiyatları" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Genel İndirim Oranı (%)</label>
+                    <input class="form-input" type="number" [(ngModel)]="formData.discountRate" (ngModelChange)="onDiscountRateChange()" min="0" max="100" step="1" />
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Başlangıç Tarihi *</label>
+                    <input class="form-input" type="date" [(ngModel)]="formData.startDate" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Bitiş Tarihi *</label>
+                    <input class="form-input" type="date" [(ngModel)]="formData.endDate" />
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="flex: 2;">
+                    <label class="form-label">Açıklama</label>
+                    <input class="form-input" type="text" [(ngModel)]="formData.description" placeholder="Kısa açıklama..." />
+                </div>
+                <div class="form-group" style="flex: 1; display: flex; align-items: flex-end; padding-bottom: 0.5rem;">
+                    <label class="toggle-switch">
+                        <input type="checkbox" [(ngModel)]="formData.isActive" />
+                        <span class="toggle-slider"></span>
+                        <span style="margin-left: 0.5rem; color: var(--text-secondary);">Aktif</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="form-section">
+            <div class="form-section-header">
+                <h3 class="form-section-title">Ürünler</h3>
+                <select #productSelect class="form-input" style="width: auto; min-width: 240px;" (change)="addProduct(productSelect.value); productSelect.value = ''">
+                    <option value="">+ Ürün Ekle</option>
+                    @for (p of availableProducts; track p.id) {
+                    <option [value]="p.id">{{ p.name }} — ₺{{ p.defaultSalePrice.toLocaleString('tr-TR') }}</option>
+                    }
+                </select>
+            </div>
+            @if (formData.items.length > 0) {
+            <table class="data-table" style="margin-top: 0.75rem;">
+                <thead>
+                    <tr>
+                        <th>Ürün</th>
+                        <th>Standart Fiyat</th>
+                        <th>Liste Fiyatı</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (item of formData.items; track item.productId; let i = $index) {
+                    <tr>
+                        <td class="font-medium">{{ item.productName }}</td>
+                        <td class="text-muted">₺{{ item.originalPrice.toLocaleString('tr-TR') }}</td>
+                        <td>
+                            <input class="form-input" type="number" [(ngModel)]="item.customPrice" min="0" step="0.01" style="width: 120px;" />
+                        </td>
+                        <td>
+                            <button class="action-btn delete" (click)="removeProduct(i)">
+                                <span class="material-icons-outlined">close</span>
+                            </button>
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+            } @else {
+            <p class="text-muted" style="margin-top: 0.75rem; font-size: 0.875rem;">Yukarıdan ürün ekleyerek fiyat belirleyin</p>
+            }
+        </div>
+    </div>
+    @if (formError()) {
+    <div class="form-error" style="padding: 0 1.5rem; color: var(--danger); font-size: 0.875rem;">{{ formError() }}</div>
+    }
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeCreateModal()">İptal</button>
+        <button class="btn btn-primary" (click)="saveList()" [disabled]="isSaving()">
+            <span class="material-icons-outlined">save</span> {{ isSaving() ? 'Kaydediliyor...' : 'Oluştur' }}
+        </button>
+    </div>
+</div>
+}

@@ -1,0 +1,122 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">
+                <span class="material-icons-outlined page-title-icon" style="color: var(--primary-400);">account_tree</span>
+                Hesap Planı
+            </h1>
+            <p class="page-subtitle">Muhasebe hesap planınızı yönetin</p>
+        </div>
+        <button class="btn btn-primary" (click)="openAddModal()">
+            <span class="material-icons-outlined">add</span> Yeni Hesap
+        </button>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <div class="toolbar-search">
+            <span class="material-icons-outlined search-icon">search</span>
+            <input type="text" placeholder="Hesap kodu veya adı ara..." [(ngModel)]="searchTerm" />
+        </div>
+        <select class="toolbar-select" [ngModel]="typeFilter()" (ngModelChange)="typeFilter.set($event)">
+            <option value="all">Tüm Türler</option>
+            <option [value]="AccountType.Asset">Varlık</option>
+            <option [value]="AccountType.Liability">Borç</option>
+            <option [value]="AccountType.Equity">Özkaynak</option>
+            <option [value]="AccountType.Revenue">Gelir</option>
+            <option [value]="AccountType.Expense">Gider</option>
+        </select>
+    </div>
+
+    <!-- Table -->
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Hesap Kodu</th>
+                    <th>Hesap Adı</th>
+                    <th>Tür</th>
+                    <th>Durum</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (item of filteredItems; track item.id) {
+                <tr>
+                    <td class="font-medium" style="font-family: monospace; color: var(--text-primary);">{{ item.code || '—' }}</td>
+                    <td>{{ item.name || '—' }}</td>
+                    <td><span class="badge" [ngClass]="typeClass(item.type)">{{ typeLabel(item.type) }}</span></td>
+                    <td>
+                        @if (item.isActive) {
+                        <span class="badge badge-success">Aktif</span>
+                        } @else {
+                        <span class="badge badge-muted">Pasif</span>
+                        }
+                    </td>
+                    <td>
+                        <div class="actions-cell">
+                            <button class="action-btn edit" (click)="openEditModal(item)" title="Düzenle">
+                                <span class="material-icons-outlined">edit</span>
+                            </button>
+                            <button class="action-btn delete" (click)="deleteItem(item)" title="Sil">
+                                <span class="material-icons-outlined">delete</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                } @empty {
+                <tr>
+                    <td colspan="5" class="empty-state">
+                        <span class="material-icons-outlined" style="font-size:48px; color: var(--text-tertiary);">account_tree</span>
+                        <p>Henüz hesap kaydı bulunmuyor.</p>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ═══ Hesap Ekleme/Düzenleme Modalı ═══ -->
+@if (showModal()) {
+<div class="overlay" (click)="showModal.set(false)"></div>
+<div class="modal" style="width: 440px;">
+    <div class="modal-header">
+        <h2>{{ editingId() ? 'Hesap Düzenle' : 'Yeni Hesap' }}</h2>
+        <button class="modal-close" (click)="showModal.set(false)"><span class="material-icons-outlined">close</span></button>
+    </div>
+    <div class="modal-form">
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Hesap Kodu</label>
+                <input class="form-input" [(ngModel)]="formData.code" placeholder="100, 320, vb." />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Hesap Türü *</label>
+                <select class="form-input" [(ngModel)]="formData.type">
+                    <option [ngValue]="AccountType.Asset">Varlık</option>
+                    <option [ngValue]="AccountType.Liability">Borç</option>
+                    <option [ngValue]="AccountType.Equity">Özkaynak</option>
+                    <option [ngValue]="AccountType.Revenue">Gelir</option>
+                    <option [ngValue]="AccountType.Expense">Gider</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Hesap Adı *</label>
+            <input class="form-input" [(ngModel)]="formData.name" placeholder="Hesap adı" />
+        </div>
+        <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+            <input type="checkbox" id="isActive" [(ngModel)]="formData.isActive" />
+            <label for="isActive" class="form-label" style="margin:0;">Aktif</label>
+        </div>
+    </div>
+    @if (formError()) { <div style="padding: 0 1.5rem; color: var(--danger); font-size: 0.875rem;">{{ formError() }}</div> }
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="showModal.set(false)">İptal</button>
+        <button class="btn btn-primary" (click)="save()" [disabled]="isSaving()">
+            <span class="material-icons-outlined">save</span> {{ isSaving() ? 'Kaydediliyor...' : 'Kaydet' }}
+        </button>
+    </div>
+</div>
+}

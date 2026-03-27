@@ -44,7 +44,7 @@ export class StockMovementsComponent implements OnInit {
                 description: m.referenceNo || '',
                 createdAt: m.movementDateUtc?.split('T')[0] || ''
             }))),
-            error: (err) => console.error('Stok hareketleri yüklenemedi:', err.error?.detail || err.message)
+            error: (err) => this.toastService.error('Hata', 'Stok hareketleri yüklenemedi.')
         });
     }
 
@@ -55,7 +55,7 @@ export class StockMovementsComponent implements OnInit {
                 warehouseName: b.warehouseName || '—',
                 balance: b.balance
             }))),
-            error: (err) => console.error('Stok bakiyeleri yüklenemedi:', err.error?.detail || err.message)
+            error: (err) => this.toastService.error('Hata', 'Stok bakiyeleri yüklenemedi.')
         });
     }
 

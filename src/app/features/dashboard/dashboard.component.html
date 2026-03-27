@@ -47,6 +47,94 @@
         </div>
     </div>
 
+    <!-- Treasury & Check-Notes Summary -->
+    <div class="kpi-grid" style="margin-top: 16px;">
+        <div class="kpi-card card">
+            <div class="kpi-header">
+                <div>
+                    <p class="kpi-label">Banka Bakiyesi</p>
+                    <h2 class="kpi-value">{{ treasurySummary.bankBalance }}</h2>
+                </div>
+                <div class="kpi-icon" data-color="primary"><span class="material-icons-outlined">account_balance</span></div>
+            </div>
+        </div>
+        <div class="kpi-card card">
+            <div class="kpi-header">
+                <div>
+                    <p class="kpi-label">Kasa Bakiyesi</p>
+                    <h2 class="kpi-value">{{ treasurySummary.cashBalance }}</h2>
+                </div>
+                <div class="kpi-icon" data-color="success"><span class="material-icons-outlined">point_of_sale</span></div>
+            </div>
+        </div>
+        <div class="kpi-card card">
+            <div class="kpi-header">
+                <div>
+                    <p class="kpi-label">Çek/Senet Alacak</p>
+                    <h2 class="kpi-value">{{ checkNoteSummary.receivableTotal }}</h2>
+                </div>
+                <div class="kpi-icon" data-color="info"><span class="material-icons-outlined">call_received</span></div>
+            </div>
+        </div>
+        <div class="kpi-card card">
+            <div class="kpi-header">
+                <div>
+                    <p class="kpi-label">Vadesi Geçmiş Çek</p>
+                    <h2 class="kpi-value" [style.color]="checkNoteSummary.overdueCount > 0 ? 'var(--danger)' : ''">{{ checkNoteSummary.overdueCount }}</h2>
+                </div>
+                <div class="kpi-icon" data-color="warning"><span class="material-icons-outlined">warning</span></div>
+            </div>
+        </div>
+        <div class="kpi-card card">
+            <div class="kpi-header">
+                <div>
+                    <p class="kpi-label">Bekleyen Teklifler</p>
+                    <h2 class="kpi-value">{{ pendingQuoteCount }}</h2>
+                </div>
+                <div class="kpi-icon" data-color="info"><span class="material-icons-outlined">request_quote</span></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Low Stock Alerts -->
+    @if (lowStockItems.length > 0) {
+    <div class="section">
+        <div class="section-header">
+            <h3 class="section-title" style="color: var(--warning)">
+                <span class="material-icons-outlined" style="vertical-align: middle; font-size: 20px; margin-right: 4px;">warning</span>
+                Kritik Stok Uyarısı ({{ lowStockItems.length }} ürün)
+            </h3>
+            <a routerLink="/reports" class="btn btn-ghost btn-sm">Stok Raporu</a>
+        </div>
+        <div class="card table-card">
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Ürün</th>
+                            <th>Mevcut Stok</th>
+                            <th>Kritik Seviye</th>
+                            <th>Depo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @for (item of lowStockItems; track item.name) {
+                        <tr>
+                            <td class="font-medium">{{ item.name }}</td>
+                            <td>
+                                <span class="badge badge-danger">{{ item.balance }} {{ item.unit }}</span>
+                            </td>
+                            <td class="text-muted">{{ item.critical }} {{ item.unit }}</td>
+                            <td class="text-muted">{{ item.warehouse }}</td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    }
+
     <!-- Recent Orders -->
     <div class="section">
         <div class="section-header">

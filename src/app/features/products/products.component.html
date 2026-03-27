@@ -1,384 +1,556 @@
 <div class="page-container">
-    <div class="page-header">
-        <div>
-            <h1 class="page-title">
-                <span class="material-icons-outlined page-title-icon"
-                    style="color: var(--primary-400);">inventory_2</span>
-                Ürünler
-            </h1>
-            <p class="page-subtitle">Ürün kataloğunuzu yönetin</p>
-        </div>
-        <div class="page-header-actions">
-            <button class="btn btn-secondary" (click)="openExcelModal()">
-                <span class="material-icons-outlined">upload_file</span>
-                Excel Yükle
-            </button>
-            <button class="btn btn-primary" (click)="openAddModal()">
-                <span class="material-icons-outlined">add</span>
-                Yeni Ürün
-            </button>
-        </div>
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">
+        <span class="material-icons-outlined page-title-icon" style="color: var(--primary-400)">inventory_2</span>
+        Urunler
+      </h1>
+      <p class="page-subtitle">Urun katalogunuzu yonetin</p>
+    </div>
+    <div class="page-header-actions">
+      <button class="btn btn-secondary" (click)="openExcelModal()">
+        <span class="material-icons-outlined">upload_file</span>
+        Excel Yukle
+      </button>
+      <button class="btn btn-secondary" (click)="openBarcodeModal()">
+        <span class="material-icons-outlined">qr_code_2</span>
+        Barkod Yazdır
+      </button>
+      <button class="btn btn-primary" (click)="openAddModal()">
+        <span class="material-icons-outlined">add</span>
+        Yeni Urun
+      </button>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon" style="background: rgba(76, 110, 245, 0.12); color: var(--primary-400)">
+        <span class="material-icons-outlined">inventory_2</span>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ products().length }}</span>
+        <span class="stat-label">Toplam Urun</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background: var(--success-bg); color: var(--success)">
+        <span class="material-icons-outlined">check_circle</span>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ activeCount }}</span>
+        <span class="stat-label">Aktif Urun</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background: var(--warning-bg); color: var(--warning)">
+        <span class="material-icons-outlined">category</span>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ categories.length }}</span>
+        <span class="stat-label">Kategori</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-search-section">
+    <div class="hero-search-bar" [class.search-active]="searchTerm">
+      <span class="material-icons-outlined hero-search-icon">search</span>
+      <input
+        type="text"
+        class="hero-search-input"
+        placeholder="Urun adi, kod, barkod veya kategori ara..."
+        [(ngModel)]="searchTerm"
+        (input)="onSearchInput()"
+        id="product-search-input"
+      />
+
+      @if (isSearching()) {
+        <div class="search-spinner"></div>
+      }
+
+      @if (searchTerm) {
+        <button class="search-clear-btn" (click)="clearSearch()" title="Aramayi Temizle">
+          <span class="material-icons-outlined">close</span>
+        </button>
+      }
+
+      <button class="barcode-scan-btn" (click)="openBarcodeScanner()" title="Barkod Tara">
+        <span class="material-icons-outlined">qr_code_scanner</span>
+        <span class="barcode-scan-text">Barkod Tara</span>
+      </button>
     </div>
 
-    <!-- Stats -->
-    <div class="stats-row">
-        <div class="stat-card">
-            <div class="stat-icon" style="background: rgba(76, 110, 245, 0.12); color: var(--primary-400);">
-                <span class="material-icons-outlined">inventory_2</span>
-            </div>
-            <div class="stat-info">
-                <span class="stat-value">{{ products().length }}</span>
-                <span class="stat-label">Toplam Ürün</span>
-            </div>
+    <div class="filter-chips-row">
+      <div class="filter-chips">
+        <button class="filter-chip" [class.chip-active]="categoryFilter() === 'all'" (click)="categoryFilter.set('all')">
+          Tumu
+          <span class="chip-count">{{ products().length }}</span>
+        </button>
+        @for (cat of categories; track cat) {
+          <button class="filter-chip" [class.chip-active]="categoryFilter() === cat" (click)="categoryFilter.set(cat)">
+            {{ cat }}
+          </button>
+        }
+      </div>
+
+      @if (debouncedTerm() || categoryFilter() !== 'all') {
+        <div class="search-result-badge">
+          <span class="material-icons-outlined">filter_list</span>
+          <strong>{{ filteredProducts.length }}</strong> sonuc bulundu
         </div>
-        <div class="stat-card">
-            <div class="stat-icon" style="background: var(--success-bg); color: var(--success);">
-                <span class="material-icons-outlined">check_circle</span>
-            </div>
-            <div class="stat-info">
-                <span class="stat-value">{{ activeCount }}</span>
-                <span class="stat-label">Aktif Ürün</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon" style="background: var(--warning-bg); color: var(--warning);">
-                <span class="material-icons-outlined">category</span>
-            </div>
-            <div class="stat-info">
-                <span class="stat-value">{{ categories.length }}</span>
-                <span class="stat-label">Kategori</span>
-            </div>
-        </div>
+      }
     </div>
+  </div>
 
-    <!-- ═══ HERO SEARCH BAR ═══════════════════════════════ -->
-    <div class="hero-search-section">
-        <div class="hero-search-bar" [class.search-active]="searchTerm">
-            <span class="material-icons-outlined hero-search-icon">search</span>
-            <input type="text" class="hero-search-input" placeholder="Ürün adı, barkod veya kategori ara..."
-                [(ngModel)]="searchTerm" (input)="onSearchInput()" id="product-search-input" />
-
-            <!-- Loading spinner while debouncing -->
-            @if (isSearching()) {
-            <div class="search-spinner"></div>
-            }
-
-            <!-- Clear button -->
-            @if (searchTerm) {
-            <button class="search-clear-btn" (click)="clearSearch()" title="Aramayı Temizle">
-                <span class="material-icons-outlined">close</span>
-            </button>
-            }
-
-            <!-- Barcode Scanner Button (inside search bar) -->
-            <button class="barcode-scan-btn" (click)="openBarcodeScanner()" title="Barkod Tara">
-                <span class="material-icons-outlined">qr_code_scanner</span>
-                <span class="barcode-scan-text">Barkod Tara</span>
-            </button>
-        </div>
-
-        <!-- Filter chips row -->
-        <div class="filter-chips-row">
-            <div class="filter-chips">
-                <button class="filter-chip" [class.chip-active]="categoryFilter() === 'all'"
-                    (click)="categoryFilter.set('all')">
-                    Tümü
-                    <span class="chip-count">{{ products().length }}</span>
-                </button>
-                @for (cat of categories; track cat) {
-                <button class="filter-chip" [class.chip-active]="categoryFilter() === cat"
-                    (click)="categoryFilter.set(cat)">
-                    {{ cat }}
-                </button>
-                }
-            </div>
-
-            <!-- Result count -->
-            @if (debouncedTerm() || categoryFilter() !== 'all') {
-            <div class="search-result-badge">
-                <span class="material-icons-outlined">filter_list</span>
-                <strong>{{ filteredProducts.length }}</strong> sonuç bulundu
-            </div>
-            }
-        </div>
+  @if (isLoading()) {
+    <div class="loading-panel">
+      <div class="spinner"></div>
+      <span>Urunler yukleniyor...</span>
     </div>
-
-    <!-- Table -->
+  } @else {
     <div class="table-container">
-        <div class="table-responsive">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th class="sortable" [class.sorted]="sortColumn==='name'" (click)="sort('name')">Ürün Adı <span class="sort-icon material-icons-outlined">{{ sortColumn==='name' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
-                        <th class="sortable" [class.sorted]="sortColumn==='barcode'" (click)="sort('barcode')">Barkod <span class="sort-icon material-icons-outlined">{{ sortColumn==='barcode' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
-                        <th class="sortable" [class.sorted]="sortColumn==='categoryName'" (click)="sort('categoryName')">Kategori <span class="sort-icon material-icons-outlined">{{ sortColumn==='categoryName' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
-                        <th class="sortable" [class.sorted]="sortColumn==='unitPrice'" (click)="sort('unitPrice')">Birim Fiyat <span class="sort-icon material-icons-outlined">{{ sortColumn==='unitPrice' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
-                        <th class="sortable" [class.sorted]="sortColumn==='unit'" (click)="sort('unit')">Birim <span class="sort-icon material-icons-outlined">{{ sortColumn==='unit' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
-                        <th>Durum</th>
-                        <th>İşlemler</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (product of filteredProducts; track product.id) {
-                    <tr [class.row-inactive]="!product.isActive">
-                        <td class="font-medium" style="color: var(--text-primary);">
-                            <span [innerHTML]="highlightMatch(product.name)"></span>
-                        </td>
-                        <td>
-                            <code class="barcode-badge">
-                                <span [innerHTML]="highlightMatch(product.barcode)"></span>
-                            </code>
-                        </td>
-                        <td>
-                            <span class="category-chip">
-                                <span [innerHTML]="highlightMatch(product.categoryName)"></span>
-                            </span>
-                        </td>
-                        <td class="amount">₺{{ product.unitPrice.toLocaleString('tr-TR') }}</td>
-                        <td>{{ product.unit }}</td>
-                        <td>
-                            <span class="badge" [class.badge-success]="product.isActive"
-                                [class.badge-danger]="!product.isActive">
-                                {{ product.isActive ? 'Aktif' : 'Pasif' }}
-                            </span>
-                        </td>
-                        <td>
-                            <div class="actions-cell">
-                                <button class="action-btn edit" title="Düzenle" (click)="openEditModal(product)">
-                                    <span class="material-icons-outlined">edit</span>
-                                </button>
-                                <button class="action-btn" [title]="product.isActive ? 'Pasife Al' : 'Aktife Al'"
-                                    (click)="toggleStatus(product.id)"
-                                    [style.color]="product.isActive ? 'var(--warning)' : 'var(--success)'">
-                                    <span class="material-icons-outlined">{{ product.isActive ? 'block' : 'check_circle'
-                                        }}</span>
-                                </button>
-                                <button class="action-btn delete" title="Sil" (click)="deleteProduct(product.id)">
-                                    <span class="material-icons-outlined">delete</span>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                    }
-                </tbody>
-            </table>
-            @if (filteredProducts.length === 0) {
-            <div class="empty-state">
-                <span class="material-icons-outlined">inventory_2</span>
-                @if (debouncedTerm() || categoryFilter() !== 'all') {
-                <h3>Sonuç bulunamadı</h3>
-                <p>"{{ debouncedTerm() }}" aramasına uygun ürün yok</p>
-                <button class="btn btn-secondary btn-sm" (click)="clearSearch(); categoryFilter.set('all')">
-                    <span class="material-icons-outlined">restart_alt</span>
-                    Filtreleri Temizle
-                </button>
-                } @else {
-                <h3>Henüz ürün yok</h3>
-                <p>Yeni bir ürün ekleyerek başlayın</p>
-                }
-            </div>
+      <div class="table-responsive">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Gorsel</th>
+              <th class="sortable" [class.sorted]="sortColumn === 'name'" (click)="sort('name')">
+                Urun Adi
+                <span class="sort-icon material-icons-outlined">{{ sortColumn === 'name' ? (sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
+              </th>
+              <th class="sortable" [class.sorted]="sortColumn === 'code'" (click)="sort('code')">
+                Kod
+                <span class="sort-icon material-icons-outlined">{{ sortColumn === 'code' ? (sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
+              </th>
+              <th class="sortable" [class.sorted]="sortColumn === 'barcode'" (click)="sort('barcode')">
+                Barkod
+                <span class="sort-icon material-icons-outlined">{{ sortColumn === 'barcode' ? (sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
+              </th>
+              <th class="sortable" [class.sorted]="sortColumn === 'categoryName'" (click)="sort('categoryName')">
+                Kategori
+                <span class="sort-icon material-icons-outlined">{{ sortColumn === 'categoryName' ? (sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
+              </th>
+              <th class="sortable" [class.sorted]="sortColumn === 'unitPrice'" (click)="sort('unitPrice')">
+                Satis Fiyati
+                <span class="sort-icon material-icons-outlined">{{ sortColumn === 'unitPrice' ? (sortDir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
+              </th>
+              <th>Birim</th>
+              <th>Durum</th>
+              <th>Islemler</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (product of filteredProducts; track product.id) {
+              <tr [class.row-inactive]="!product.isActive">
+                <td class="product-image-col">
+                  @if (product.imageUrl) {
+                    <img [src]="product.imageUrl" [alt]="product.name" class="product-thumb" loading="lazy" />
+                  } @else {
+                    <div class="product-thumb product-thumb-empty">
+                      <span class="material-icons-outlined">image</span>
+                    </div>
+                  }
+                </td>
+                <td class="font-medium" style="color: var(--text-primary)">
+                  <span [innerHTML]="highlightMatch(product.name)"></span>
+                </td>
+                <td>
+                  <code class="barcode-badge"><span [innerHTML]="highlightMatch(product.code)"></span></code>
+                </td>
+                <td>
+                  <code class="barcode-badge"><span [innerHTML]="highlightMatch(product.barcode)"></span></code>
+                </td>
+                <td>
+                  <span class="category-chip"><span [innerHTML]="highlightMatch(product.categoryName)"></span></span>
+                </td>
+                <td class="amount">{{ product.unitPrice | number:'1.2-2' }} TRY</td>
+                <td>{{ product.unit }}</td>
+                <td>
+                  <span class="badge" [class.badge-success]="product.isActive" [class.badge-danger]="!product.isActive">
+                    {{ product.isActive ? 'Aktif' : 'Pasif' }}
+                  </span>
+                </td>
+                <td>
+                  <div class="actions-cell">
+                    <input #imageInput type="file" accept="image/*" capture="environment" hidden (change)="onProductImageSelected(product, $event)" />
+                    <button class="action-btn image" title="Gorsel Yukle" (click)="imageInput.click()" [disabled]="isImageUploading(product.id)">
+                      <span class="material-icons-outlined">{{ isImageUploading(product.id) ? 'hourglass_top' : 'image' }}</span>
+                    </button>
+                    <button
+                      class="action-btn remove-image"
+                      title="Gorseli Kaldir"
+                      (click)="removeProductImage(product)"
+                      [disabled]="!product.imageUrl || isImageRemoving(product.id)"
+                    >
+                      <span class="material-icons-outlined">{{ isImageRemoving(product.id) ? 'hourglass_top' : 'image_not_supported' }}</span>
+                    </button>
+                    <button class="action-btn edit" title="Duzenle" (click)="openEditModal(product)">
+                      <span class="material-icons-outlined">edit</span>
+                    </button>
+                    <button class="action-btn" [title]="product.isActive ? 'Pasife Al' : 'Aktife Al'" (click)="toggleStatus(product)" [style.color]="product.isActive ? 'var(--warning)' : 'var(--success)'">
+                      <span class="material-icons-outlined">{{ product.isActive ? 'block' : 'check_circle' }}</span>
+                    </button>
+                    <button class="action-btn delete" title="Sil" (click)="deleteProduct(product.id)">
+                      <span class="material-icons-outlined">delete</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
             }
-        </div>
+          </tbody>
+        </table>
+
+        @if (filteredProducts.length === 0) {
+          <div class="empty-state">
+            <span class="material-icons-outlined">inventory_2</span>
+            @if (debouncedTerm() || categoryFilter() !== 'all') {
+              <h3>Sonuc bulunamadi</h3>
+              <p>Filtrelerinize uygun urun yok.</p>
+              <button class="btn btn-secondary btn-sm" (click)="clearSearch(); categoryFilter.set('all')">
+                <span class="material-icons-outlined">restart_alt</span>
+                Filtreleri Temizle
+              </button>
+            } @else {
+              <h3>Henuz urun yok</h3>
+              <p>Yeni urun ekleyerek baslayin.</p>
+            }
+          </div>
+        }
+      </div>
     </div>
+  }
 </div>
 
-<!-- ═══ Ürün Ekleme/Düzenleme Modalı ═══════════════════════ -->
 @if (showModal()) {
-<div class="overlay" (click)="closeModal()"></div>
-<div class="modal" style="width: 520px;">
+  <div class="overlay" (click)="closeModal()"></div>
+  <div class="modal" style="width: 560px">
     <div class="modal-header">
-        <h2>{{ editingProduct() ? 'Ürün Düzenle' : 'Yeni Ürün' }}</h2>
-        <button class="modal-close" (click)="closeModal()">
-            <span class="material-icons-outlined">close</span>
-        </button>
+      <h2>{{ editingProduct() ? 'Urun Duzenle' : 'Yeni Urun' }}</h2>
+      <button class="modal-close" (click)="closeModal()">
+        <span class="material-icons-outlined">close</span>
+      </button>
     </div>
     <div class="modal-form">
+      <div class="form-row">
         <div class="form-group">
-            <label class="form-label">Ürün Adı</label>
-            <input class="form-input" [(ngModel)]="formData.name" placeholder="Ürün adı" />
-        </div>
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label">Barkod</label>
-                <input class="form-input" [(ngModel)]="formData.barcode" placeholder="Barkod numarası" />
-            </div>
-            <div class="form-group">
-                <label class="form-label">Kategori</label>
-                <input class="form-input" [(ngModel)]="formData.categoryName" placeholder="Kategori" />
-            </div>
-        </div>
-        <div class="form-row">
-            <div class="form-group">
-                <label class="form-label">Birim Fiyat (₺)</label>
-                <input class="form-input" type="number" [(ngModel)]="formData.unitPrice" />
-            </div>
-            <div class="form-group">
-                <label class="form-label">Birim</label>
-                <input class="form-input" [(ngModel)]="formData.unit" placeholder="Adet, Kg, Lt..." />
-            </div>
+          <label class="form-label">Urun Kodu</label>
+          <input class="form-input" [(ngModel)]="formData.code" placeholder="Orn: PRD-1001" />
         </div>
         <div class="form-group">
-            <label class="form-label">Açıklama</label>
-            <input class="form-input" [(ngModel)]="formData.description" placeholder="Açıklama (opsiyonel)" />
+          <label class="form-label">Urun Adi</label>
+          <input class="form-input" [(ngModel)]="formData.name" placeholder="Urun adi" />
         </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Barkod</label>
+          <input class="form-input" [(ngModel)]="formData.barcode" placeholder="EAN-13" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kategori</label>
+          <input class="form-input" [(ngModel)]="formData.categoryName" placeholder="Kategori" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Satis Fiyati (TRY)</label>
+          <input class="form-input" type="number" [(ngModel)]="formData.unitPrice" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Birim</label>
+          <input class="form-input" [(ngModel)]="formData.unit" placeholder="EA, KG, LT" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Aciklama</label>
+        <input class="form-input" [(ngModel)]="formData.description" placeholder="Opsiyonel aciklama" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Kritik Stok Seviyesi</label>
+          <input class="form-input" type="number" min="0" [(ngModel)]="formData.criticalStockLevel" placeholder="1" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Minimum Stok (opsiyonel)</label>
+          <input class="form-input" type="number" min="0" [(ngModel)]="formData.minimumStockLevel" placeholder="Bos birakilabilir" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Urun Gorseli</label>
+        <div class="modal-image-actions">
+          <input #modalImageInput type="file" accept="image/*" hidden (change)="onModalImageSelected($event)" />
+          <input #modalCameraInput type="file" accept="image/*" capture="environment" hidden (change)="onModalImageSelected($event)" />
+          <button type="button" class="btn btn-secondary btn-sm" (click)="modalImageInput.click()">
+            <span class="material-icons-outlined">image</span>
+            Galeriden Sec
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" (click)="modalCameraInput.click()">
+            <span class="material-icons-outlined">photo_camera</span>
+            Kamera ile Cek
+          </button>
+          @if (pendingModalImageFile()) {
+            <span class="selected-file-name">{{ pendingModalImageFile()!.name }}</span>
+            <button type="button" class="btn btn-secondary btn-sm" (click)="clearModalImageSelection()">
+              <span class="material-icons-outlined">close</span>
+              Kaldir
+            </button>
+          }
+        </div>
+      </div>
+
+      @if (pendingModalImagePreview()) {
+        <div class="modal-image-preview">
+          <img [src]="pendingModalImagePreview()!" alt="Secilen urun gorseli" />
+          <span>Kayit sonrasi gorsel cloud depoya otomatik yuklenecektir.</span>
+        </div>
+      }
+
+      @if (editingProduct()?.imageUrl) {
+        <div class="modal-image-preview">
+          <img [src]="editingProduct()!.imageUrl!" alt="Urun gorseli" />
+          <span>Aktif gorsel satirdaki image butonu ile degistirilebilir.</span>
+        </div>
+      }
     </div>
     <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="closeModal()">İptal</button>
-        <button class="btn btn-primary" (click)="saveProduct()">
-            <span class="material-icons-outlined">{{ editingProduct() ? 'save' : 'add' }}</span>
-            {{ editingProduct() ? 'Güncelle' : 'Kaydet' }}
-        </button>
+      <button class="btn btn-secondary" (click)="closeModal()">Iptal</button>
+      <button class="btn btn-primary" (click)="saveProduct()" [disabled]="isSaving()">
+        @if (isSaving()) {
+          <div class="spinner spinner-sm"></div>
+          {{ isModalImageUploading() ? 'Gorsel yukleniyor...' : 'Kaydediliyor...' }}
+        } @else {
+          <span class="material-icons-outlined">{{ editingProduct() ? 'save' : 'add' }}</span>
+          {{ editingProduct() ? 'Guncelle' : 'Kaydet' }}
+        }
+      </button>
     </div>
-</div>
+  </div>
 }
 
-<!-- ═══ BARKOD TARAYICI MODALI ══════════════════════════════ -->
 @if (showBarcodeScanner()) {
-<div class="overlay" (click)="closeBarcodeScanner()"></div>
-<div class="modal barcode-modal">
+  <div class="overlay" (click)="closeBarcodeScanner()"></div>
+  <div class="modal barcode-modal">
     <div class="modal-header">
-        <h2>
-            <span class="material-icons-outlined"
-                style="color: var(--primary-400); vertical-align: middle; margin-right: 6px;">qr_code_scanner</span>
-            Barkod Okuyucu
-        </h2>
-        <button class="modal-close" (click)="closeBarcodeScanner()">
-            <span class="material-icons-outlined">close</span>
-        </button>
+      <h2>
+        <span class="material-icons-outlined" style="color: var(--primary-400); vertical-align: middle; margin-right: 6px">qr_code_scanner</span>
+        Barkod Okuyucu
+      </h2>
+      <button class="modal-close" (click)="closeBarcodeScanner()">
+        <span class="material-icons-outlined">close</span>
+      </button>
     </div>
 
     <div class="barcode-content">
-        <!-- Camera placeholder -->
-        <div class="camera-area">
-            <div class="camera-frame">
-                <div class="corner tl"></div>
-                <div class="corner tr"></div>
-                <div class="corner bl"></div>
-                <div class="corner br"></div>
-                <div class="scan-line"></div>
-            </div>
-            <p class="camera-hint">
-                <span class="material-icons-outlined">videocam</span>
-                Kamera erişimi için tarayıcı izni gerekiyor
-            </p>
-            <p class="camera-subhint">Mobil cihazınızda barkodu kameraya gösterin</p>
+      <div class="camera-area">
+        <video #barcodeVideo class="barcode-video" playsinline muted autoplay></video>
+        <div class="camera-frame">
+          <div class="corner tl"></div>
+          <div class="corner tr"></div>
+          <div class="corner bl"></div>
+          <div class="corner br"></div>
+          <div class="scan-line"></div>
         </div>
+        <p class="camera-hint" *ngIf="cameraActive()">
+          <span class="material-icons-outlined">videocam</span>
+          Kamera aktif. Barkodu cerceve icine getirin.
+        </p>
+        <p class="camera-subhint" *ngIf="cameraActive()">Mobil cihazinizda barkodu kameraya gosterin</p>
+        <p class="camera-subhint" *ngIf="!cameraActive() && !cameraError()">Kamera erisimi icin tarayici izni gerekir.</p>
+        <p class="camera-subhint text-danger" *ngIf="cameraError()">{{ cameraError() }}</p>
+      </div>
 
-        <!-- Divider -->
-        <div class="barcode-divider">
-            <span>veya</span>
-        </div>
+      <div class="barcode-divider"><span>veya</span></div>
 
-        <!-- Manual barcode input -->
-        <div class="manual-barcode-section">
-            <label class="form-label">Barkod Numarasını Yazın</label>
-            <div class="manual-barcode-input-group">
-                <span class="material-icons-outlined">keyboard</span>
-                <input class="form-input" [(ngModel)]="barcodeManualInput" placeholder="8690001234567"
-                    (keydown)="onBarcodeScanKeydown($event)" autofocus inputmode="numeric"
-                    style="font-family: 'JetBrains Mono', monospace; letter-spacing: 2px;" />
-            </div>
+      <div class="manual-barcode-section">
+        <label class="form-label">Barkod Numarasi</label>
+        <div class="manual-barcode-input-group">
+          <span class="material-icons-outlined">keyboard</span>
+          <input
+            class="form-input"
+            [(ngModel)]="barcodeManualInput"
+            placeholder="8690001234567"
+            (keydown)="onBarcodeScanKeydown($event)"
+            autofocus
+            inputmode="numeric"
+            style="font-family: 'JetBrains Mono', monospace; letter-spacing: 2px"
+          />
         </div>
+      </div>
     </div>
 
     <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="closeBarcodeScanner()">İptal</button>
-        <button class="btn btn-primary" (click)="applyBarcodeSearch()" [disabled]="!barcodeManualInput.trim()">
-            <span class="material-icons-outlined">search</span>
-            Barkod ile Ara
-        </button>
+      <button class="btn btn-secondary" (click)="closeBarcodeScanner()">Iptal</button>
+      <button class="btn btn-primary" (click)="applyBarcodeSearch()" [disabled]="!barcodeManualInput.trim() || isBarcodeChecking()">
+        <span class="material-icons-outlined">search</span>
+        {{ isBarcodeChecking() ? 'Sorgulaniyor...' : 'Barkod ile Ara' }}
+      </button>
     </div>
-</div>
+  </div>
 }
 
-<!-- Excel Upload Modal -->
-@if (showExcelUploadModal()) {
-<div class="overlay" (click)="closeExcelModal()"></div>
-<div class="modal excel-modal">
+@if (showUnknownBarcodePrompt()) {
+  <div class="overlay" (click)="cancelUnknownBarcodePrompt()"></div>
+  <div class="modal unknown-barcode-modal">
     <div class="modal-header">
-        <h2>Toplu Ürün Yükleme</h2>
-        <button class="modal-close" (click)="closeExcelModal()"><span class="material-icons-outlined">close</span></button>
+      <h2>Urun bulunamadi</h2>
+      <button class="modal-close" (click)="cancelUnknownBarcodePrompt()">
+        <span class="material-icons-outlined">close</span>
+      </button>
+    </div>
+    <div class="modal-form">
+      <p class="unknown-barcode-message">
+        <strong>{{ unknownBarcodePrompt()?.barcode }}</strong> barkodu veritabaninda bulunamadi.
+      </p>
+      <p class="unknown-barcode-sub">
+        Bu barkodla yeni urun karti olusturmak ister misiniz?
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="cancelUnknownBarcodePrompt()">Vazgec</button>
+      <button class="btn btn-primary" (click)="confirmUnknownBarcodeAsNewProduct()">
+        <span class="material-icons-outlined">add_box</span>
+        Yeni Urun Olarak Ekle
+      </button>
+    </div>
+  </div>
+}
+
+@if (showExcelUploadModal()) {
+  <div class="overlay" (click)="closeExcelModal()"></div>
+  <div class="modal excel-modal">
+    <div class="modal-header">
+      <h2>Toplu Urun Yukleme</h2>
+      <button class="modal-close" (click)="closeExcelModal()"><span class="material-icons-outlined">close</span></button>
     </div>
 
     @if (!excelFile()) {
-    <div class="excel-upload-zone"
-         (dragover)="onDragOver($event)"
-         (dragleave)="onDragLeave($event)"
-         (drop)="onDrop($event)"
-         [class.drag-over]="isDragOver()"
-         (click)="excelFileInput.click()">
+      <div
+        class="excel-upload-zone"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event)"
+        [class.drag-over]="isDragOver()"
+        (click)="excelFileInput.click()"
+      >
         <input #excelFileInput type="file" accept=".xlsx,.xls,.csv" hidden (change)="onFileSelected($event)" />
-        <div class="upload-icon-wrap">
-            <span class="material-icons-outlined">cloud_upload</span>
-        </div>
-        <p class="upload-title">Excel dosyasını sürükleyin veya tıklayın</p>
-        <p class="upload-subtitle">Desteklenen formatlar: .xlsx, .xls, .csv — Maks. 5MB</p>
-    </div>
+        <div class="upload-icon-wrap"><span class="material-icons-outlined">cloud_upload</span></div>
+        <p class="upload-title">Excel dosyasini surukleyin veya tiklayin</p>
+        <p class="upload-subtitle">Desteklenen formatlar: .xlsx, .xls, .csv - Maks. 5MB</p>
+      </div>
     } @else {
-    <div class="excel-file-info">
-        <div class="file-icon-wrap">
-            <span class="material-icons-outlined">description</span>
-        </div>
+      <div class="excel-file-info">
+        <div class="file-icon-wrap"><span class="material-icons-outlined">description</span></div>
         <div class="file-details">
-            <span class="file-name">{{ excelFile()!.name }}</span>
-            <span class="file-size">{{ formatFileSize(excelFile()!.size) }}</span>
+          <span class="file-name">{{ excelFile()!.name }}</span>
+          <span class="file-size">{{ formatFileSize(excelFile()!.size) }}</span>
         </div>
-        <button class="action-btn delete" title="Kaldır" (click)="removeExcelFile()">
-            <span class="material-icons-outlined">close</span>
+        <button class="action-btn delete" title="Kaldir" (click)="removeExcelFile()">
+          <span class="material-icons-outlined">close</span>
         </button>
-    </div>
+      </div>
     }
 
     <div class="excel-template-info">
-        <span class="material-icons-outlined">info</span>
-        <div>
-            <strong>Şablon Formatı:</strong> Excel dosyanız şu sütunları içermelidir:
-            <span class="template-cols">Ürün Adı, Barkod, Kategori, Birim Fiyat, Birim, Açıklama</span>
-        </div>
+      <span class="material-icons-outlined">info</span>
+      <div>
+        <strong>Sablon Formati:</strong> Urun Adi, Barkod, Kategori, Birim Fiyat, Birim, Aciklama
+      </div>
     </div>
 
     @if (excelResult()) {
-    <div class="excel-result" [class.has-errors]="excelResult()!.failedCount > 0">
+      <div class="excel-result" [class.has-errors]="excelResult()!.failedCount > 0">
         <div class="result-stats">
-            <div class="result-stat success">
-                <span class="material-icons-outlined">check_circle</span>
-                <span>{{ excelResult()!.createdCount }} ürün başarıyla eklendi</span>
-            </div>
-            @if (excelResult()!.failedCount > 0) {
+          <div class="result-stat success">
+            <span class="material-icons-outlined">check_circle</span>
+            <span>{{ excelResult()!.createdCount }} urun basariyla eklendi</span>
+          </div>
+          @if (excelResult()!.failedCount > 0) {
             <div class="result-stat error">
-                <span class="material-icons-outlined">error</span>
-                <span>{{ excelResult()!.failedCount }} kayıtta hata oluştu</span>
+              <span class="material-icons-outlined">error</span>
+              <span>{{ excelResult()!.failedCount }} kayitta hata olustu</span>
             </div>
-            }
+          }
         </div>
         @if (excelResult()!.errors && excelResult()!.errors!.length > 0) {
-        <div class="result-errors">
+          <div class="result-errors">
             @for (err of excelResult()!.errors!; track err) {
-            <div class="result-error-item">
+              <div class="result-error-item">
                 <span class="material-icons-outlined">warning</span>
                 {{ err }}
-            </div>
+              </div>
             }
-        </div>
+          </div>
         }
-    </div>
+      </div>
     }
 
     <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="closeExcelModal()">
-            {{ excelResult() ? 'Kapat' : 'İptal' }}
-        </button>
-        @if (!excelResult()) {
+      <button class="btn btn-secondary" (click)="closeExcelModal()">{{ excelResult() ? 'Kapat' : 'Iptal' }}</button>
+      @if (!excelResult()) {
         <button class="btn btn-primary" [disabled]="!excelFile() || excelUploading()" (click)="uploadExcel()">
-            @if (excelUploading()) {
+          @if (excelUploading()) {
             <div class="spinner spinner-sm"></div>
-            Yükleniyor...
-            } @else {
+            Yukleniyor...
+          } @else {
             <span class="material-icons-outlined">upload</span>
-            Yükle
-            }
+            Yukle
+          }
         </button>
-        }
+      }
     </div>
+  </div>
+}
+
+<!-- ─── Barkod Yazdırma Modalı ─────────────────────────────── -->
+@if (showBarcodeModal()) {
+<div class="overlay" (click)="closeBarcodeModal()"></div>
+<div class="modal modal-wide">
+  <div class="modal-header">
+    <h2><span class="material-icons-outlined" style="color: var(--primary-400);">qr_code_2</span> Barkod Etiket Yazdır</h2>
+    <button class="modal-close" (click)="closeBarcodeModal()"><span class="material-icons-outlined">close</span></button>
+  </div>
+  <div class="modal-form">
+    <div class="barcode-toolbar">
+      <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+        <button class="btn btn-secondary btn-sm" (click)="selectAllBarcodes()">
+          <span class="material-icons-outlined">select_all</span> Tümünü Seç
+        </button>
+        <button class="btn btn-secondary btn-sm" (click)="clearBarcodeSelection()">
+          <span class="material-icons-outlined">deselect</span> Seçimi Temizle
+        </button>
+        <span class="text-muted" style="font-size: 0.875rem;">{{ barcodeSelection().size }} ürün seçili</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <label class="form-label" style="margin: 0; white-space: nowrap;">Her ürün için etiket sayısı:</label>
+        <input class="form-input" type="number" [(ngModel)]="barcodeLabelCount" min="1" max="99" style="width: 70px;" />
+      </div>
+    </div>
+
+    <div class="barcode-product-list">
+      @for (p of filteredProducts; track p.id) {
+      <div class="barcode-product-row" [class.selected]="isBarcodeSelected(p.id)" (click)="p.barcode && toggleBarcodeProduct(p.id)">
+        <input type="checkbox" [checked]="isBarcodeSelected(p.id)" [disabled]="!p.barcode" (click)="$event.stopPropagation()" (change)="toggleBarcodeProduct(p.id)" />
+        <div class="bp-info">
+          <span class="bp-name">{{ p.name }}</span>
+          @if (p.barcode) {
+          <span class="bp-barcode">{{ p.barcode }}</span>
+          } @else {
+          <span class="text-muted" style="font-size: 0.75rem;">Barkod yok</span>
+          }
+        </div>
+        <span class="bp-price">₺{{ p.unitPrice.toLocaleString('tr-TR') }}</span>
+      </div>
+      }
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" (click)="closeBarcodeModal()">İptal</button>
+    <button class="btn btn-primary" (click)="printBarcodes()" [disabled]="barcodeSelection().size === 0">
+      <span class="material-icons-outlined">print</span>
+      {{ barcodeSelection().size > 0 ? barcodeSelection().size + ' Ürün Yazdır' : 'Yazdır' }}
+    </button>
+  </div>
 </div>
 }

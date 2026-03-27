@@ -2,66 +2,66 @@ import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
+import { ToastService } from '../../core/services/toast.service';
+import { ConfirmService } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import {
-    CurrentUserDto, UpdateProfileRequest,
-    TwoFactorStatusDto, TwoFactorSetupDto,
-    NotificationPreferencesDto, ActiveSessionDto
+    CurrentUserDto,
+    TwoFactorSetupResponse,
+    NotificationPreferences,
+    ActiveSession
 } from '../../core/models/user.model';
-
-type ProfileTab = 'account' | '2fa' | 'notifications' | 'sessions';
 
 @Component({
     selector: 'app-profile',
     standalone: true,
     imports: [CommonModule, FormsModule],
     templateUrl: './profile.component.html',
-    styleUrls: ['./profile.component.css']
+    styleUrls: ['./profile.component.css', '../../shared/styles/crud-page.css']
 })
 export class ProfileComponent implements OnInit {
     private authService = inject(AuthService);
+    private toastService = inject(ToastService);
+    private confirmService = inject(ConfirmService);
 
-    activeTab = signal<ProfileTab>('account');
+    // ─── Genel State ─────────────────────────────────────────────
     profile = signal<CurrentUserDto | null>(null);
     loading = signal(true);
+    activeTab = signal<'account' | 'security' | 'notifications' | 'sessions'>('account');
 
-    // ─── Şifre Değiştir ────────────────────────────────────
+    // ─── Şifre Değiştirme ────────────────────────────────────────
     pwForm = { current: '', next: '', confirm: '' };
     pwLoading = signal(false);
     pwSuccess = signal('');
     pwError = signal('');
 
-    // ─── Profil Düzenle ────────────────────────────────────
-    editMode = signal(false);
-    editForm: UpdateProfileRequest = { userName: '', email: '' };
-    editLoading = signal(false);
-    editSuccess = signal('');
-    editError = signal('');
+    // ─── 2FA ─────────────────────────────────────────────────────
+    twoFactorEnabled = signal(false);
+    twoFactorLoading = signal(false);
+    twoFactorSetup = signal<TwoFactorSetupResponse | null>(null);
+    twoFactorCode = '';
+    twoFactorError = signal('');
+    twoFactorSuccess = signal('');
+    showDisable2FA = signal(false);
+    disable2FACode = '';
 
-    // ─── 2FA ───────────────────────────────────────────────
-    twoFaStatus = signal<TwoFactorStatusDto | null>(null);
-    twoFaSetup = signal<TwoFactorSetupDto | null>(null);
-    twoFaCode = '';
-    twoFaLoading = signal(false);
-    twoFaError = signal('');
-    twoFaSuccess = signal('');
-    showSetupModal = signal(false);
-    showDisableModal = signal(false);
-    disableCode = '';
-
-    // ─── Bildirimler ───────────────────────────────────────
-    notifPrefs = signal<NotificationPreferencesDto | null>(null);
+    // ─── Bildirim Tercihleri ─────────────────────────────────────
+    notifPrefs = signal<NotificationPreferences>({
+        emailInvoice: true,
+        emailPayment: true,
+        emailReminder: true,
+        emailMarketing: false,
+        pushEnabled: true,
+        pushOrderStatus: true,
+        pushStockAlert: true
+    });
     notifLoading = signal(false);
-    notifSaved = signal(false);
+    notifSaving = signal(false);
 
-    // ─── Oturumlar ─────────────────────────────────────────
-    sessions = signal<ActiveSessionDto[]>([]);
+    // ─── Aktif Oturumlar ─────────────────────────────────────────
+    sessions = signal<ActiveSession[]>([]);
     sessionsLoading = signal(false);
-    revokeLoading = signal<string | null>(null);
 
-    // ─── Toast ─────────────────────────────────────────────
-    toast = signal<{ msg: string; type: 'success' | 'error' } | null>(null);
-    private toastTimer: any = null;
-
+    // ─── Label Maps ──────────────────────────────────────────────
     readonly planLabels: Record<string, string> = {
         '1': 'Başlangıç', '2': 'Profesyonel', '3': 'Kurumsal',
         'Starter': 'Başlangıç', 'Pro': 'Profesyonel', 'Enterprise': 'Kurumsal'
@@ -71,21 +71,22 @@ export class ProfileComponent implements OnInit {
         'Trial': 'Deneme', 'Active': 'Aktif', 'Cancelled': 'İptal'
     };
 
+    // ─── Lifecycle ───────────────────────────────────────────────
     ngOnInit(): void {
         this.authService.getMe().subscribe({
             next: (me) => { this.profile.set(me); this.loading.set(false); },
-            error: () => this.loading.set(false)
+            error: () => { this.loading.set(false); }
         });
+        this.load2FAStatus();
+        this.loadNotificationPreferences();
     }
 
-    setTab(tab: ProfileTab): void {
+    switchTab(tab: 'account' | 'security' | 'notifications' | 'sessions'): void {
         this.activeTab.set(tab);
-        if (tab === '2fa' && !this.twoFaStatus()) this.load2FA();
-        if (tab === 'notifications' && !this.notifPrefs()) this.loadNotifications();
-        if (tab === 'sessions' && this.sessions().length === 0) this.loadSessions();
+        if (tab === 'sessions') this.loadSessions();
     }
 
-    // ─── Computed ──────────────────────────────────────────
+    // ─── Hesap Bilgileri ─────────────────────────────────────────
     get displayName(): string {
         return this.profile()?.userName || this.authService.currentUser()?.userName || '—';
     }
@@ -93,18 +94,20 @@ export class ProfileComponent implements OnInit {
         return this.profile()?.role || this.authService.currentUser()?.role || '—';
     }
     get avatarInitials(): string {
-        const name = this.profile()?.userName || '';
+        const name = this.profile()?.userName || this.authService.currentUser()?.userName || '';
         const parts = name.trim().split(/\s+/);
         if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
         return name.slice(0, 2).toUpperCase();
     }
     get planLabel(): string {
-        const p = this.profile()?.subscriptionPlan;
-        return p ? (this.planLabels[p] || p) : '—';
+        const p = this.profile();
+        if (!p?.subscriptionPlan) return '—';
+        return this.planLabels[p.subscriptionPlan] || p.subscriptionPlan;
     }
     get statusLabel(): string {
-        const s = this.profile()?.subscriptionStatus;
-        return s ? (this.statusLabels[s] || s) : '—';
+        const p = this.profile();
+        if (!p?.subscriptionStatus) return '—';
+        return this.statusLabels[p.subscriptionStatus] || p.subscriptionStatus;
     }
     get statusClass(): string {
         const s = this.profile()?.subscriptionStatus || '';
@@ -113,204 +116,221 @@ export class ProfileComponent implements OnInit {
         return 'cancelled';
     }
 
-    // ─── Profil Düzenleme ──────────────────────────────────
-    startEdit(): void {
-        const p = this.profile();
-        this.editForm = { userName: p?.userName || '', email: p?.email || '' };
-        this.editError.set('');
-        this.editSuccess.set('');
-        this.editMode.set(true);
-    }
-
-    cancelEdit(): void {
-        this.editMode.set(false);
-    }
-
-    saveEdit(): void {
-        this.editError.set('');
-        if (!this.editForm.userName || !this.editForm.email) {
-            this.editError.set('Kullanıcı adı ve e-posta zorunludur.');
-            return;
-        }
-        this.editLoading.set(true);
-        this.authService.updateProfile(this.editForm).subscribe({
-            next: () => {
-                this.editLoading.set(false);
-                this.editMode.set(false);
-                this.authService.getMe().subscribe(me => this.profile.set(me));
-                this.showToast('Profil güncellendi', 'success');
-            },
-            error: (err) => {
-                this.editLoading.set(false);
-                this.editError.set(err.error?.detail || 'Güncellenemedi.');
-            }
-        });
-    }
-
-    // ─── Şifre Değiştir ────────────────────────────────────
+    // ─── Şifre Değiştirme ────────────────────────────────────────
     changePassword(): void {
         this.pwError.set('');
         this.pwSuccess.set('');
+
         if (!this.pwForm.current || !this.pwForm.next || !this.pwForm.confirm) {
-            this.pwError.set('Tüm alanlar zorunludur.'); return;
+            this.pwError.set('Tüm alanlar zorunludur.');
+            return;
         }
         if (this.pwForm.next !== this.pwForm.confirm) {
-            this.pwError.set('Yeni şifreler eşleşmiyor.'); return;
+            this.pwError.set('Yeni şifreler eşleşmiyor.');
+            return;
         }
         if (this.pwForm.next.length < 6) {
-            this.pwError.set('En az 6 karakter olmalıdır.'); return;
+            this.pwError.set('Yeni şifre en az 6 karakter olmalıdır.');
+            return;
         }
+
         this.pwLoading.set(true);
-        this.authService.changePassword({ currentPassword: this.pwForm.current, newPassword: this.pwForm.next }).subscribe({
+        this.authService.changePassword({
+            currentPassword: this.pwForm.current,
+            newPassword: this.pwForm.next
+        }).subscribe({
             next: () => {
-                this.pwSuccess.set('Şifre başarıyla güncellendi.');
+                this.pwSuccess.set('Şifreniz başarıyla güncellendi.');
                 this.pwForm = { current: '', next: '', confirm: '' };
                 this.pwLoading.set(false);
             },
             error: (err) => {
-                this.pwError.set(err.error?.detail || 'Mevcut şifrenizi kontrol edin.');
+                this.pwError.set(err.error?.detail || 'Şifre güncellenemedi. Mevcut şifrenizi kontrol edin.');
                 this.pwLoading.set(false);
             }
         });
     }
 
-    // ─── 2FA ───────────────────────────────────────────────
-    load2FA(): void {
+    // ─── 2FA ─────────────────────────────────────────────────────
+    private load2FAStatus(): void {
         this.authService.getTwoFactorStatus().subscribe({
-            next: s => this.twoFaStatus.set(s),
+            next: (status) => this.twoFactorEnabled.set(status.isEnabled),
             error: () => {}
         });
     }
 
-    openSetup(): void {
-        this.twoFaCode = '';
-        this.twoFaError.set('');
-        this.twoFaSuccess.set('');
-        this.twoFaLoading.set(true);
+    start2FASetup(): void {
+        this.twoFactorLoading.set(true);
+        this.twoFactorError.set('');
+        this.twoFactorSuccess.set('');
+        this.twoFactorCode = '';
+
         this.authService.setupTwoFactor().subscribe({
-            next: (data) => {
-                this.twoFaSetup.set(data);
-                this.twoFaLoading.set(false);
-                this.showSetupModal.set(true);
-            },
-            error: () => {
-                this.twoFaLoading.set(false);
-                this.twoFaError.set('Kurulum başlatılamadı.');
-            }
-        });
-    }
-
-    enable2FA(): void {
-        if (!this.twoFaCode || this.twoFaCode.length < 6) {
-            this.twoFaError.set('6 haneli kod gerekli.'); return;
-        }
-        this.twoFaLoading.set(true);
-        this.twoFaError.set('');
-        this.authService.enableTwoFactor({ code: this.twoFaCode }).subscribe({
-            next: () => {
-                this.twoFaLoading.set(false);
-                this.showSetupModal.set(false);
-                this.twoFaStatus.set({ isEnabled: true, hasSecret: true });
-                this.showToast('İki faktörlü doğrulama aktif edildi', 'success');
+            next: (setup) => {
+                this.twoFactorSetup.set(setup);
+                this.twoFactorLoading.set(false);
             },
             error: (err) => {
-                this.twoFaLoading.set(false);
-                this.twoFaError.set(err.error?.detail || 'Kod doğrulanamadı.');
+                this.twoFactorError.set(err.error?.detail || '2FA kurulumu başlatılamadı.');
+                this.twoFactorLoading.set(false);
             }
         });
     }
 
-    openDisable(): void {
-        this.disableCode = '';
-        this.twoFaError.set('');
-        this.showDisableModal.set(true);
-    }
-
-    disable2FA(): void {
-        if (!this.disableCode || this.disableCode.length < 6) {
-            this.twoFaError.set('6 haneli kod gerekli.'); return;
+    confirm2FASetup(): void {
+        if (!this.twoFactorCode || this.twoFactorCode.length < 6) {
+            this.twoFactorError.set('6 haneli doğrulama kodunu girin.');
+            return;
         }
-        this.twoFaLoading.set(true);
-        this.twoFaError.set('');
-        this.authService.disableTwoFactor({ code: this.disableCode }).subscribe({
+
+        this.twoFactorLoading.set(true);
+        this.twoFactorError.set('');
+
+        this.authService.enableTwoFactor({ code: this.twoFactorCode }).subscribe({
             next: () => {
-                this.twoFaLoading.set(false);
-                this.showDisableModal.set(false);
-                this.twoFaStatus.set({ isEnabled: false, hasSecret: false });
-                this.showToast('İki faktörlü doğrulama devre dışı bırakıldı', 'success');
+                this.twoFactorEnabled.set(true);
+                this.twoFactorSetup.set(null);
+                this.twoFactorCode = '';
+                this.twoFactorSuccess.set('İki faktörlü kimlik doğrulama etkinleştirildi.');
+                this.twoFactorLoading.set(false);
+                this.toastService.success('2FA Aktif', 'İki faktörlü kimlik doğrulama etkinleştirildi.');
             },
             error: (err) => {
-                this.twoFaLoading.set(false);
-                this.twoFaError.set(err.error?.detail || 'Kod doğrulanamadı.');
+                this.twoFactorError.set(err.error?.detail || 'Doğrulama kodu yanlış. Tekrar deneyin.');
+                this.twoFactorLoading.set(false);
             }
         });
     }
 
-    // ─── Bildirimler ───────────────────────────────────────
-    loadNotifications(): void {
+    cancel2FASetup(): void {
+        this.twoFactorSetup.set(null);
+        this.twoFactorCode = '';
+        this.twoFactorError.set('');
+    }
+
+    openDisable2FA(): void {
+        this.showDisable2FA.set(true);
+        this.disable2FACode = '';
+        this.twoFactorError.set('');
+    }
+
+    cancelDisable2FA(): void {
+        this.showDisable2FA.set(false);
+        this.disable2FACode = '';
+        this.twoFactorError.set('');
+    }
+
+    confirmDisable2FA(): void {
+        if (!this.disable2FACode || this.disable2FACode.length < 6) {
+            this.twoFactorError.set('Doğrulama kodunu girin.');
+            return;
+        }
+
+        this.twoFactorLoading.set(true);
+        this.twoFactorError.set('');
+
+        this.authService.disableTwoFactor({ code: this.disable2FACode }).subscribe({
+            next: () => {
+                this.twoFactorEnabled.set(false);
+                this.showDisable2FA.set(false);
+                this.disable2FACode = '';
+                this.twoFactorSuccess.set('İki faktörlü kimlik doğrulama devre dışı bırakıldı.');
+                this.twoFactorLoading.set(false);
+                this.toastService.warning('2FA Kapalı', 'İki faktörlü kimlik doğrulama devre dışı bırakıldı.');
+            },
+            error: (err) => {
+                this.twoFactorError.set(err.error?.detail || 'Doğrulama başarısız.');
+                this.twoFactorLoading.set(false);
+            }
+        });
+    }
+
+    // ─── Bildirim Tercihleri ─────────────────────────────────────
+    private loadNotificationPreferences(): void {
         this.notifLoading.set(true);
         this.authService.getNotificationPreferences().subscribe({
-            next: (p) => { this.notifPrefs.set(p); this.notifLoading.set(false); },
-            error: () => this.notifLoading.set(false)
+            next: (prefs) => { this.notifPrefs.set(prefs); this.notifLoading.set(false); },
+            error: () => { this.notifLoading.set(false); }
         });
     }
 
-    saveNotifications(): void {
-        const prefs = this.notifPrefs();
-        if (!prefs) return;
-        this.notifLoading.set(true);
-        this.authService.updateNotificationPreferences(prefs).subscribe({
+    saveNotificationPreferences(): void {
+        this.notifSaving.set(true);
+        this.authService.updateNotificationPreferences(this.notifPrefs()).subscribe({
             next: () => {
-                this.notifLoading.set(false);
-                this.notifSaved.set(true);
-                setTimeout(() => this.notifSaved.set(false), 2500);
+                this.notifSaving.set(false);
+                this.toastService.success('Kaydedildi', 'Bildirim tercihleri güncellendi.');
             },
-            error: () => this.notifLoading.set(false)
+            error: (err) => {
+                this.notifSaving.set(false);
+                this.toastService.error('Hata', err.error?.detail || 'Bildirim tercihleri güncellenemedi.');
+            }
         });
     }
 
-    // ─── Oturumlar ─────────────────────────────────────────
+    toggleNotif(key: keyof NotificationPreferences): void {
+        this.notifPrefs.update(p => ({ ...p, [key]: !p[key] }));
+    }
+
+    // ─── Aktif Oturumlar ─────────────────────────────────────────
     loadSessions(): void {
         this.sessionsLoading.set(true);
         this.authService.getActiveSessions().subscribe({
-            next: (s) => { this.sessions.set(s); this.sessionsLoading.set(false); },
-            error: () => this.sessionsLoading.set(false)
+            next: (data) => { this.sessions.set(data); this.sessionsLoading.set(false); },
+            error: () => { this.sessionsLoading.set(false); }
         });
     }
 
-    revokeSession(id: string): void {
-        this.revokeLoading.set(id);
-        this.authService.revokeSession(id).subscribe({
+    async revokeSession(session: ActiveSession): Promise<void> {
+        const confirmed = await this.confirmService.confirm({
+            title: 'Oturumu Sonlandır',
+            message: `"${session.deviceName}" cihazındaki oturumu sonlandırmak istediğinize emin misiniz?`,
+            confirmText: 'Sonlandır',
+            type: 'danger'
+        });
+        if (!confirmed) return;
+
+        this.authService.revokeSession(session.id).subscribe({
             next: () => {
-                this.revokeLoading.set(null);
-                this.sessions.update(s => s.filter(x => x.id !== id));
-                this.showToast('Oturum sonlandırıldı', 'success');
+                this.loadSessions();
+                this.toastService.success('Sonlandırıldı', 'Oturum başarıyla kapatıldı.');
             },
-            error: () => { this.revokeLoading.set(null); this.showToast('Sonlandırılamadı', 'error'); }
+            error: (err) => this.toastService.error('Hata', err.error?.detail || 'Oturum sonlandırılamadı.')
         });
     }
 
-    revokeOthers(): void {
-        this.sessionsLoading.set(true);
+    async revokeOtherSessions(): Promise<void> {
+        const confirmed = await this.confirmService.confirm({
+            title: 'Tüm Oturumları Kapat',
+            message: 'Bu cihaz dışındaki tüm aktif oturumlar sonlandırılacak. Devam etmek istiyor musunuz?',
+            confirmText: 'Tümünü Kapat',
+            type: 'warning'
+        });
+        if (!confirmed) return;
+
         this.authService.revokeOtherSessions().subscribe({
             next: () => {
-                this.sessionsLoading.set(false);
                 this.loadSessions();
-                this.showToast('Diğer oturumlar sonlandırıldı', 'success');
+                this.toastService.success('Tamamlandı', 'Diğer tüm oturumlar kapatıldı.');
             },
-            error: () => this.sessionsLoading.set(false)
+            error: (err) => this.toastService.error('Hata', err.error?.detail || 'İşlem başarısız.')
         });
     }
 
-    formatLastActive(dt: string): string {
-        const d = new Date(dt);
-        return d.toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    sessionDeviceIcon(name: string): string {
+        const lower = name.toLowerCase();
+        if (lower.includes('mobile') || lower.includes('iphone') || lower.includes('android')) return 'smartphone';
+        if (lower.includes('tablet') || lower.includes('ipad')) return 'tablet';
+        return 'computer';
     }
 
-    // ─── Toast ─────────────────────────────────────────────
-    showToast(msg: string, type: 'success' | 'error'): void {
-        this.toast.set({ msg, type });
-        if (this.toastTimer) clearTimeout(this.toastTimer);
-        this.toastTimer = setTimeout(() => this.toast.set(null), 3000);
+    formatDate(utc: string): string {
+        if (!utc) return '—';
+        try {
+            return new Date(utc).toLocaleString('tr-TR', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+        } catch { return utc; }
     }
 }

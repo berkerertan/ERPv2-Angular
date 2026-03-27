@@ -14,10 +14,7 @@
       "Bash(# Check bootstrap-admin schema curl -s http://localhost:5058/swagger/v1/swagger.json)",
       "Bash(python3 -c \":*)",
       "Bash(python3:*)",
-      "Bash(npx ng:*)",
-      "Read(//c/Users/User/Documents/ERPv2/**)",
-      "Bash(dotnet build:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx ng:*)"
     ]
   }
 }

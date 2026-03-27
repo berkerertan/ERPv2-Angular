@@ -1,0 +1,11 @@
+.debt-section { margin-top: 24px; }
+.debt-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.debt-title { margin: 0; font-size: 16px; font-weight: 600; color: var(--text-primary); }
+.debt-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 16px; }
+.ds-item { background: var(--bg-secondary); border-radius: 8px; padding: 12px 16px; }
+.ds-label { display: block; font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; }
+.ds-value { display: block; font-size: 18px; font-weight: 700; margin-top: 2px; }
+.debt-toolbar { margin-bottom: 12px; }
+.toolbar-search { position: relative; }
+.toolbar-search .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 18px; color: var(--text-tertiary); }
+.toolbar-search input { width: 100%; padding: 8px 12px 8px 36px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; background: var(--bg-primary); color: var(--text-primary); }

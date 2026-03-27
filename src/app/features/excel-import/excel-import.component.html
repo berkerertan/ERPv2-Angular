@@ -1,0 +1,416 @@
+<div class="page-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">
+                <span class="material-icons-outlined page-title-icon" style="color: var(--success);">upload_file</span>
+                Excel / CSV Import
+            </h1>
+            <p class="page-subtitle">Toplu veri yükleme ve içe aktarma işlemleri</p>
+        </div>
+    </div>
+
+    <!-- Module Tabs -->
+    <div class="module-tabs">
+        <button class="module-tab" [class.active]="activeModule() === 'buyers-batch'" (click)="activeModule.set('buyers-batch')">
+            <span class="material-icons-outlined">groups</span>
+            <span class="module-tab-label">Toplu Alıcı Import</span>
+            <span class="module-tab-desc">Birden fazla alıcı için Excel yükle</span>
+        </button>
+        <button class="module-tab" [class.active]="activeModule() === 'single-buyer'" (click)="activeModule.set('single-buyer')">
+            <span class="material-icons-outlined">person</span>
+            <span class="module-tab-label">Tekil Alıcı Import</span>
+            <span class="module-tab-desc">Tek alıcı veresiye defteri</span>
+        </button>
+    </div>
+
+    <!-- ══════════════ BATCH BUYERS IMPORT ══════════════ -->
+    @if (activeModule() === 'buyers-batch') {
+    <div class="import-layout">
+        <div class="import-main">
+
+            <!-- Step 1: Upload -->
+            <div class="step-card">
+                <div class="step-header">
+                    <div class="step-badge">1</div>
+                    <div>
+                        <h3 class="step-title">Excel Dosyalarını Seçin</h3>
+                        <p class="step-desc">Her dosya bir alıcıya karşılık gelir. Dosya adı alıcının adı olarak kullanılır.</p>
+                    </div>
+                </div>
+
+                <!-- Drop Zone -->
+                <div class="drop-zone" [class.drag-over]="batchIsDragOver()"
+                     (dragover)="onBatchDragOver($event)"
+                     (dragleave)="onBatchDragLeave($event)"
+                     (drop)="onBatchDrop($event)">
+                    <div class="drop-zone-inner">
+                        <span class="material-icons-outlined drop-icon">cloud_upload</span>
+                        <p class="drop-title">Dosyaları buraya sürükleyin</p>
+                        <p class="drop-subtitle">veya</p>
+                        <label class="btn btn-secondary" style="cursor:pointer;">
+                            <span class="material-icons-outlined">folder_open</span>
+                            Dosya Seç
+                            <input type="file" accept=".xlsx,.xls,.csv" multiple style="display:none" (change)="onBatchFileSelected($event)" />
+                        </label>
+                        <p class="drop-hint">xlsx, xls, csv — maks. 10MB/dosya</p>
+                    </div>
+                </div>
+
+                <!-- File List -->
+                @if (batchFiles().length > 0) {
+                <div class="file-list">
+                    <div class="file-list-header">
+                        <span>{{ batchFiles().length }} dosya seçildi</span>
+                        <button class="btn-link" (click)="clearBatchFiles()">Temizle</button>
+                    </div>
+                    @for (file of batchFiles(); track file.name; let i = $index) {
+                    <div class="file-item">
+                        <div class="file-icon">
+                            <span class="material-icons-outlined">description</span>
+                        </div>
+                        <div class="file-info">
+                            <span class="file-name">{{ file.name }}</span>
+                            <span class="file-buyer-name">→ Alıcı: <strong>{{ extractBuyerName(file.name) }}</strong></span>
+                        </div>
+                        <span class="file-size">{{ formatFileSize(file.size) }}</span>
+                        <button class="file-remove" (click)="removeBatchFile(i)">
+                            <span class="material-icons-outlined">close</span>
+                        </button>
+                    </div>
+                    }
+                </div>
+                }
+            </div>
+
+            <!-- Step 2: Options -->
+            <div class="step-card">
+                <div class="step-header">
+                    <div class="step-badge">2</div>
+                    <div>
+                        <h3 class="step-title">Import Seçenekleri</h3>
+                        <p class="step-desc">Veri yükleme davranışını yapılandırın</p>
+                    </div>
+                </div>
+
+                <div class="option-row">
+                    <label class="toggle-label">
+                        <input type="checkbox" [(ngModel)]="batchReplaceExisting" class="toggle-input" />
+                        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                        <div>
+                            <span class="toggle-title">Mevcut Kayıtları Değiştir</span>
+                            <span class="toggle-hint">Açıksa, aynı alıcının eski kalemleri silinir</span>
+                        </div>
+                    </label>
+                </div>
+
+                <button class="btn-link expand-btn" (click)="showAdvancedOptions.set(!showAdvancedOptions())">
+                    <span class="material-icons-outlined" style="font-size:16px;">{{ showAdvancedOptions() ? 'expand_less' : 'expand_more' }}</span>
+                    {{ showAdvancedOptions() ? 'Gelişmiş Seçenekleri Gizle' : 'Gelişmiş Sütun Eşleme' }}
+                </button>
+
+                @if (showAdvancedOptions()) {
+                <div class="advanced-options">
+                    <p class="adv-hint">Varsayılan sütun isimlerini özelleştirin. Bırakılan alanlar için varsayılan değerler kullanılır.</p>
+                    <div class="adv-grid">
+                        <div class="form-group">
+                            <label class="form-label">Tarih Sütunu</label>
+                            <input class="form-input" [(ngModel)]="columnOptions.transactionDateColumn" placeholder="Tarih" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Malzeme Açıklaması</label>
+                            <input class="form-input" [(ngModel)]="columnOptions.materialDescriptionColumn" placeholder="Malzeme Açıklaması" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Miktar</label>
+                            <input class="form-input" [(ngModel)]="columnOptions.quantityColumn" placeholder="Miktar" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Liste Fiyatı</label>
+                            <input class="form-input" [(ngModel)]="columnOptions.listPriceColumn" placeholder="Liste Fiyatı" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Satış Fiyatı</label>
+                            <input class="form-input" [(ngModel)]="columnOptions.salePriceColumn" placeholder="Satış Fiyatı" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Toplam Tutar</label>
+                            <input class="form-input" [(ngModel)]="columnOptions.totalAmountColumn" placeholder="Toplam Tutar" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Ödeme</label>
+                            <input class="form-input" [(ngModel)]="columnOptions.paymentColumn" placeholder="Ödeme" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Kalan Bakiye</label>
+                            <input class="form-input" [(ngModel)]="columnOptions.remainingBalanceColumn" placeholder="Kalan Bakiye" />
+                        </div>
+                    </div>
+                </div>
+                }
+            </div>
+
+            <!-- Step 3: Upload -->
+            <div class="step-card">
+                <div class="step-header">
+                    <div class="step-badge">3</div>
+                    <div>
+                        <h3 class="step-title">İçe Aktar</h3>
+                        <p class="step-desc">Seçilen dosyaları sisteme yükleyin</p>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary btn-upload" (click)="uploadBatch()"
+                        [disabled]="batchFiles().length === 0 || batchUploading()">
+                    @if (batchUploading()) {
+                    <span class="spinner"></span>
+                    Yükleniyor...
+                    } @else {
+                    <span class="material-icons-outlined">upload</span>
+                    {{ batchFiles().length }} Dosyayı İçe Aktar
+                    }
+                </button>
+
+                @if (batchFiles().length === 0) {
+                <p class="upload-hint">Yüklemek için önce dosya seçin</p>
+                }
+            </div>
+
+            <!-- Result -->
+            @if (batchResult()) {
+            <div class="result-card">
+                <div class="result-header">
+                    <span class="material-icons-outlined result-icon">check_circle</span>
+                    <div>
+                        <h3>Import Tamamlandı</h3>
+                        <p class="step-desc">{{ batchResult()!.processedFiles }} / {{ batchResult()!.totalFiles }} dosya işlendi</p>
+                    </div>
+                </div>
+
+                <div class="result-stats">
+                    <div class="rstat">
+                        <span class="rstat-val success">{{ batchResult()!.totalCreatedCount }}</span>
+                        <span class="rstat-lbl">Oluşturulan Kayıt</span>
+                    </div>
+                    <div class="rstat">
+                        <span class="rstat-val" [style.color]="batchResult()!.totalFailedCount > 0 ? 'var(--danger)' : 'var(--text-muted)'">{{ batchResult()!.totalFailedCount }}</span>
+                        <span class="rstat-lbl">Başarısız</span>
+                    </div>
+                    <div class="rstat">
+                        <span class="rstat-val primary">{{ batchResult()!.createdCariCount }}</span>
+                        <span class="rstat-lbl">Yeni Alıcı</span>
+                    </div>
+                    <div class="rstat">
+                        <span class="rstat-val">{{ batchResult()!.totalRows }}</span>
+                        <span class="rstat-lbl">Toplam Satır</span>
+                    </div>
+                </div>
+
+                @if (batchResult()!.files && batchResult()!.files!.length > 0) {
+                <div class="file-results">
+                    @for (f of batchResult()!.files!; track f.fileName) {
+                    <div class="file-result-item" [ngClass]="getBatchResultClass(f)">
+                        <span class="material-icons-outlined fr-icon">
+                            {{ f.failedCount === 0 ? 'check_circle' : (f.createdCount === 0 ? 'error' : 'warning') }}
+                        </span>
+                        <div class="fr-info">
+                            <span class="fr-name">{{ f.fileName }}</span>
+                            @if (f.cariCreated) { <span class="fr-badge new">Yeni Alıcı</span> }
+                            <span class="fr-counts">{{ f.createdCount }} oluşturuldu · {{ f.failedCount }} başarısız · {{ f.totalRows }} satır</span>
+                        </div>
+                        @if (f.errors && f.errors.length > 0) {
+                        <details class="fr-errors">
+                            <summary>{{ f.errors.length }} hata</summary>
+                            @for (err of f.errors; track err) {
+                            <p class="fr-err-item">{{ err }}</p>
+                            }
+                        </details>
+                        }
+                    </div>
+                    }
+                </div>
+                }
+            </div>
+            }
+        </div>
+
+        <!-- Sidebar: Format Guide -->
+        <div class="import-sidebar">
+            <div class="guide-card">
+                <h4 class="guide-title">
+                    <span class="material-icons-outlined">info</span>
+                    Dosya Formatı
+                </h4>
+                <p class="guide-desc">Her Excel dosyası bir alıcıyı temsil eder. <strong>Dosya adı alıcının adı olarak sisteme kaydedilir.</strong></p>
+                <div class="guide-table-wrap">
+                    <table class="guide-table">
+                        <thead>
+                            <tr>
+                                <th>Sütun</th>
+                                <th>Zorunlu</th>
+                                <th>Örnek</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Tarih</td><td><span class="req">✓</span></td><td>01.01.2026</td></tr>
+                            <tr><td>Malzeme Açıklaması</td><td></td><td>iPhone 15 Pro</td></tr>
+                            <tr><td>Miktar</td><td></td><td>5</td></tr>
+                            <tr><td>Liste Fiyatı</td><td></td><td>64999</td></tr>
+                            <tr><td>Satış Fiyatı</td><td></td><td>59999</td></tr>
+                            <tr><td>Toplam Tutar</td><td><span class="req">✓</span></td><td>299995</td></tr>
+                            <tr><td>Ödeme</td><td></td><td>100000</td></tr>
+                            <tr><td>Kalan Bakiye</td><td></td><td>199995</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="guide-tip">
+                    <span class="material-icons-outlined" style="font-size:16px; color:var(--warning);">lightbulb</span>
+                    İpucu: Sütun isimlerini özelleştirmek için "Gelişmiş Sütun Eşleme" seçeneğini açın
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+
+    <!-- ══════════════ SINGLE BUYER IMPORT ══════════════ -->
+    @if (activeModule() === 'single-buyer') {
+    <div class="import-layout">
+        <div class="import-main">
+            <div class="step-card">
+                <div class="step-header">
+                    <div class="step-badge">1</div>
+                    <div>
+                        <h3 class="step-title">Alıcı Seçin</h3>
+                        <p class="step-desc">Verilerin yükleneceği cari hesabı belirleyin</p>
+                    </div>
+                </div>
+                <div class="form-group" style="max-width: 400px;">
+                    <label class="form-label">Cari Hesap *</label>
+                    <select class="form-input" [(ngModel)]="singleState.cariAccountId">
+                        <option value="">-- Alıcı Seçin --</option>
+                        @for (acc of cariAccounts(); track acc.id) {
+                        <option [value]="acc.id">{{ acc.name }} {{ acc.code ? '(' + acc.code + ')' : '' }}</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <div class="step-card">
+                <div class="step-header">
+                    <div class="step-badge">2</div>
+                    <div>
+                        <h3 class="step-title">Dosya Seçin</h3>
+                        <p class="step-desc">Alıcıya ait veresiye defterini yükleyin</p>
+                    </div>
+                </div>
+
+                @if (!singleState.file) {
+                <div class="drop-zone" [class.drag-over]="singleIsDragOver()"
+                     (dragover)="onSingleDragOver($event)"
+                     (dragleave)="onSingleDragLeave($event)"
+                     (drop)="onSingleDrop($event)">
+                    <div class="drop-zone-inner">
+                        <span class="material-icons-outlined drop-icon">upload_file</span>
+                        <p class="drop-title">Dosyayı buraya sürükleyin</p>
+                        <label class="btn btn-secondary" style="cursor:pointer; margin-top: 8px;">
+                            <span class="material-icons-outlined">folder_open</span>
+                            Dosya Seç
+                            <input type="file" accept=".xlsx,.xls,.csv" style="display:none" (change)="onSingleFileSelected($event)" />
+                        </label>
+                    </div>
+                </div>
+                } @else {
+                <div class="file-list">
+                    <div class="file-item">
+                        <div class="file-icon">
+                            <span class="material-icons-outlined">description</span>
+                        </div>
+                        <div class="file-info">
+                            <span class="file-name">{{ singleState.file.name }}</span>
+                            <span class="file-size">{{ formatFileSize(singleState.file.size) }}</span>
+                        </div>
+                        <button class="file-remove" (click)="clearSingleFile()">
+                            <span class="material-icons-outlined">close</span>
+                        </button>
+                    </div>
+                </div>
+                }
+            </div>
+
+            <div class="step-card">
+                <div class="step-header">
+                    <div class="step-badge">3</div>
+                    <div>
+                        <h3 class="step-title">İçe Aktar</h3>
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-upload" (click)="uploadSingle()"
+                        [disabled]="!singleState.file || !singleState.cariAccountId || singleState.uploading">
+                    @if (singleState.uploading) {
+                    <span class="spinner"></span>
+                    Yükleniyor...
+                    } @else {
+                    <span class="material-icons-outlined">upload</span>
+                    İçe Aktar
+                    }
+                </button>
+            </div>
+
+            @if (singleState.result) {
+            <div class="result-card">
+                <div class="result-header">
+                    <span class="material-icons-outlined result-icon">check_circle</span>
+                    <div>
+                        <h3>Import Tamamlandı</h3>
+                    </div>
+                </div>
+                <div class="result-stats">
+                    <div class="rstat"><span class="rstat-val success">{{ singleState.result.createdCount }}</span><span class="rstat-lbl">Oluşturulan</span></div>
+                    <div class="rstat"><span class="rstat-val" [style.color]="singleState.result.failedCount > 0 ? 'var(--danger)' : 'var(--text-muted)'">{{ singleState.result.failedCount }}</span><span class="rstat-lbl">Başarısız</span></div>
+                    <div class="rstat"><span class="rstat-val">{{ singleState.result.totalRows }}</span><span class="rstat-lbl">Toplam Satır</span></div>
+                </div>
+                @if (singleState.result.errors?.length > 0) {
+                <div class="result-errors">
+                    <strong>Hatalar:</strong>
+                    @for (err of singleState.result.errors; track err) {
+                    <p class="fr-err-item">{{ err }}</p>
+                    }
+                </div>
+                }
+            </div>
+            }
+        </div>
+
+        <!-- Sidebar -->
+        <div class="import-sidebar">
+            <div class="guide-card">
+                <h4 class="guide-title">
+                    <span class="material-icons-outlined">info</span>
+                    Dosya Formatı
+                </h4>
+                <p class="guide-desc">Alıcıya ait veresiye verilerini içeren Excel dosyası yükleyin.</p>
+                <div class="guide-table-wrap">
+                    <table class="guide-table">
+                        <thead>
+                            <tr>
+                                <th>Sütun</th>
+                                <th>Zorunlu</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Tarih</td><td><span class="req">✓</span></td></tr>
+                            <tr><td>Malzeme Açıklaması</td><td></td></tr>
+                            <tr><td>Miktar</td><td></td></tr>
+                            <tr><td>Liste Fiyatı</td><td></td></tr>
+                            <tr><td>Satış Fiyatı</td><td></td></tr>
+                            <tr><td>Toplam Tutar</td><td><span class="req">✓</span></td></tr>
+                            <tr><td>Ödeme</td><td></td></tr>
+                            <tr><td>Kalan Bakiye</td><td></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+</div>

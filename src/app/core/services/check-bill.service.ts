@@ -3,53 +3,69 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
-    CheckNoteDto,
-    CheckNoteDueListItemDto,
+    CheckNote,
+    CheckNoteDueListItem,
     UpsertCheckNoteRequest,
     UpdateCheckNoteStatusRequest,
     SettleCheckNoteRequest,
-    SettleCheckNoteResultDto
+    SettleCheckNoteResult
 } from '../models/check-bill.model';
 
 @Injectable({ providedIn: 'root' })
-export class CheckBillService {
-    private readonly base = `${environment.apiUrl}/api/accounting/check-notes`;
+export class CheckNoteService {
+    private readonly apiUrl = `${environment.apiUrl}/api/accounting/check-notes`;
 
     constructor(private http: HttpClient) {}
 
-    getAll(params?: { type?: number; direction?: number; status?: number }): Observable<CheckNoteDto[]> {
-        let httpParams = new HttpParams();
-        if (params?.type != null) httpParams = httpParams.set('type', params.type);
-        if (params?.direction != null) httpParams = httpParams.set('direction', params.direction);
-        if (params?.status != null) httpParams = httpParams.set('status', params.status);
-        return this.http.get<CheckNoteDto[]>(this.base, { params: httpParams });
+    /** Çek/Senet listesi (filtre parametreleriyle) */
+    getAll(params?: Record<string, any>): Observable<CheckNote[]> {
+        return this.http.get<CheckNote[]>(this.apiUrl, { params: this.buildParams(params) });
     }
 
-    getById(id: string): Observable<CheckNoteDto> {
-        return this.http.get<CheckNoteDto>(`${this.base}/${id}`);
+    /** Detay */
+    getById(id: string): Observable<CheckNote> {
+        return this.http.get<CheckNote>(`${this.apiUrl}/${id}`);
     }
 
-    getDueList(): Observable<CheckNoteDueListItemDto[]> {
-        return this.http.get<CheckNoteDueListItemDto[]>(`${this.base}/due-list`);
+    /** Yeni çek/senet — 201 Created: uuid döner */
+    create(request: UpsertCheckNoteRequest): Observable<string> {
+        return this.http.post<string>(this.apiUrl, request);
     }
 
-    create(req: UpsertCheckNoteRequest): Observable<string> {
-        return this.http.post<string>(this.base, req);
+    /** Güncelle — 204 No Content */
+    update(id: string, request: UpsertCheckNoteRequest): Observable<void> {
+        return this.http.put<void>(`${this.apiUrl}/${id}`, request);
     }
 
-    update(id: string, req: UpsertCheckNoteRequest): Observable<void> {
-        return this.http.put<void>(`${this.base}/${id}`, req);
+    /** Durum değiştir (ciro, protesto, iptal vb.) — POST */
+    changeStatus(id: string, request: UpdateCheckNoteStatusRequest): Observable<void> {
+        return this.http.post<void>(`${this.apiUrl}/${id}/status`, request);
     }
 
-    updateStatus(id: string, req: UpdateCheckNoteStatusRequest): Observable<void> {
-        return this.http.post<void>(`${this.base}/${id}/status`, req);
+    /** Tahsilat / ödeme tamamla — POST */
+    settle(id: string, request: SettleCheckNoteRequest): Observable<SettleCheckNoteResult> {
+        return this.http.post<SettleCheckNoteResult>(`${this.apiUrl}/${id}/settle`, request);
     }
 
-    settle(id: string, req: SettleCheckNoteRequest): Observable<SettleCheckNoteResultDto> {
-        return this.http.post<SettleCheckNoteResultDto>(`${this.base}/${id}/settle`, req);
+    /** Vadesi yaklaşanlar listesi */
+    getDueList(params?: Record<string, any>): Observable<CheckNoteDueListItem[]> {
+        return this.http.get<CheckNoteDueListItem[]>(`${this.apiUrl}/due-list`, { params: this.buildParams(params) });
     }
 
+    /** Sil — 204 No Content */
     delete(id: string): Observable<void> {
-        return this.http.delete<void>(`${this.base}/${id}`);
+        return this.http.delete<void>(`${this.apiUrl}/${id}`);
+    }
+
+    private buildParams(params?: Record<string, any>): HttpParams {
+        let httpParams = new HttpParams();
+        if (!params) return httpParams;
+        Object.keys(params).forEach(key => {
+            const value = params[key];
+            if (value !== undefined && value !== null && value !== '') {
+                httpParams = httpParams.set(key, value.toString());
+            }
+        });
+        return httpParams;
     }
 }

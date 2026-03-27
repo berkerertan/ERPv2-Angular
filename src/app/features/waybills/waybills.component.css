@@ -1,0 +1,3 @@
+/* Waybills — component-specific overrides */
+.badge-info   { background: rgba(76,110,245,0.15); color: var(--primary-400); }
+.badge-purple { background: rgba(138,43,226,0.12); color: #a855f7; }

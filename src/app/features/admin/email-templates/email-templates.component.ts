@@ -1,6 +1,7 @@
-import { Component, OnInit, OnDestroy, signal, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, inject, SecurityContext } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { PlatformAdminService } from '../../../core/services/platform-admin.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmService } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -30,6 +31,29 @@ const TEMPLATE_VARS: Record<string, string[]> = {
 };
 const COMMON_VARS = ['{{TenantName}}', '{{TenantCode}}', '{{RecipientEmail}}'];
 
+/** Önizleme için örnek değerler — tüm bilinen değişkenleri kapsar */
+const SAMPLE_VALUES: Record<string, string> = {
+    '{{TenantName}}':          'Örnek Şirket A.Ş.',
+    '{{TenantCode}}':          'ornek-sirket',
+    '{{RecipientEmail}}':      'demo@erp.local',
+    '{{LoginUrl}}':            'https://app.erp.local/login',
+    '{{Plan}}':                'Profesyonel',
+    '{{SubscriptionStatus}}':  'Aktif',
+    '{{SubscriptionEndDate}}': '31.03.2026',
+    '{{InvoiceNo}}':           'INV-2026-0042',
+    '{{InvoiceDate}}':         '25.03.2026',
+    '{{Amount}}':              '₺1.499,00',
+    '{{InvoiceUrl}}':          'https://app.erp.local/invoices/42',
+    '{{DueDate}}':             '01.04.2026',
+    '{{DaysLeft}}':            '7',
+    '{{PaymentUrl}}':          'https://app.erp.local/payment',
+    '{{PlanName}}':            'Profesyonel',
+    '{{ExpiryDate}}':          '31.03.2026',
+    '{{RenewalUrl}}':          'https://app.erp.local/renew',
+    '{{ResetLink}}':           'https://app.erp.local/reset?token=abc123xyz',
+    '{{ExpiryHours}}':         '24',
+};
+
 export type EmailTab = 'templates' | 'builder' | 'campaigns' | 'logs';
 
 @Component({
@@ -40,24 +64,32 @@ export type EmailTab = 'templates' | 'builder' | 'campaigns' | 'logs';
     styleUrl: './email-templates.component.css'
 })
 export class EmailTemplatesComponent implements OnInit, OnDestroy {
-    private svc     = inject(PlatformAdminService);
-    private toast   = inject(ToastService);
-    private confirm = inject(ConfirmService);
+    private svc       = inject(PlatformAdminService);
+    private toast     = inject(ToastService);
+    private confirm   = inject(ConfirmService);
+    private sanitizer = inject(DomSanitizer);
 
     // ─── Tab ──────────────────────────────────────────────────────────
     activeTab = signal<EmailTab>('templates');
 
     // ─── Templates ────────────────────────────────────────────────────
-    templates        = signal<EmailTemplateDto[]>([]);
+    templates          = signal<EmailTemplateDto[]>([]);
     isLoadingTemplates = signal(false);
-    templateError    = signal<string | null>(null);
-    selectedTemplate = signal<EmailTemplateDto | null>(null);
-    showEditPanel    = signal(false);
-    isSaving         = signal(false);
+    templateError      = signal<string | null>(null);
+    selectedTemplate   = signal<EmailTemplateDto | null>(null);
+    showEditPanel      = signal(false);
+    isSaving           = signal(false);
     // edit form (regular props for ngModel)
     editSubject  = '';
     editBodyHtml = '';
     editIsActive = true;
+
+    // ─── Preview Modal ────────────────────────────────────────────────
+    showPreviewModal  = signal(false);
+    isLoadingPreview  = signal(false);
+    previewTemplate   = signal<EmailTemplateDto | null>(null);
+    previewSubject    = signal('');
+    previewBodySafe   = signal<SafeHtml>('');
 
     // ─── Campaign Builder ─────────────────────────────────────────────
     bName              = '';
@@ -118,6 +150,12 @@ export class EmailTemplatesComponent implements OnInit, OnDestroy {
         if (this._logDebounce) clearTimeout(this._logDebounce);
     }
 
+    /** XSS koruması — HTML önizleme içeriğini sanitize eder */
+    get sanitizedBodyHtml(): string {
+        const raw = this.editBodyHtml || '<span style="opacity:.4">İçerik yok</span>';
+        return this.sanitizer.sanitize(SecurityContext.HTML, raw) || '';
+    }
+
     // ─── Tab ──────────────────────────────────────────────────────────
 
     switchTab(tab: EmailTab): void {
@@ -159,19 +197,10 @@ export class EmailTemplatesComponent implements OnInit, OnDestroy {
         });
     }
 
-    // Backend bodyHtml veya body field'ı kullanabilir
-    templateBody(t: EmailTemplateDto): string {
-        return t.bodyHtml ?? t.body ?? '';
-    }
-
-    templateUpdatedAt(t: EmailTemplateDto): string {
-        return t.updatedAtUtc ?? t.updatedAt ?? '';
-    }
-
     openEditPanel(t: EmailTemplateDto): void {
         this.selectedTemplate.set(t);
-        this.editSubject  = t.subject;
-        this.editBodyHtml = this.templateBody(t);
+        this.editSubject  = t.subjectTemplate;
+        this.editBodyHtml = t.bodyTemplate;
         this.editIsActive = t.isActive;
         this.showEditPanel.set(true);
     }
@@ -185,16 +214,23 @@ export class EmailTemplatesComponent implements OnInit, OnDestroy {
         const t = this.selectedTemplate();
         if (!t || !this.editSubject.trim()) return;
         this.isSaving.set(true);
+
+        // Profesyonel tasarımı otomatik uygula (her zaman)
+        const wrappedBody = this.generateFullEmailHtml(
+            t.key,
+            this.editBodyHtml || '<p>İçerik buraya gelecek.</p>'
+        );
+
         const req: UpdateEmailTemplateRequest = {
-            subject:  this.editSubject,
-            bodyHtml: this.editBodyHtml,
-            isActive: this.editIsActive,
+            subjectTemplate: this.editSubject,
+            bodyTemplate:    wrappedBody,
+            isActive:        this.editIsActive,
         };
         this.svc.updateEmailTemplate(t.key, req).subscribe({
             next: () => {
                 this.templates.update(list => list.map(x =>
                     x.key === t.key
-                        ? { ...x, subject: this.editSubject, bodyHtml: this.editBodyHtml, isActive: this.editIsActive, updatedAtUtc: new Date().toISOString() }
+                        ? { ...x, subjectTemplate: this.editSubject, bodyTemplate: wrappedBody, isActive: this.editIsActive, updatedAtUtc: new Date().toISOString() }
                         : x
                 ));
                 this.toast.success('Kaydedildi', `"${t.name}" şablonu güncellendi`);
@@ -210,6 +246,161 @@ export class EmailTemplatesComponent implements OnInit, OnDestroy {
 
     insertVar(v: string): void {
         this.editBodyHtml += v;
+    }
+
+    // ─── Preview Modal ─────────────────────────────────────────────────
+
+    /** Template listesindeki göz ikonuna tıklandığında — API'den taze veri çeker */
+    openPreviewFromList(t: EmailTemplateDto, event: Event): void {
+        event.stopPropagation();
+        this.previewTemplate.set(t);
+        this.showPreviewModal.set(true);
+        this.isLoadingPreview.set(true);
+
+        this.svc.getEmailTemplate(t.key).subscribe({
+            next: (data) => {
+                this.previewTemplate.set(data);
+                this.buildPreview(data.subjectTemplate, data.bodyTemplate);
+                this.isLoadingPreview.set(false);
+            },
+            error: () => {
+                // API hatası → listeden gelen önbellek veri ile devam
+                this.buildPreview(t.subjectTemplate, t.bodyTemplate);
+                this.isLoadingPreview.set(false);
+            }
+        });
+    }
+
+    /** Edit panelindeki "Önizle" butonuna tıklandığında — formun anlık değerini gösterir */
+    openPreviewFromEditor(): void {
+        if (!this.selectedTemplate()) return;
+        this.previewTemplate.set(this.selectedTemplate());
+        this.buildPreview(this.editSubject, this.editBodyHtml);
+        this.showPreviewModal.set(true);
+        this.isLoadingPreview.set(false);
+    }
+
+    closePreview(): void {
+        this.showPreviewModal.set(false);
+        this.previewTemplate.set(null);
+    }
+
+    /** Değişkenleri çözer, tam email HTML'i sarmalayarak SafeHtml üretir */
+    private buildPreview(subject: string, body: string): void {
+        this.previewSubject.set(this.resolveVars(subject));
+        const resolvedBody  = this.resolveVars(body);
+        const key           = this.previewTemplate()?.key ?? '';
+        const fullHtml      = this.generateFullEmailHtml(key, resolvedBody);
+        this.previewBodySafe.set(this.sanitizer.bypassSecurityTrustHtml(fullHtml));
+    }
+
+    /**
+     * Tüm e-postalar için kullanılan tam HTML email wrapper'ı.
+     * body parametresi sadece <body> içindeki içerik bölümüdür.
+     */
+    generateFullEmailHtml(key: string, body: string): string {
+        const titles: Record<string, string> = {
+            welcome:             'Hoş Geldiniz!',
+            invoice:             'Fatura Bilgilendirmesi',
+            reminder:            'Ödeme Hatırlatması',
+            subscription_expiry: 'Abonelik Bitiyor',
+            password_reset:      'Şifre Sıfırlama',
+        };
+        const headerTitle = titles[key] ?? 'Bilgilendirme';
+        const isEmpty = !body?.trim();
+
+        return `<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${headerTitle}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f0f2f8;font-family:Arial,Helvetica,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" border="0"
+       style="background-color:#f0f2f8;padding:40px 16px">
+  <tr><td align="center">
+    <table width="600" cellpadding="0" cellspacing="0" border="0"
+           style="max-width:600px;width:100%;background:#ffffff;
+                  border-radius:16px;overflow:hidden;
+                  box-shadow:0 4px 24px rgba(0,0,0,0.10)">
+
+      <!-- HEADER -->
+      <tr>
+        <td style="background:linear-gradient(135deg,#4c6ef5 0%,#6d44e8 100%);
+                   padding:36px 48px;text-align:center">
+          <div style="font-size:28px;font-weight:800;color:#ffffff;
+                      letter-spacing:-1px;font-family:Arial,sans-serif">
+            ERP<span style="opacity:0.55">v2</span>
+          </div>
+          <div style="color:rgba(255,255,255,0.72);font-size:13px;
+                      margin-top:6px;letter-spacing:0.3px">
+            Kurumsal Yönetim Sistemi
+          </div>
+        </td>
+      </tr>
+
+      <!-- TITLE BAR -->
+      <tr>
+        <td style="background:#fafbff;padding:20px 48px 16px;
+                   border-bottom:2px solid #eef0fb">
+          <p style="margin:0;font-size:20px;font-weight:700;
+                    color:#1e2433;letter-spacing:-0.3px">${headerTitle}</p>
+        </td>
+      </tr>
+
+      <!-- BODY CONTENT -->
+      <tr>
+        <td style="padding:32px 48px 28px;color:#374151;
+                   font-size:15px;line-height:1.8">
+          ${isEmpty
+              ? '<p style="color:#aaa;text-align:center;padding:20px 0">İçerik henüz eklenmedi.</p>'
+              : body}
+        </td>
+      </tr>
+
+      <!-- DIVIDER -->
+      <tr>
+        <td style="padding:0 48px">
+          <div style="height:1px;background:#eef0fb"></div>
+        </td>
+      </tr>
+
+      <!-- FOOTER -->
+      <tr>
+        <td style="background:#f8f9ff;padding:24px 48px 32px;
+                   text-align:center">
+          <p style="margin:0 0 6px;font-size:12px;color:#9ca3af">
+            Bu e-posta ERPv2 Platformu tarafından otomatik olarak gönderilmiştir.
+          </p>
+          <p style="margin:0 0 16px;font-size:12px;color:#9ca3af">
+            Yardım için
+            <a href="mailto:destek@erp.local"
+               style="color:#4c6ef5;text-decoration:none">
+              destek@erp.local
+            </a>
+          </p>
+          <p style="margin:0;font-size:11px;color:#d1d5db">
+            &copy; 2026 ERPv2 &mdash; Tüm hakları saklıdır.
+          </p>
+        </td>
+      </tr>
+
+    </table>
+  </td></tr>
+</table>
+</body>
+</html>`;
+    }
+
+    /** {{Değişken}} → örnek değer */
+    private resolveVars(template: string): string {
+        if (!template) return '';
+        let result = template;
+        for (const [placeholder, value] of Object.entries(SAMPLE_VALUES)) {
+            result = result.split(placeholder).join(value);
+        }
+        return result;
     }
 
     templateVars(key: string): string[] {

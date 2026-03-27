@@ -61,7 +61,7 @@ export class SalesOrdersComponent implements OnInit {
                 totalAmount: o.totalAmount,
                 createdAt: o.orderDateUtc.split('T')[0]
             }))),
-            error: (err) => console.error('Siparişler yüklenemedi:', err.error?.detail || err.message)
+            error: () => this.toastService.error('Hata', 'Siparişler yüklenemedi.')
         });
     }
 

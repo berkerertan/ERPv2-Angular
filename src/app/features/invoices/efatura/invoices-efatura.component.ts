@@ -101,7 +101,7 @@ export class InvoicesEFaturaComponent implements OnInit {
                 grandTotal:      inv.totalAmount,
                 taxTotal:        inv.taxTotal,
             }))),
-            error: (err) => console.error('E-Fatura listesi yüklenemedi:', err.error?.detail || err.message)
+            error: () => this.toastService.error('Hata', 'E-Fatura listesi yüklenemedi.')
         });
     }
 

@@ -9,6 +9,8 @@ import { OrderStatus } from '../models/sales-order.model';
 import { StockMovementType } from '../models/stock-movement.model';
 import { FinanceMovementType } from '../models/finance-movement.model';
 import { InvoiceType, InvoiceCategory, InvoiceStatus } from '../models/invoice.model';
+import { WaybillStatus, WaybillType } from '../models/waybill.model';
+import { ReturnStatus, ReturnType } from '../models/return.model';
 
 // ── Tarih yardımcıları ────────────────────────────────────────────────────────
 const ago = (days: number): string => {
@@ -26,6 +28,9 @@ const poid = (n: number) => `00000004-0000-0000-0000-${String(n).padStart(12,'0'
 const smid = (n: number) => `00000005-0000-0000-0000-${String(n).padStart(12,'0')}`;
 const fmid = (n: number) => `00000006-0000-0000-0000-${String(n).padStart(12,'0')}`;
 const ivid = (n: number) => `00000007-0000-0000-0000-${String(n).padStart(12,'0')}`;
+const wbid = (n: number) => `00000011-0000-0000-0000-${String(n).padStart(12,'0')}`;
+const rtid = (n: number) => `00000012-0000-0000-0000-${String(n).padStart(12,'0')}`;
+const plid = (n: number) => `00000013-0000-0000-0000-${String(n).padStart(12,'0')}`;
 
 export const DEMO_WH_ID  = '00000010-0000-0000-0000-000000000001';
 export const DEMO_WH2_ID = '00000010-0000-0000-0000-000000000002';
@@ -601,3 +606,95 @@ export const DEMO_PLATFORM_OVERVIEW = {
     todayActiveUsers:            14,
     todayRequestCount:           340,
 };
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Dashboard Summary (GET /api/reports/dashboard-summary)
+// ═════════════════════════════════════════════════════════════════════════════
+export const DEMO_DASHBOARD_SUMMARY = {
+    totalSalesAmount:      11_650_000,
+    totalOrderCount:       15,
+    totalProductCount:     30,
+    totalActiveCariCount:  14,
+    totalBankBalance:      872_450,
+    totalCashBalance:      124_800,
+    overdueReceivables:    234_600,
+    overdueCheckNoteCount: 2,
+    pendingQuoteCount:     3,
+};
+
+// ═════════════════════════════════════════════════════════════════════════════
+// İRSALİYELER
+// ═════════════════════════════════════════════════════════════════════════════
+export const DEMO_WAYBILLS = [
+    { id: wbid(1), waybillNo: 'IRS-20260101-001', type: WaybillType.Outgoing,  cariAccountId: cid(1),  warehouseId: '00000010-0000-0000-0000-000000000001', status: WaybillStatus.Delivered, shipDateUtc: ago(10), deliveryAddress: 'Atatürk Cad. No:12 Kadıköy/İstanbul', totalAmount: 27500, items: [{ productId: pid(1), productName: 'Samsung 65" Neo QLED 4K', quantity: 1, unitPrice: 27500 }] },
+    { id: wbid(2), waybillNo: 'IRS-20260108-002', type: WaybillType.Outgoing,  cariAccountId: cid(3),  warehouseId: '00000010-0000-0000-0000-000000000001', status: WaybillStatus.Shipped,   shipDateUtc: ago(5),  deliveryAddress: 'Bağcılar Mah. 15. Sok. No:8 Bağcılar/İstanbul', totalAmount: 59999, items: [{ productId: pid(5), productName: 'Apple iPhone 15 Pro', quantity: 1, unitPrice: 59999 }] },
+    { id: wbid(3), waybillNo: 'IRS-20260115-003', type: WaybillType.Outgoing,  cariAccountId: cid(4),  warehouseId: '00000010-0000-0000-0000-000000000002', status: WaybillStatus.Draft,     shipDateUtc: ago(2),  deliveryAddress: 'İzmir Yolu 7. Km Nilüfer/Bursa', totalAmount: 95998, items: [{ productId: pid(6), productName: 'Samsung Galaxy S24 Ultra', quantity: 2, unitPrice: 47999 }] },
+    { id: wbid(4), waybillNo: 'IRS-20260118-004', type: WaybillType.Incoming,  cariAccountId: cid(7),  warehouseId: '00000010-0000-0000-0000-000000000001', status: WaybillStatus.Delivered, shipDateUtc: ago(7),  deliveryAddress: 'Merkez Ana Depo', totalAmount: 44000, items: [{ productId: pid(1), productName: 'Samsung 65" Neo QLED 4K', quantity: 2, unitPrice: 22000 }] },
+    { id: wbid(5), waybillNo: 'IRS-20260120-005', type: WaybillType.Outgoing,  cariAccountId: cid(2),  warehouseId: '00000010-0000-0000-0000-000000000001', status: WaybillStatus.Cancelled, shipDateUtc: ago(3),  deliveryAddress: 'Çankaya/Ankara', totalAmount: 34900, items: [{ productId: pid(2), productName: 'LG 55" OLED evo C3', quantity: 1, unitPrice: 34900 }] },
+    { id: wbid(6), waybillNo: 'IRS-20260122-006', type: WaybillType.Outgoing,  cariAccountId: cid(5),  warehouseId: '00000010-0000-0000-0000-000000000001', status: WaybillStatus.Draft,     shipDateUtc: ago(1),  deliveryAddress: 'Konak/İzmir', totalAmount: 78998, items: [{ productId: pid(9), productName: 'Apple iPad Pro 13"', quantity: 2, unitPrice: 39499 }] },
+];
+
+// ═════════════════════════════════════════════════════════════════════════════
+// İADE YÖNETİMİ
+// ═════════════════════════════════════════════════════════════════════════════
+export const DEMO_RETURNS = [
+    { id: rtid(1), returnNo: 'IAD-20260105-001', type: ReturnType.Sales,    cariAccountId: cid(1),  warehouseId: '00000010-0000-0000-0000-000000000001', status: ReturnStatus.Approved, returnDateUtc: ago(8),  reason: 'Ürün arızalı geldi', totalAmount: 27500, items: [{ productId: pid(1), productName: 'Samsung 65" Neo QLED 4K', quantity: 1, unitPrice: 27500 }] },
+    { id: rtid(2), returnNo: 'IAD-20260110-002', type: ReturnType.Purchase, cariAccountId: cid(7),  warehouseId: '00000010-0000-0000-0000-000000000001', status: ReturnStatus.Approved, returnDateUtc: ago(6),  reason: 'Yanlış ürün gönderildi', totalAmount: 22000, items: [{ productId: pid(1), productName: 'Samsung 65" Neo QLED 4K', quantity: 1, unitPrice: 22000 }] },
+    { id: rtid(3), returnNo: 'IAD-20260114-003', type: ReturnType.Sales,    cariAccountId: cid(3),  warehouseId: '00000010-0000-0000-0000-000000000001', status: ReturnStatus.Pending,  returnDateUtc: ago(4),  reason: 'Müşteri vazgeçti', totalAmount: 47999, items: [{ productId: pid(6), productName: 'Samsung Galaxy S24 Ultra', quantity: 1, unitPrice: 47999 }] },
+    { id: rtid(4), returnNo: 'IAD-20260118-004', type: ReturnType.Purchase, cariAccountId: cid(8),  warehouseId: '00000010-0000-0000-0000-000000000002', status: ReturnStatus.Pending,  returnDateUtc: ago(2),  reason: 'Hasar görmüş ürün', totalAmount: 28000, items: [{ productId: pid(2), productName: 'LG 55" OLED evo C3', quantity: 1, unitPrice: 28000 }] },
+    { id: rtid(5), returnNo: 'IAD-20260120-005', type: ReturnType.Sales,    cariAccountId: cid(4),  warehouseId: '00000010-0000-0000-0000-000000000001', status: ReturnStatus.Rejected, returnDateUtc: ago(1),  reason: 'Garanti süresi dolmuş', totalAmount: 10990, items: [{ productId: pid(4), productName: 'Philips 50" The One TV', quantity: 1, unitPrice: 10990 }] },
+];
+
+// ═════════════════════════════════════════════════════════════════════════════
+// FİYAT LİSTELERİ
+// ═════════════════════════════════════════════════════════════════════════════
+export const DEMO_PRICE_LISTS = [
+    {
+        id: plid(1), name: 'Standart Perakende', description: 'Tüm perakende müşteriler için geçerli', isActive: true,
+        startDate: '2026-01-01', endDate: '2026-12-31', discountRate: 0,
+        items: [
+            { productId: pid(1), productName: 'Samsung 65" Neo QLED 4K', originalPrice: 27500, customPrice: 27500 },
+            { productId: pid(5), productName: 'Apple iPhone 15 Pro', originalPrice: 59999, customPrice: 59999 },
+        ]
+    },
+    {
+        id: plid(2), name: 'Kurumsal Müşteri', description: 'Kurumsal alıcılara özel %10 indirimli', isActive: true,
+        startDate: '2026-01-01', endDate: '2026-12-31', discountRate: 10,
+        items: [
+            { productId: pid(1), productName: 'Samsung 65" Neo QLED 4K', originalPrice: 27500, customPrice: 24750 },
+            { productId: pid(5), productName: 'Apple iPhone 15 Pro', originalPrice: 59999, customPrice: 53999 },
+            { productId: pid(6), productName: 'Samsung Galaxy S24 Ultra', originalPrice: 47999, customPrice: 43199 },
+        ]
+    },
+    {
+        id: plid(3), name: 'Bayi Fiyat Listesi', description: 'Yetkili bayiler için %20 indirimli', isActive: true,
+        startDate: '2026-01-01', endDate: '2026-06-30', discountRate: 20,
+        items: [
+            { productId: pid(1), productName: 'Samsung 65" Neo QLED 4K', originalPrice: 27500, customPrice: 22000 },
+            { productId: pid(2), productName: 'LG 55" OLED evo C3', originalPrice: 34900, customPrice: 27920 },
+            { productId: pid(5), productName: 'Apple iPhone 15 Pro', originalPrice: 59999, customPrice: 47999 },
+        ]
+    },
+    {
+        id: plid(4), name: 'Kampanya Listesi', description: 'Yaz indirimi özel kampanya', isActive: false,
+        startDate: '2026-06-01', endDate: '2026-08-31', discountRate: 15,
+        items: [
+            { productId: pid(3), productName: 'Sony 75" BRAVIA XR X95L', originalPrice: 54900, customPrice: 46665 },
+            { productId: pid(9), productName: 'Apple iPad Pro 13"', originalPrice: 39999, customPrice: 33999 },
+        ]
+    },
+];
+
+// ═════════════════════════════════════════════════════════════════════════════
+// BİLDİRİMLER
+// ═════════════════════════════════════════════════════════════════════════════
+export const DEMO_NOTIFICATIONS = [
+    { id: '1', type: 'warning', title: 'Kritik Stok Uyarısı', message: 'Samsung 65" Neo QLED 4K — stok 2 adede düştü', isRead: false, createdAt: ago(0.1), link: '/products' },
+    { id: '2', type: 'info',    title: 'Yeni Sipariş Alındı',  message: 'Teknomax Ltd. — SS-20260128-001 no\'lu sipariş oluşturuldu', isRead: false, createdAt: ago(0.3), link: '/sales-orders' },
+    { id: '3', type: 'warning', title: 'Vadesi Geçen Çek',     message: 'Netaş Elektronik — 28.000 ₺ değerinde çek vadesi geçti', isRead: false, createdAt: ago(1), link: '/checks-bills' },
+    { id: '4', type: 'success', title: 'Ödeme Alındı',         message: 'Bilişim Dünyası A.Ş. — 47.999 ₺ ödeme kaydedildi', isRead: true,  createdAt: ago(2), link: '/finance-movements' },
+    { id: '5', type: 'info',    title: 'İrsaliye Teslim Edildi','message': 'IRS-20260118-004 no\'lu irsaliye teslim edildi', isRead: true,  createdAt: ago(3), link: '/waybills' },
+    { id: '6', type: 'danger',  title: 'İade Talebi Geldi',    message: 'Teknosa — IAD-20260114-003 iade talebi onay bekliyor', isRead: true,  createdAt: ago(4), link: '/returns' },
+    { id: '7', type: 'warning', title: 'Kritik Stok Uyarısı',  message: 'Sony 75" BRAVIA XR X95L — stok 3 adede düştü', isRead: true,  createdAt: ago(5), link: '/products' },
+    { id: '8', type: 'info',    title: 'Yeni Teklif Talebi',   message: 'İntegral Bilgisayar — fiyat teklifi talep ediyor', isRead: true,  createdAt: ago(6), link: '/quotes' },
+];

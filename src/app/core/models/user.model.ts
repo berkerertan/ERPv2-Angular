@@ -99,44 +99,56 @@ export interface SubscriptionPlanOptionDto {
     features?: string[];
 }
 
-/* ── 2FA ── */
-export interface TwoFactorStatusDto {
-    isEnabled: boolean;
-    hasSecret: boolean;
-}
+/* ─── 2FA (İki Faktörlü Kimlik Doğrulama) ─────────────────── */
 
-export interface TwoFactorSetupDto {
-    secretKey: string;
+/** 2FA kurulum başlangıç yanıtı */
+export interface TwoFactorSetupResponse {
+    sharedKey: string;
     qrCodeUri: string;
 }
 
-export interface TwoFactorCodeRequest {
+/** 2FA doğrulama/etkinleştirme isteği */
+export interface TwoFactorVerifyRequest {
     code: string;
 }
 
-/* ── Notification Preferences ── */
-export interface NotificationPreferencesDto {
-    emailOnLogin: boolean;
-    emailOnPasswordChange: boolean;
-    emailOnNewOrder: boolean;
-    pushNotifications: boolean;
+/** 2FA durumu */
+export interface TwoFactorStatusResponse {
+    isEnabled: boolean;
+    hasAuthenticator: boolean;
 }
 
-/* ── Active Sessions ── */
-export interface ActiveSessionDto {
+/* ─── Bildirim Tercihleri ──────────────────────────────────── */
+
+export interface NotificationPreferences {
+    emailInvoice: boolean;       // Fatura bildirimleri
+    emailPayment: boolean;       // Ödeme bildirimleri
+    emailReminder: boolean;      // Hatırlatmalar
+    emailMarketing: boolean;     // Pazarlama & güncellemeler
+    pushEnabled: boolean;        // Anlık bildirimler
+    pushOrderStatus: boolean;    // Sipariş durumu
+    pushStockAlert: boolean;     // Stok uyarıları
+}
+
+export interface UpdateNotificationPreferencesRequest {
+    emailInvoice?: boolean;
+    emailPayment?: boolean;
+    emailReminder?: boolean;
+    emailMarketing?: boolean;
+    pushEnabled?: boolean;
+    pushOrderStatus?: boolean;
+    pushStockAlert?: boolean;
+}
+
+/* ─── Aktif Oturumlar ──────────────────────────────────────── */
+
+export interface ActiveSession {
     id: string;
     deviceName: string;
     ipAddress: string;
     location?: string;
     lastActiveUtc: string;
-    expiresAtUtc: string;
     isCurrent: boolean;
-}
-
-/* ── Profile Update ── */
-export interface UpdateProfileRequest {
-    userName: string;
-    email: string;
 }
 
 /** UI tarafında kullanılacak kullanıcı bilgisi (localStorage'dan) */

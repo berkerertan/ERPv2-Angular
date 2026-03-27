@@ -72,7 +72,7 @@ export class BuyersComponent implements OnInit {
                     isActive: true
                 };
             })),
-            error: (err) => console.error('Alıcılar yüklenemedi:', err.error?.detail || err.message)
+            error: () => this.toastService.error('Hata', 'Alıcılar yüklenemedi.')
         });
     }
 

@@ -80,14 +80,18 @@
                                 <div class="template-row-info">
                                     <span class="template-row-name">{{ t.name }}</span>
                                     <span class="template-row-key text-muted">{{ t.key }}</span>
-                                    <span class="template-row-subject text-muted">{{ t.subject }}</span>
+                                    <span class="template-row-subject text-muted">{{ t.subjectTemplate }}</span>
                                 </div>
                             </div>
                             <div class="template-row-right">
                                 <span class="badge" [class.badge-success]="t.isActive" [class.badge-secondary]="!t.isActive">
                                     {{ t.isActive ? 'Aktif' : 'Pasif' }}
                                 </span>
-                                <span class="template-date text-muted">{{ formatDate(templateUpdatedAt(t)) }}</span>
+                                <span class="template-date text-muted">{{ formatDate(t.updatedAtUtc) }}</span>
+                                <button class="preview-icon-btn" title="Önizle"
+                                        (click)="openPreviewFromList(t, $event)">
+                                    <span class="material-icons-outlined">visibility</span>
+                                </button>
                                 <span class="material-icons-outlined chevron">chevron_right</span>
                             </div>
                         </div>
@@ -139,15 +143,15 @@
 
                     <!-- Body -->
                     <div class="form-group">
-                        <label class="form-label">İçerik <span class="form-label-hint">(HTML)</span></label>
+                        <label class="form-label">
+                            İçerik <span class="form-label-hint">(HTML — kayıt sırasında profesyonel tasarım otomatik uygulanır)</span>
+                        </label>
                         <textarea class="form-control body-area" [(ngModel)]="editBodyHtml"
                                   placeholder="<p>E-posta içeriği...</p>"></textarea>
-                    </div>
-
-                    <!-- HTML Preview -->
-                    <div class="form-group">
-                        <label class="form-label">Önizleme</label>
-                        <div class="html-preview" [innerHTML]="editBodyHtml || '<span style=\'opacity:.4\'>İçerik yok</span>'"></div>
+                        <p class="body-hint">
+                            <span class="material-icons-outlined" style="font-size:14px;vertical-align:middle">info</span>
+                            Ham HTML içerik girin. Kayıt sırasında profesyonel e-posta tasarımı otomatik olarak uygulanır.
+                        </p>
                     </div>
 
                     <!-- Active -->
@@ -162,6 +166,10 @@
 
                 <div class="panel-footer">
                     <button class="btn btn-secondary" (click)="closeEditPanel()">Vazgeç</button>
+                    <button class="btn btn-outline-preview" (click)="openPreviewFromEditor()" title="Mevcut içeriği önizle">
+                        <span class="material-icons-outlined">visibility</span>
+                        Önizle
+                    </button>
                     <button class="btn btn-primary" [disabled]="isSaving() || !editSubject.trim()" (click)="saveTemplate()">
                         @if (isSaving()) { <div class="spinner spinner-sm"></div> }
                         @else { <span class="material-icons-outlined">save</span> }
@@ -814,3 +822,85 @@
     }
 
 </div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- E-POSTA ÖNİZLEME MODALI                                       -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+@if (showPreviewModal()) {
+<div class="email-preview-overlay" (click)="closePreview()">
+    <div class="email-preview-modal" (click)="$event.stopPropagation()">
+
+        <!-- Modal Başlık -->
+        <div class="epm-header">
+            <div class="epm-header-left">
+                <span class="material-icons-outlined epm-header-icon">mark_email_read</span>
+                <div>
+                    <h2 class="epm-title">E-posta Önizlemesi</h2>
+                    @if (previewTemplate()) {
+                    <span class="epm-key-badge">{{ previewTemplate()!.key }}</span>
+                    }
+                </div>
+            </div>
+            <button class="btn-icon" (click)="closePreview()">
+                <span class="material-icons-outlined">close</span>
+            </button>
+        </div>
+
+        <!-- İçerik -->
+        @if (isLoadingPreview()) {
+        <div class="epm-loading">
+            <div class="spinner"></div>
+            <span>Şablon yükleniyor...</span>
+        </div>
+        } @else {
+
+        <!-- Örnek Değer Notu -->
+        <div class="epm-sample-note">
+            <span class="material-icons-outlined">info</span>
+            Değişkenler örnek verilerle gösterilmektedir. Gerçek gönderimde alıcıya ait değerler kullanılır.
+        </div>
+
+        <!-- E-posta İstemcisi -->
+        <div class="email-client-mock">
+
+            <!-- Üst Bar (simulasyon) -->
+            <div class="ecm-topbar">
+                <div class="ecm-dots">
+                    <span class="ecm-dot dot-red"></span>
+                    <span class="ecm-dot dot-yellow"></span>
+                    <span class="ecm-dot dot-green"></span>
+                </div>
+                <span class="ecm-topbar-title">Gelen Kutusu</span>
+            </div>
+
+            <!-- E-posta Meta -->
+            <div class="ecm-meta">
+                <div class="ecm-avatar">
+                    <span class="material-icons-outlined">business</span>
+                </div>
+                <div class="ecm-meta-info">
+                    <div class="ecm-meta-row">
+                        <span class="ecm-meta-from">ERPv2 Platform</span>
+                        <span class="ecm-meta-addr">&lt;noreply&#64;erp.local&gt;</span>
+                        <span class="ecm-meta-time">Şimdi</span>
+                    </div>
+                    <div class="ecm-meta-to">
+                        Kime: <span class="ecm-meta-addr">demo&#64;erp.local</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HTML Gövde — tam email iframe (konu email içinde render edilir) -->
+            <iframe class="ecm-iframe"
+                    [srcdoc]="previewBodySafe()"
+                    frameborder="0"
+                    scrolling="auto"
+                    title="E-posta önizlemesi">
+            </iframe>
+
+        </div>
+
+        }
+    </div>
+</div>
+}
