@@ -1,0 +1,320 @@
+<div class="page-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Çek / Senet Takibi</h1>
+            <p class="page-subtitle">Vadeli alım ve satım belgelerini yönetin</p>
+        </div>
+        <button class="btn btn-primary" (click)="openAddModal()">
+            <span class="material-icons-outlined">add</span> Yeni Çek/Senet
+        </button>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--success-bg); color: var(--success);">
+                <span class="material-icons-outlined">call_received</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value amount positive">₺{{ totalReceivable().toLocaleString('tr-TR') }}</span>
+                <span class="stat-label">Alacak Toplam</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--danger-bg); color: var(--danger);">
+                <span class="material-icons-outlined">call_made</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value amount negative">₺{{ totalPayable().toLocaleString('tr-TR') }}</span>
+                <span class="stat-label">Borç Toplam</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(76,110,245,0.12); color: var(--primary-400);">
+                <span class="material-icons-outlined">schedule</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ pendingCount() }}</span>
+                <span class="stat-label">Bekleyen</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--danger-bg); color: var(--danger);">
+                <span class="material-icons-outlined">warning</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value" [style.color]="overdueCount() > 0 ? 'var(--danger)' : ''">{{ overdueCount() }}</span>
+                <span class="stat-label">Vadesi Geçmiş</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="filter-bar">
+        <div class="tabs">
+            <button class="tab" [class.active]="activeTypeTab() === 'all'" (click)="activeTypeTab.set('all')">Tümü</button>
+            <button class="tab" [class.active]="activeTypeTab() === 'check'" (click)="activeTypeTab.set('check')">Çekler</button>
+            <button class="tab" [class.active]="activeTypeTab() === 'promissory-note'" (click)="activeTypeTab.set('promissory-note')">Senetler</button>
+        </div>
+        <div class="tabs">
+            <button class="tab tab-sm" [class.active]="activeDirectionTab() === 'all'" (click)="activeDirectionTab.set('all')">Tümü</button>
+            <button class="tab tab-sm" [class.active]="activeDirectionTab() === 'receivable'" (click)="activeDirectionTab.set('receivable')">Alacak</button>
+            <button class="tab tab-sm" [class.active]="activeDirectionTab() === 'payable'" (click)="activeDirectionTab.set('payable')">Borç</button>
+        </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <div class="toolbar-search">
+            <span class="material-icons-outlined search-icon">search</span>
+            <input type="text" placeholder="Kod, cari, banka veya seri no ara..." [(ngModel)]="searchTerm" />
+        </div>
+        <select class="toolbar-select" [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
+            <option value="all">Tüm Durumlar</option>
+            <option [value]="CheckBillStatus.Portfolio">Portföyde</option>
+            <option [value]="CheckBillStatus.Endorsed">Ciro Edildi</option>
+            <option [value]="CheckBillStatus.Protested">Protesto</option>
+            <option [value]="CheckBillStatus.Collected">Tahsil Edildi</option>
+            <option [value]="CheckBillStatus.Paid">Ödendi</option>
+            <option [value]="CheckBillStatus.Cancelled">İptal</option>
+        </select>
+    </div>
+
+    <!-- Table -->
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Tür</th>
+                    <th>Yön</th>
+                    <th class="sortable" [class.sorted]="sortColumn==='code'" (click)="sort('code')">
+                        Kod
+                        <span class="sort-icon material-icons-outlined">{{ sortColumn==='code' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
+                    </th>
+                    <th>Seri No</th>
+                    <th>Cari</th>
+                    <th class="sortable" [class.sorted]="sortColumn==='amount'" (click)="sort('amount')">
+                        Tutar
+                        <span class="sort-icon material-icons-outlined">{{ sortColumn==='amount' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
+                    </th>
+                    <th class="sortable" [class.sorted]="sortColumn==='dueDateUtc'" (click)="sort('dueDateUtc')">
+                        Vade
+                        <span class="sort-icon material-icons-outlined">{{ sortColumn==='dueDateUtc' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span>
+                    </th>
+                    <th>Durum</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (item of filteredItems; track item.id) {
+                <tr [class.row-overdue]="isOverdue(item)">
+                    <td>
+                        <span class="badge badge-type" [class.badge-check]="item.type === CheckBillType.Check" [class.badge-bill]="item.type === CheckBillType.PromissoryNote">
+                            {{ typeLabel(item.type) }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="direction-tag" [class.direction-received]="item.direction === CheckBillDirection.Receivable" [class.direction-given]="item.direction === CheckBillDirection.Payable">
+                            <span class="material-icons-outlined" style="font-size:13px;">{{ directionIcon(item.direction) }}</span>
+                            {{ directionLabel(item.direction) }}
+                        </span>
+                    </td>
+                    <td class="font-medium" style="color: var(--text-primary);">{{ item.code }}</td>
+                    <td class="text-muted">{{ item.serialNo || '—' }}</td>
+                    <td class="text-muted">{{ item.cariName }}</td>
+                    <td>
+                        <span class="amount font-semibold" [class.positive]="item.direction === CheckBillDirection.Receivable" [class.negative]="item.direction === CheckBillDirection.Payable">
+                            ₺{{ item.amount.toLocaleString('tr-TR') }}
+                        </span>
+                    </td>
+                    <td class="text-muted">
+                        <span [class.text-danger]="isOverdue(item)">{{ item.dueDateUtc.substring(0, 10) }}</span>
+                    </td>
+                    <td>
+                        <span class="badge" [ngClass]="'badge-' + statusClass(item.status)">
+                            {{ statusLabel(item.status) }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="actions-cell">
+                            @if (availableStatuses(item).length) {
+                            <button class="action-btn status" (click)="openStatusModal(item)" title="Durum Değiştir">
+                                <span class="material-icons-outlined">swap_horiz</span>
+                            </button>
+                            }
+                            <button class="action-btn edit" (click)="openEditModal(item)" title="Düzenle">
+                                <span class="material-icons-outlined">edit</span>
+                            </button>
+                            <button class="action-btn delete" (click)="deleteItem(item)" title="Sil">
+                                <span class="material-icons-outlined">delete</span>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                } @empty {
+                <tr>
+                    <td colspan="9" class="empty-state">
+                        <span class="material-icons-outlined" style="font-size:48px; color: var(--text-tertiary);">receipt_long</span>
+                        <p>Henüz çek/senet kaydı bulunmuyor.</p>
+                    </td>
+                </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- ─── Create / Edit Modal ─────────────────────────────────────── -->
+@if (showModal()) {
+<div class="overlay" (click)="closeModal()"></div>
+<div class="modal" style="width: 560px;">
+    <div class="modal-header">
+        <h2>{{ editingItem() ? 'Çek/Senet Düzenle' : 'Yeni Çek/Senet' }}</h2>
+        <button class="modal-close" (click)="closeModal()">
+            <span class="material-icons-outlined">close</span>
+        </button>
+    </div>
+    <div class="modal-form">
+        <!-- Row: Type + Direction -->
+        @if (!editingItem()) {
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Belge Türü *</label>
+                <select class="form-input" [(ngModel)]="formData.type">
+                    <option [ngValue]="CheckBillType.Check">Çek</option>
+                    <option [ngValue]="CheckBillType.PromissoryNote">Senet</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Yön *</label>
+                <select class="form-input" [(ngModel)]="formData.direction">
+                    <option [ngValue]="CheckBillDirection.Receivable">Alacak</option>
+                    <option [ngValue]="CheckBillDirection.Payable">Borç</option>
+                </select>
+            </div>
+        </div>
+        }
+
+        <!-- Row: Code + Cari -->
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Belge Kodu *</label>
+                <input class="form-input" [(ngModel)]="formData.code" placeholder="Çek/Senet kodu"
+                       [readonly]="!!editingItem()" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Cari Hesap *</label>
+                <select class="form-input" [(ngModel)]="formData.cariAccountId" [disabled]="!!editingItem()">
+                    <option value="">-- Cari Hesap Seçin --</option>
+                    @for (cari of cariAccounts(); track cari.id) {
+                    <option [value]="cari.id">{{ cari.name }} ({{ cari.code }})</option>
+                    }
+                </select>
+            </div>
+        </div>
+
+        <!-- Row: Serial No + Amount -->
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Seri No</label>
+                <input class="form-input" [(ngModel)]="formData.serialNo" placeholder="Çek/Senet seri no" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Tutar (₺) *</label>
+                <input class="form-input" type="number" [(ngModel)]="formData.amount" min="0" />
+            </div>
+        </div>
+
+        <!-- Row: Issue Date + Due Date -->
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Düzenlenme Tarihi</label>
+                <input class="form-input" type="date" [(ngModel)]="formData.issueDateUtc" [readonly]="!!editingItem()" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Vade Tarihi *</label>
+                <input class="form-input" type="date" [(ngModel)]="formData.dueDateUtc" />
+            </div>
+        </div>
+
+        <!-- Bank Info -->
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Banka Adı</label>
+                <input class="form-input" [(ngModel)]="formData.bankName" placeholder="Banka adı (opsiyonel)" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Şube</label>
+                <input class="form-input" [(ngModel)]="formData.branchName" placeholder="Şube adı" />
+            </div>
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+            <label class="form-label">Açıklama</label>
+            <input class="form-input" [(ngModel)]="formData.description" placeholder="Ek açıklama (opsiyonel)" />
+        </div>
+    </div>
+
+    @if (formError()) {
+    <div style="padding: 0 1.5rem; color: var(--danger); font-size: 0.875rem;">{{ formError() }}</div>
+    }
+
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeModal()">İptal</button>
+        <button class="btn btn-primary" (click)="save()" [disabled]="isSaving()">
+            <span class="material-icons-outlined">save</span>
+            {{ isSaving() ? 'Kaydediliyor...' : 'Kaydet' }}
+        </button>
+    </div>
+</div>
+}
+
+<!-- ─── Status Change Modal ─────────────────────────────────────── -->
+@if (showStatusModal()) {
+<div class="overlay" (click)="closeStatusModal()"></div>
+<div class="modal" style="width: 440px;">
+    <div class="modal-header">
+        <h2>Durum Değiştir</h2>
+        <button class="modal-close" (click)="closeStatusModal()">
+            <span class="material-icons-outlined">close</span>
+        </button>
+    </div>
+    <div class="modal-form">
+        <div class="status-info">
+            <span class="text-muted">Belge:</span>
+            <strong>{{ statusItem()?.code }}</strong>
+            <span class="badge" [ngClass]="'badge-' + statusClass(statusItem()!.status)" style="margin-left: 8px;">
+                {{ statusLabel(statusItem()!.status) }}
+            </span>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Yeni Durum *</label>
+            <select class="form-input" [(ngModel)]="statusFormData.status">
+                @for (opt of availableStatuses(statusItem()); track opt.value) {
+                <option [ngValue]="opt.value">{{ opt.label }}</option>
+                }
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Açıklama / Not</label>
+            <input class="form-input" [(ngModel)]="statusFormData.note" placeholder="İşlem notu (opsiyonel)" />
+        </div>
+    </div>
+
+    @if (formError()) {
+    <div style="padding: 0 1.5rem; color: var(--danger); font-size: 0.875rem;">{{ formError() }}</div>
+    }
+
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeStatusModal()">İptal</button>
+        <button class="btn btn-primary" (click)="saveStatus()" [disabled]="isSaving()">
+            <span class="material-icons-outlined">check</span>
+            {{ isSaving() ? 'Kaydediliyor...' : 'Onayla' }}
+        </button>
+    </div>
+</div>
+}

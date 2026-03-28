@@ -105,7 +105,7 @@ export class AuthService {
 
     /** Şifre değiştir */
     changePassword(request: ChangePasswordRequest): Observable<void> {
-        return this.http.post<void>(`${this.apiUrl}/change-password`, request);
+        return this.http.put<void>(`${this.apiUrl}/me/password`, request);
     }
 
     /** Abonelik planı seçenekleri */
