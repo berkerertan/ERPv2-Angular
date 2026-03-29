@@ -548,6 +548,42 @@ export class PosComponent implements OnInit, OnDestroy, AfterViewInit {
         this.printReceipt();
     }
 
+    // ─── Touch Mode ────────────────────────────────────
+    touchMode = signal(false);
+    activeCategory = signal<string>('');
+
+    private readonly CAT_COLORS = [
+        '#f97316', '#e11d48', '#16a34a', '#0891b2',
+        '#7c3aed', '#d97706', '#059669', '#dc2626',
+        '#c2410c', '#0284c7'
+    ];
+
+    get categories(): string[] {
+        return [...new Set(this.productCatalog.map(p => p.category).filter(Boolean))];
+    }
+
+    get filteredProducts(): QuickProduct[] {
+        const cat = this.activeCategory();
+        let list = cat ? this.productCatalog.filter(p => p.category === cat) : this.productCatalog;
+        const term = this.debouncedTerm().toLowerCase();
+        if (term) list = list.filter(p => p.name.toLowerCase().includes(term) || p.barcode.includes(term));
+        return list;
+    }
+
+    getCategoryColor(cat: string): string {
+        const idx = this.categories.indexOf(cat);
+        return this.CAT_COLORS[Math.max(0, idx) % this.CAT_COLORS.length];
+    }
+
+    getCategoryCount(cat: string): number {
+        return this.productCatalog.filter(p => p.category === cat).length;
+    }
+
+    addToCartFromGrid(product: QuickProduct): void {
+        this.addToCart(product.id, product.name, product.barcode, product.unitPrice);
+        this.showNotification(`${product.name} eklendi`, 'success');
+    }
+
     // ─── Notifications ─────────────────────────────────
     showNotification(message: string, type: string): void {
         this.notification.set({ message, type });

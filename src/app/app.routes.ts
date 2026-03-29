@@ -188,6 +188,14 @@ export const routes: Routes = [
                 loadComponent: () => import('./features/excel-import/excel-import.component').then(m => m.ExcelImportComponent)
             },
             {
+                path: 'label-print',
+                loadComponent: () => import('./features/label-print/label-print.component').then(m => m.LabelPrintComponent)
+            },
+            {
+                path: 'inventory-count',
+                loadComponent: () => import('./features/inventory-count/inventory-count.component').then(m => m.InventoryCountComponent)
+            },
+            {
                 path: 'profile',
                 loadComponent: () => import('./features/profile/profile.component').then(m => m.ProfileComponent)
             }

@@ -32,29 +32,87 @@
 
     <!-- Navigation -->
     <nav class="sidebar-nav">
-        @for (section of navSections; track section.title) {
-        <div class="nav-section">
-            @if (!isCollapsed() || isHoverExpanded()) {
-            <div class="nav-section-title" [class.hover-label]="isHoverExpanded()">{{ section.title }}</div>
-            } @else {
-            <div class="nav-section-divider"></div>
+
+        <!-- SEARCH — nav içinde, kapalıyken ikon, açıkken input -->
+        @if (!isCollapsed() || isHoverExpanded()) {
+          <div class="sidebar-search" [class.hover-label]="isHoverExpanded()">
+            <span class="material-icons-outlined sidebar-search-icon">search</span>
+            <input
+              #searchInput
+              class="sidebar-search-input"
+              type="text"
+              placeholder="Menüde ara…"
+              [ngModel]="searchQuery()"
+              (ngModelChange)="searchQuery.set($event)"
+              (keydown.escape)="clearSearch()"
+              autocomplete="off"
+            />
+            @if (searchQuery()) {
+              <button class="sidebar-search-clear" (click)="clearSearch()" tabindex="-1">
+                <span class="material-icons-outlined">close</span>
+              </button>
             }
-            <ul class="nav-list">
-                @for (item of section.items; track item.route) {
-                <li class="nav-item">
-                    <a class="nav-link" [routerLink]="item.route" routerLinkActive="active"
-                        [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }" (click)="closeMobile()"
-                        [title]="isCollapsed() && !isHoverExpanded() ? item.label : ''">
-                        <span class="nav-icon material-icons-outlined">{{ item.icon }}</span>
-                        @if (!isCollapsed() || isHoverExpanded()) {
-                        <span class="nav-label" [class.hover-label]="isHoverExpanded()">{{ item.label }}</span>
-                        }
-                    </a>
-                </li>
-                }
-            </ul>
-        </div>
+          </div>
+        } @else {
+          <!-- Kapalı modda arama ikonu — tıklayınca sidebar açılır -->
+          <button class="nav-search-icon-btn" (click)="toggleCollapse()" title="Menüde ara">
+            <span class="material-icons-outlined">search</span>
+          </button>
         }
+
+        <!-- ARAMA SONUÇLARI -->
+        @if (filteredNav() !== null) {
+            @if (filteredNav()!.length === 0) {
+                <div class="nav-search-empty">
+                    <span class="material-icons-outlined">search_off</span>
+                    <span>Sonuç bulunamadı</span>
+                </div>
+            } @else {
+                <ul class="nav-list nav-search-results">
+                    @for (item of filteredNav()!; track item.route) {
+                    <li class="nav-item">
+                        <a class="nav-link nav-link--result" [routerLink]="item.route" routerLinkActive="active"
+                            [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
+                            (click)="closeMobile(); clearSearch()">
+                            <span class="nav-icon material-icons-outlined">{{ item.icon }}</span>
+                            <span class="nav-result-text">
+                                <span class="nav-label" [innerHTML]="highlight(item.label)"></span>
+                                <span class="nav-result-section">{{ item.sectionTitle }}</span>
+                            </span>
+                        </a>
+                    </li>
+                    }
+                </ul>
+            }
+        }
+
+        <!-- NORMAL MENÜ (arama yokken) -->
+        @if (filteredNav() === null) {
+            @for (section of navSections; track section.title) {
+            <div class="nav-section">
+                @if (!isCollapsed() || isHoverExpanded()) {
+                <div class="nav-section-title" [class.hover-label]="isHoverExpanded()">{{ section.title }}</div>
+                } @else {
+                <div class="nav-section-divider"></div>
+                }
+                <ul class="nav-list">
+                    @for (item of section.items; track item.route) {
+                    <li class="nav-item">
+                        <a class="nav-link" [routerLink]="item.route" routerLinkActive="active"
+                            [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }" (click)="closeMobile()"
+                            [title]="isCollapsed() && !isHoverExpanded() ? item.label : ''">
+                            <span class="nav-icon material-icons-outlined">{{ item.icon }}</span>
+                            @if (!isCollapsed() || isHoverExpanded()) {
+                            <span class="nav-label" [class.hover-label]="isHoverExpanded()">{{ item.label }}</span>
+                            }
+                        </a>
+                    </li>
+                    }
+                </ul>
+            </div>
+            }
+        }
+
     </nav>
 
     <!-- Footer: Expand butonu (kapalı + hover değilse) -->

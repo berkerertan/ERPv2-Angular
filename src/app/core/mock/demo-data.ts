@@ -601,3 +601,297 @@ export const DEMO_PLATFORM_OVERVIEW = {
     todayActiveUsers:            14,
     todayRequestCount:           340,
 };
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 11. TEKLİFLER (8 adet)
+// ═════════════════════════════════════════════════════════════════════════════
+import { QuoteStatus } from '../models/quote.model';
+const qid = (n: number) => `0000000d-0000-0000-0000-${String(n).padStart(12,'0')}`;
+const qiid = (q: number, i: number) => `0000000d-${String(q).padStart(4,'0')}-0000-0000-${String(i).padStart(12,'0')}`;
+
+const mkQItem = (q: number, i: number, pName: string, unit: string, qty: number, price: number, disc: number) => {
+    const lineTotal = qty * price * (1 - disc / 100);
+    return { id: qiid(q, i), productId: pid(i), productName: pName, unit, quantity: qty, unitPrice: price, discountPercent: disc, lineTotal: Math.round(lineTotal), sortOrder: i };
+};
+
+export const DEMO_QUOTES = [
+    {
+        id: qid(1), quoteNumber: 'TKF-2026-001', cariAccountId: cid(1), cariCode: 'MUS-001', cariName: 'Teknosa İç ve Dış Ticaret A.Ş.',
+        customerName: 'Teknosa İç ve Dış Ticaret A.Ş.', customerPhone: '0850 200 9600', customerEmail: 'kurumsal@teknosa.com',
+        status: QuoteStatus.Accepted, quoteDateUtc: ago(45), validUntilUtc: ago(15),
+        overallDiscountPercent: 5, taxPercent: 20, notes: 'Yıllık toplu alım indirimi uygulanmıştır.',
+        convertedSalesOrderId: soid(1),
+        items: [mkQItem(1,5,'Apple iPhone 15 Pro 256GB','EA',20,59999,5), mkQItem(1,6,'Samsung Galaxy S24 Ultra','EA',15,47999,5), mkQItem(1,1,'Samsung 65" Neo QLED 4K','EA',5,27500,5)],
+        subTotal: 2116730, discountAmount: 105836, taxAmount: 402179, grandTotal: 2413073, itemCount: 3, createdAtUtc: ago(45)
+    },
+    {
+        id: qid(2), quoteNumber: 'TKF-2026-002', cariAccountId: cid(2), cariCode: 'MUS-002', cariName: 'Media Markt Turkey A.Ş.',
+        customerName: 'Media Markt Turkey A.Ş.', customerPhone: '0850 333 5555', customerEmail: 'b2b@mediamarkt.com.tr',
+        status: QuoteStatus.Sent, quoteDateUtc: ago(20), validUntilUtc: fwd(10),
+        overallDiscountPercent: 3, taxPercent: 20, notes: 'Dizüstü bilgisayar kampanyası.',
+        items: [mkQItem(2,12,'Apple MacBook Pro M3 14"','EA',8,79999,3), mkQItem(2,13,'Dell XPS 15 i7 32GB','EA',6,69999,3)],
+        subTotal: 1059988, discountAmount: 31800, taxAmount: 205638, grandTotal: 1233826, itemCount: 2, createdAtUtc: ago(20)
+    },
+    {
+        id: qid(3), quoteNumber: 'TKF-2026-003', cariAccountId: cid(4), cariCode: 'MUS-004', cariName: 'Amazon Türkiye Perakende Ltd. Şti.',
+        customerName: 'Amazon Türkiye Perakende Ltd. Şti.', customerPhone: '0800 300 3000', customerEmail: 'vendor@amazon.com.tr',
+        status: QuoteStatus.Draft, quoteDateUtc: ago(5), validUntilUtc: fwd(25),
+        overallDiscountPercent: 0, taxPercent: 20, notes: 'Akıllı telefon sezon fiyatlandırması.',
+        items: [mkQItem(3,5,'Apple iPhone 15 Pro 256GB','EA',30,59999,0), mkQItem(3,6,'Samsung Galaxy S24 Ultra','EA',25,47999,0), mkQItem(3,8,'Google Pixel 8 Pro 256GB','EA',10,32999,0)],
+        subTotal: 3129960, discountAmount: 0, taxAmount: 625992, grandTotal: 3755952, itemCount: 3, createdAtUtc: ago(5)
+    },
+    {
+        id: qid(4), quoteNumber: 'TKF-2026-004', cariAccountId: cid(15), cariCode: 'HEM-001', cariName: 'Turkcell Teknoloji A.Ş.',
+        customerName: 'Turkcell Teknoloji A.Ş.', customerPhone: '0532 532 0000', customerEmail: 'b2b@turkcell.com.tr',
+        status: QuoteStatus.ConvertedToOrder, quoteDateUtc: ago(55), validUntilUtc: ago(25),
+        overallDiscountPercent: 8, taxPercent: 20, notes: 'Kurumsal cihaz yenileme projesi.',
+        convertedSalesOrderId: soid(17),
+        items: [mkQItem(4,6,'Samsung Galaxy S24 Ultra','EA',20,47999,8), mkQItem(4,5,'Apple iPhone 15 Pro','EA',15,59999,8), mkQItem(4,9,'Apple iPad Pro 13" M2','EA',8,39999,8)],
+        subTotal: 2549760, discountAmount: 203981, taxAmount: 469156, grandTotal: 2814935, itemCount: 3, createdAtUtc: ago(55)
+    },
+    {
+        id: qid(5), quoteNumber: 'TKF-2026-005', cariAccountId: cid(3), cariCode: 'MUS-003', cariName: 'Vatan Bilgisayar Ticaret A.Ş.',
+        customerName: 'Vatan Bilgisayar Ticaret A.Ş.', customerPhone: '0850 484 2884', customerEmail: 'tedarik@vatanbilgisayar.com',
+        status: QuoteStatus.Rejected, quoteDateUtc: ago(30), validUntilUtc: ago(5),
+        overallDiscountPercent: 2, taxPercent: 20, notes: 'Rakip fiyatları nedeniyle reddedildi.',
+        items: [mkQItem(5,9,'Apple iPad Pro 13" M2','EA',10,39999,2), mkQItem(5,10,'Samsung Galaxy Tab S9 Ultra','EA',8,31999,2)],
+        subTotal: 655992, discountAmount: 13120, taxAmount: 128574, grandTotal: 771446, itemCount: 2, createdAtUtc: ago(30)
+    },
+    {
+        id: qid(6), quoteNumber: 'TKF-2026-006', cariAccountId: cid(7), cariCode: 'MUS-007', cariName: 'ÇiçekSepeti E-Ticaret A.Ş.',
+        customerName: 'ÇiçekSepeti E-Ticaret A.Ş.', customerPhone: '0850 222 3434', customerEmail: 'tedarikci@ciceksepeti.com',
+        status: QuoteStatus.Expired, quoteDateUtc: ago(65), validUntilUtc: ago(35),
+        overallDiscountPercent: 0, taxPercent: 20, notes: 'Geçerlilik süresi doldu.',
+        items: [mkQItem(6,24,'Tefal ActiFry Genius XL','EA',20,3999,0), mkQItem(6,25,'Philips Tam Otomatik Kahve','EA',15,5999,0)],
+        subTotal: 169975, discountAmount: 0, taxAmount: 33995, grandTotal: 203970, itemCount: 2, createdAtUtc: ago(65)
+    },
+    {
+        id: qid(7), quoteNumber: 'TKF-2026-007', cariAccountId: cid(16), cariCode: 'HEM-002', cariName: 'Koç Sistem Bilgi ve İletişim Hizmetleri A.Ş.',
+        customerName: 'Koç Sistem Bilgi ve İletişim Hizmetleri A.Ş.', customerPhone: '0850 225 5600', customerEmail: 'ticaret@kocsistem.com.tr',
+        status: QuoteStatus.Accepted, quoteDateUtc: ago(12), validUntilUtc: fwd(18),
+        overallDiscountPercent: 4, taxPercent: 20, notes: 'Yönetici ofis kurulum paketi.',
+        convertedSalesOrderId: soid(18),
+        items: [mkQItem(7,12,'Apple MacBook Pro M3 14"','EA',6,79999,4), mkQItem(7,13,'Dell XPS 15 i7 32GB','EA',4,69999,4), mkQItem(7,15,'HP Spectre x360 14"','EA',3,47999,4)],
+        subTotal: 906964, discountAmount: 36279, taxAmount: 174137, grandTotal: 1044822, itemCount: 3, createdAtUtc: ago(12)
+    },
+    {
+        id: qid(8), quoteNumber: 'TKF-2026-008', cariAccountId: cid(5), cariCode: 'MUS-005', cariName: 'Hepsiburada Elektronik Ticaret A.Ş.',
+        customerName: 'Hepsiburada Elektronik Ticaret A.Ş.', customerPhone: '0850 252 4444', customerEmail: 'tedarikci@hepsiburada.com',
+        status: QuoteStatus.Sent, quoteDateUtc: ago(3), validUntilUtc: fwd(27),
+        overallDiscountPercent: 0, taxPercent: 20, notes: 'Sezon sonu ses sistemi teklifi.',
+        items: [mkQItem(8,16,'Sony WH-1000XM5 Kulaklık','EA',25,8500,0), mkQItem(8,17,'Bose QC45 ANC Kulaklık','EA',20,6999,0), mkQItem(8,18,'JBL Charge 5 Hoparlör','EA',30,2499,0)],
+        subTotal: 427460, discountAmount: 0, taxAmount: 85492, grandTotal: 512952, itemCount: 3, createdAtUtc: ago(3)
+    },
+];
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 12. ÇEK / SENET (10 adet — alacak + borç, farklı durumlar)
+// ═════════════════════════════════════════════════════════════════════════════
+import { CheckNoteType, CheckNoteDirection, CheckNoteStatus, TreasuryChannel } from '../models/check-bill.model';
+const cnid = (n: number) => `0000000c-0000-0000-0000-${String(n).padStart(12,'0')}`;
+const baid = (n: number) => `0000000e-0000-0000-0000-${String(n).padStart(12,'0')}`;
+
+export const DEMO_CHECK_NOTES = [
+    {
+        id: cnid(1), code: 'CEK-2026-001', type: CheckNoteType.Check, direction: CheckNoteDirection.Receivable,
+        status: CheckNoteStatus.Portfolio, cariAccountId: cid(1), cariCode: 'MUS-001', cariName: 'Teknosa İç ve Dış Ticaret A.Ş.',
+        amount: 463993, currency: 'TRY', issueDateUtc: ago(38), dueDateUtc: fwd(8),
+        bankName: 'Garanti BBVA', branchName: 'Levent Şubesi', accountNo: '123456789', serialNo: 'TR-2026-001234',
+        description: 'SS-2026-009 ciro çeki', lastActionNote: null, relatedFinanceMovementId: null, settledAtUtc: null, createdAtUtc: ago(38)
+    },
+    {
+        id: cnid(2), code: 'CEK-2026-002', type: CheckNoteType.Check, direction: CheckNoteDirection.Receivable,
+        status: CheckNoteStatus.Portfolio, cariAccountId: cid(4), cariCode: 'MUS-004', cariName: 'Amazon Türkiye Perakende Ltd. Şti.',
+        amount: 1688127, currency: 'TRY', issueDateUtc: ago(28), dueDateUtc: fwd(15),
+        bankName: 'İş Bankası', branchName: 'Sarıyer Şubesi', accountNo: '987654321', serialNo: 'TR-2026-002345',
+        description: 'SS-2026-004+012 bakiye çeki', lastActionNote: null, relatedFinanceMovementId: null, settledAtUtc: null, createdAtUtc: ago(28)
+    },
+    {
+        id: cnid(3), code: 'CEK-2026-003', type: CheckNoteType.Check, direction: CheckNoteDirection.Receivable,
+        status: CheckNoteStatus.Collected, cariAccountId: cid(2), cariCode: 'MUS-002', cariName: 'Media Markt Turkey A.Ş.',
+        amount: 414400, currency: 'TRY', issueDateUtc: ago(38), dueDateUtc: ago(8),
+        bankName: 'Yapı Kredi', branchName: 'Beşiktaş Şubesi', accountNo: '111222333', serialNo: 'TR-2026-003456',
+        description: 'SS-2026-010 tahsil edildi', lastActionNote: 'Garanti BBVA hesabına yatırıldı.', relatedFinanceMovementId: fmid(10), settledAtUtc: ago(8), createdAtUtc: ago(38)
+    },
+    {
+        id: cnid(4), code: 'CEK-2026-004', type: CheckNoteType.Check, direction: CheckNoteDirection.Receivable,
+        status: CheckNoteStatus.Endorsed, cariAccountId: cid(7), cariCode: 'MUS-007', cariName: 'ÇiçekSepeti E-Ticaret A.Ş.',
+        amount: 631954, currency: 'TRY', issueDateUtc: ago(44), dueDateUtc: fwd(20),
+        bankName: 'Ziraat Bankası', branchName: 'Ümraniye Şubesi', accountNo: '444555666', serialNo: 'TR-2026-004567',
+        description: 'SS-2026-007+015 ciro edildi', lastActionNote: 'Samsung ödemesine ciro edildi.', relatedFinanceMovementId: null, settledAtUtc: null, createdAtUtc: ago(44)
+    },
+    {
+        id: cnid(5), code: 'SEN-2026-001', type: CheckNoteType.PromissoryNote, direction: CheckNoteDirection.Receivable,
+        status: CheckNoteStatus.Protested, cariAccountId: cid(3), cariCode: 'MUS-003', cariName: 'Vatan Bilgisayar Ticaret A.Ş.',
+        amount: 126939, currency: 'TRY', issueDateUtc: ago(60), dueDateUtc: ago(15),
+        bankName: null, branchName: null, accountNo: null, serialNo: 'SEN-2026-005678',
+        description: 'Vadesi geçmiş alacak senedi — protestolu', lastActionNote: 'İcra takibi başlatıldı.', relatedFinanceMovementId: null, settledAtUtc: null, createdAtUtc: ago(60)
+    },
+    {
+        id: cnid(6), code: 'CEK-2026-005', type: CheckNoteType.Check, direction: CheckNoteDirection.Payable,
+        status: CheckNoteStatus.Portfolio, cariAccountId: cid(9), cariCode: 'TED-001', cariName: 'Samsung Electronics Türkiye Ltd. Şti.',
+        amount: 790000, currency: 'TRY', issueDateUtc: ago(2), dueDateUtc: fwd(28),
+        bankName: 'Garanti BBVA', branchName: 'Levent Şubesi', accountNo: '123456789', serialNo: 'TR-2026-006789',
+        description: 'AS-2026-012 sipariş avans çeki', lastActionNote: null, relatedFinanceMovementId: null, settledAtUtc: null, createdAtUtc: ago(2)
+    },
+    {
+        id: cnid(7), code: 'CEK-2026-006', type: CheckNoteType.Check, direction: CheckNoteDirection.Payable,
+        status: CheckNoteStatus.Paid, cariAccountId: cid(10), cariCode: 'TED-002', cariName: 'Apple Distribution International Ltd.',
+        amount: 436000, currency: 'TRY', issueDateUtc: ago(70), dueDateUtc: ago(2),
+        bankName: 'İş Bankası', branchName: 'Levent Şubesi', accountNo: '987654321', serialNo: 'TR-2026-007890',
+        description: 'AS-2026-003 ödeme çeki', lastActionNote: 'Hesaptan karşılandı.', relatedFinanceMovementId: fmid(15), settledAtUtc: ago(2), createdAtUtc: ago(70)
+    },
+    {
+        id: cnid(8), code: 'SEN-2026-002', type: CheckNoteType.PromissoryNote, direction: CheckNoteDirection.Payable,
+        status: CheckNoteStatus.Portfolio, cariAccountId: cid(16), cariCode: 'HEM-002', cariName: 'Koç Sistem Bilgi ve İletişim Hizmetleri A.Ş.',
+        amount: 528000, currency: 'TRY', issueDateUtc: ago(5), dueDateUtc: fwd(40),
+        bankName: null, branchName: null, accountNo: null, serialNo: 'SEN-2026-008901',
+        description: 'AS-2026-011 uzun vadeli senet', lastActionNote: null, relatedFinanceMovementId: null, settledAtUtc: null, createdAtUtc: ago(5)
+    },
+    {
+        id: cnid(9), code: 'CEK-2026-007', type: CheckNoteType.Check, direction: CheckNoteDirection.Receivable,
+        status: CheckNoteStatus.Portfolio, cariAccountId: cid(15), cariCode: 'HEM-001', cariName: 'Turkcell Teknoloji A.Ş.',
+        amount: 379957, currency: 'TRY', issueDateUtc: ago(7), dueDateUtc: fwd(45),
+        bankName: 'Akbank', branchName: 'Maltepe Şubesi', accountNo: '222333444', serialNo: 'TR-2026-009012',
+        description: 'SS-2026-017 kalan bakiye çeki', lastActionNote: null, relatedFinanceMovementId: null, settledAtUtc: null, createdAtUtc: ago(7)
+    },
+    {
+        id: cnid(10), code: 'CEK-2026-008', type: CheckNoteType.Check, direction: CheckNoteDirection.Receivable,
+        status: CheckNoteStatus.Portfolio, cariAccountId: cid(6), cariCode: 'MUS-006', cariName: 'N11 Ticaret A.Ş.',
+        amount: 221202, currency: 'TRY', issueDateUtc: ago(18), dueDateUtc: fwd(12),
+        bankName: 'Garanti BBVA', branchName: 'Çekmeköy Şubesi', accountNo: '555666777', serialNo: 'TR-2026-010123',
+        description: 'SS-2026-006+014 bakiye çeki', lastActionNote: null, relatedFinanceMovementId: null, settledAtUtc: null, createdAtUtc: ago(18)
+    },
+];
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 13. BANKA HESAPLARI & İŞLEMLERİ
+// ═════════════════════════════════════════════════════════════════════════════
+const btid = (n: number) => `0000000f-0000-0000-0000-${String(n).padStart(12,'0')}`;
+
+export const DEMO_BANK_ACCOUNTS = [
+    { id: baid(1), bankName: 'Garanti BBVA', branchName: 'Levent Kurumsal Şubesi', iban: 'TR320006100519786457841326', currency: 'TRY', balance: 4250000, createdAtUtc: ago(365) },
+    { id: baid(2), bankName: 'İş Bankası', branchName: 'Sarıyer Ticari Şubesi', iban: 'TR930006400000114090204462', currency: 'TRY', balance: 1875000, createdAtUtc: ago(300) },
+];
+
+export const DEMO_BANK_TRANSACTIONS = [
+    { id: btid(1),  bankAccountId: baid(1), cariAccountId: cid(1),  financeMovementId: fmid(1),  type: 1/*Deposit*/,    amount: 1121482, transactionDateUtc: ago(70), description: 'Teknosa SS-2026-001 tahsilat',          referenceNo: 'TAH-2026-001', createdAtUtc: ago(70) },
+    { id: btid(2),  bankAccountId: baid(1), cariAccountId: cid(2),  financeMovementId: fmid(2),  type: 1/*Deposit*/,    amount: 1159983, transactionDateUtc: ago(66), description: 'Media Markt SS-2026-002 tahsilat',       referenceNo: 'TAH-2026-002', createdAtUtc: ago(66) },
+    { id: btid(3),  bankAccountId: baid(1), cariAccountId: cid(3),  financeMovementId: fmid(3),  type: 1/*Deposit*/,    amount: 388000,  transactionDateUtc: ago(63), description: 'Vatan SS-2026-003 tahsilat',              referenceNo: 'TAH-2026-003', createdAtUtc: ago(63) },
+    { id: btid(4),  bankAccountId: baid(1), cariAccountId: cid(9),  financeMovementId: fmid(13), type: 2/*Withdrawal*/, amount: 1450000, transactionDateUtc: ago(78), description: 'Samsung AS-2026-001 tedarikçi ödemesi',    referenceNo: 'ODE-2026-001', createdAtUtc: ago(78) },
+    { id: btid(5),  bankAccountId: baid(1), cariAccountId: cid(10), financeMovementId: fmid(14), type: 2/*Withdrawal*/, amount: 1800000, transactionDateUtc: ago(73), description: 'Apple AS-2026-002 tedarikçi ödemesi',      referenceNo: 'ODE-2026-002', createdAtUtc: ago(73) },
+    { id: btid(6),  bankAccountId: baid(2), cariAccountId: cid(4),  financeMovementId: fmid(4),  type: 1/*Deposit*/,    amount: 1613967, transactionDateUtc: ago(58), description: 'Amazon SS-2026-004 tahsilat',              referenceNo: 'TAH-2026-004', createdAtUtc: ago(58) },
+    { id: btid(7),  bankAccountId: baid(2), cariAccountId: cid(5),  financeMovementId: fmid(5),  type: 1/*Deposit*/,    amount: 444019,  transactionDateUtc: ago(53), description: 'Hepsiburada SS-2026-005 kısmi tahsilat',  referenceNo: 'TAH-2026-005', createdAtUtc: ago(53) },
+    { id: btid(8),  bankAccountId: baid(2), cariAccountId: cid(11), financeMovementId: fmid(16), type: 2/*Withdrawal*/, amount: 355000,  transactionDateUtc: ago(63), description: 'Sony AS-2026-004 ödemesi',                 referenceNo: 'ODE-2026-004', createdAtUtc: ago(63) },
+    { id: btid(9),  bankAccountId: baid(1), cariAccountId: cid(15), financeMovementId: fmid(11), type: 1/*Deposit*/,    amount: 1800000, transactionDateUtc: ago(6),  description: 'Turkcell SS-2026-017 tahsilat',            referenceNo: 'TAH-2026-011', createdAtUtc: ago(6) },
+    { id: btid(10), bankAccountId: baid(1), cariAccountId: cid(16), financeMovementId: fmid(12), type: 1/*Deposit*/,    amount: 950000,  transactionDateUtc: ago(3),  description: 'Koç Sistem SS-2026-018 avans ödemesi',    referenceNo: 'TAH-2026-012', createdAtUtc: ago(3) },
+];
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 14. KASA HESAPLARI & İŞLEMLERİ
+// ═════════════════════════════════════════════════════════════════════════════
+const caid = (n: number) => `00000011-0000-0000-0000-${String(n).padStart(12,'0')}`;
+const ctid = (n: number) => `00000012-0000-0000-0000-${String(n).padStart(12,'0')}`;
+
+export const DEMO_CASH_ACCOUNTS = [
+    { id: caid(1), code: 'KASA-01', name: 'Merkez Ana Kasası',       currency: 'TRY', balance: 185000, createdAtUtc: ago(365) },
+    { id: caid(2), code: 'KASA-02', name: 'Anadolu Şubesi Kasası',   currency: 'TRY', balance:  42500, createdAtUtc: ago(290) },
+];
+
+export const DEMO_CASH_TRANSACTIONS = [
+    { id: ctid(1), cashAccountId: caid(1), cariAccountId: cid(8), financeMovementId: fmid(8), type: 1/*Income*/,  amount: 148488, transactionDateUtc: ago(40), description: 'Migros SS-2026-008 nakit tahsilat',   referenceNo: 'TAH-2026-008', createdAtUtc: ago(40) },
+    { id: ctid(2), cashAccountId: caid(1), cariAccountId: cid(6), financeMovementId: fmid(6), type: 1/*Income*/,  amount: 221970, transactionDateUtc: ago(48), description: 'N11 SS-2026-006 nakit tahsilat',       referenceNo: 'TAH-2026-006', createdAtUtc: ago(48) },
+    { id: ctid(3), cashAccountId: caid(1), cariAccountId: cid(12),financeMovementId: fmid(17),type: 2/*Expense*/, amount: 120000, transactionDateUtc: ago(58), description: 'BSH AS-2026-005 nakit ödeme',           referenceNo: 'ODE-2026-005', createdAtUtc: ago(58) },
+    { id: ctid(4), cashAccountId: caid(1), cariAccountId: null,   financeMovementId: null,    type: 2/*Expense*/, amount:  12500, transactionDateUtc: ago(20), description: 'Kırtasiye ve ofis giderleri',          referenceNo: 'GID-2026-001', createdAtUtc: ago(20) },
+    { id: ctid(5), cashAccountId: caid(2), cariAccountId: cid(7), financeMovementId: fmid(7), type: 1/*Income*/,  amount: 131973, transactionDateUtc: ago(43), description: 'ÇiçekSepeti SS-2026-007 nakit tahsilat', referenceNo: 'TAH-2026-007', createdAtUtc: ago(43) },
+    { id: ctid(6), cashAccountId: caid(2), cariAccountId: null,   financeMovementId: null,    type: 2/*Expense*/,  amount:   8500, transactionDateUtc: ago(15), description: 'Şube masrafları',                        referenceNo: 'GID-2026-002', createdAtUtc: ago(15) },
+];
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 15. HESAP PLANI (Temel Muhasebe Hesapları)
+// ═════════════════════════════════════════════════════════════════════════════
+const coaid = (n: number) => `00000013-0000-0000-0000-${String(n).padStart(12,'0')}`;
+
+export const DEMO_CHART_OF_ACCOUNTS = [
+    // Varlıklar (1)
+    { id: coaid(1),  code: '100', name: 'Kasa',                          type: 1/*Asset*/,     isActive: true, createdAtUtc: ago(365) },
+    { id: coaid(2),  code: '102', name: 'Banka',                         type: 1/*Asset*/,     isActive: true, createdAtUtc: ago(365) },
+    { id: coaid(3),  code: '120', name: 'Alıcılar',                      type: 1/*Asset*/,     isActive: true, createdAtUtc: ago(365) },
+    { id: coaid(4),  code: '121', name: 'Alacak Senetleri',              type: 1/*Asset*/,     isActive: true, createdAtUtc: ago(365) },
+    { id: coaid(5),  code: '153', name: 'Ticari Mallar',                 type: 1/*Asset*/,     isActive: true, createdAtUtc: ago(365) },
+    { id: coaid(6),  code: '191', name: 'İndirilecek KDV',               type: 1/*Asset*/,     isActive: true, createdAtUtc: ago(365) },
+    // Borçlar (2)
+    { id: coaid(7),  code: '320', name: 'Satıcılar',                     type: 2/*Liability*/, isActive: true, createdAtUtc: ago(365) },
+    { id: coaid(8),  code: '321', name: 'Borç Senetleri',                type: 2/*Liability*/, isActive: true, createdAtUtc: ago(365) },
+    { id: coaid(9),  code: '360', name: 'Ödenecek Vergiler ve Fonlar',   type: 2/*Liability*/, isActive: true, createdAtUtc: ago(365) },
+    { id: coaid(10), code: '391', name: 'Hesaplanan KDV',                type: 2/*Liability*/, isActive: true, createdAtUtc: ago(365) },
+    // Özkaynak (3)
+    { id: coaid(11), code: '500', name: 'Sermaye',                       type: 3/*Equity*/,    isActive: true, createdAtUtc: ago(365) },
+    { id: coaid(12), code: '590', name: 'Dönem Net Kârı',                type: 3/*Equity*/,    isActive: true, createdAtUtc: ago(365) },
+    // Gelirler (4)
+    { id: coaid(13), code: '600', name: 'Yurt İçi Satışlar',             type: 4/*Revenue*/,   isActive: true, createdAtUtc: ago(365) },
+    { id: coaid(14), code: '601', name: 'Yurt Dışı Satışlar',            type: 4/*Revenue*/,   isActive: false, createdAtUtc: ago(365) },
+    { id: coaid(15), code: '602', name: 'Diğer Gelirler',                type: 4/*Revenue*/,   isActive: true, createdAtUtc: ago(365) },
+    // Giderler (5)
+    { id: coaid(16), code: '620', name: 'Satılan Ticari Mallar Maliyeti',type: 5/*Expense*/,   isActive: true, createdAtUtc: ago(365) },
+    { id: coaid(17), code: '631', name: 'Pazarlama Satış Dağıtım Giderleri', type: 5/*Expense*/, isActive: true, createdAtUtc: ago(365) },
+    { id: coaid(18), code: '632', name: 'Genel Yönetim Giderleri',       type: 5/*Expense*/,   isActive: true, createdAtUtc: ago(365) },
+    { id: coaid(19), code: '660', name: 'Kısa Vadeli Borçlanma Giderleri', type: 5/*Expense*/, isActive: true, createdAtUtc: ago(365) },
+    { id: coaid(20), code: '780', name: 'Finansman Giderleri',           type: 5/*Expense*/,   isActive: true, createdAtUtc: ago(365) },
+];
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 16. CARİ BORÇ KALEMLERİ / DÉTAY (buyer-detail için zengin veri)
+// ═════════════════════════════════════════════════════════════════════════════
+const diid = (cari: number, i: number) => `00000014-${String(cari).padStart(4,'0')}-0000-0000-${String(i).padStart(12,'0')}`;
+
+export const DEMO_CARI_DEBT_ITEMS: Record<string, any[]> = {
+    [cid(1)]: [
+        { id: diid(1,1), cariAccountId: cid(1), materialDescription: 'Apple iPhone 15 Pro 256GB Doğal Titanyum (×10)', quantity: 10, listPrice: 59999, salePrice: 59999, totalAmount: 599990, payment: 599990, remainingBalance: 0,      transactionDate: ago(71) },
+        { id: diid(1,2), cariAccountId: cid(1), materialDescription: 'Samsung Galaxy S24 Ultra 512GB (×8)',             quantity:  8, listPrice: 47999, salePrice: 47999, totalAmount: 383992, payment: 383992, remainingBalance: 0,      transactionDate: ago(71) },
+        { id: diid(1,3), cariAccountId: cid(1), materialDescription: 'Samsung 65" Neo QLED 4K QN90C (×5)',              quantity:  5, listPrice: 27500, salePrice: 27500, totalAmount: 137500, payment: 137500, remainingBalance: 0,      transactionDate: ago(71) },
+        { id: diid(1,4), cariAccountId: cid(1), materialDescription: 'Apple MacBook Pro M3 14" 512GB (×4)',             quantity:  4, listPrice: 79999, salePrice: 79999, totalAmount: 319996, payment:       0, remainingBalance: 319996, transactionDate: ago(37) },
+        { id: diid(1,5), cariAccountId: cid(1), materialDescription: 'HP Spectre x360 14" i7-1355U 32GB (×3)',         quantity:  3, listPrice: 47999, salePrice: 47999, totalAmount: 143997, payment:       0, remainingBalance: 143997, transactionDate: ago(37) },
+    ],
+    [cid(2)]: [
+        { id: diid(2,1), cariAccountId: cid(2), materialDescription: 'Apple MacBook Pro M3 14" 512GB (×5)',             quantity:  5, listPrice: 79999, salePrice: 79999, totalAmount: 399995, payment: 399995, remainingBalance: 0,      transactionDate: ago(67) },
+        { id: diid(2,2), cariAccountId: cid(2), materialDescription: 'Dell XPS 15 9530 i7-13700H 32GB (×4)',            quantity:  4, listPrice: 69999, salePrice: 69999, totalAmount: 279996, payment: 279996, remainingBalance: 0,      transactionDate: ago(67) },
+        { id: diid(2,3), cariAccountId: cid(2), materialDescription: 'Samsung 65" Neo QLED (×6)',                       quantity:  6, listPrice: 27500, salePrice: 27500, totalAmount: 165000, payment:       0, remainingBalance: 165000, transactionDate: ago(34) },
+        { id: diid(2,4), cariAccountId: cid(2), materialDescription: 'LG 55" OLED evo C3 4K (×4)',                     quantity:  4, listPrice: 34900, salePrice: 34900, totalAmount: 139600, payment:  18017, remainingBalance: 120583,  transactionDate: ago(34) },
+    ],
+    [cid(4)]: [
+        { id: diid(4,1), cariAccountId: cid(4), materialDescription: 'Apple iPhone 15 Pro 256GB (×15)',                 quantity: 15, listPrice: 59999, salePrice: 59999, totalAmount: 899985, payment: 899985, remainingBalance: 0,       transactionDate: ago(59) },
+        { id: diid(4,2), cariAccountId: cid(4), materialDescription: 'Samsung Galaxy S24 Ultra 512GB (×12)',            quantity: 12, listPrice: 47999, salePrice: 47999, totalAmount: 575988, payment: 575988, remainingBalance: 0,       transactionDate: ago(59) },
+        { id: diid(4,3), cariAccountId: cid(4), materialDescription: 'Apple Watch Ultra 2 49mm Titanyum (×6)',          quantity:  6, listPrice: 22999, salePrice: 22999, totalAmount: 137994, payment:       0, remainingBalance: 137994, transactionDate: ago(59) },
+        { id: diid(4,4), cariAccountId: cid(4), materialDescription: 'Apple MacBook Pro M3 14" (×6)',                   quantity:  6, listPrice: 79999, salePrice: 79999, totalAmount: 479994, payment:       0, remainingBalance: 479994, transactionDate: ago(28) },
+        { id: diid(4,5), cariAccountId: cid(4), materialDescription: 'Dell XPS 15 9530 i7 32GB (×4)',                   quantity:  4, listPrice: 69999, salePrice: 69999, totalAmount: 279996, payment:       0, remainingBalance: 279996, transactionDate: ago(28) },
+        { id: diid(4,6), cariAccountId: cid(4), materialDescription: 'Lenovo ThinkPad X1 Carbon Gen 11 (×4)',           quantity:  4, listPrice: 52999, salePrice: 52999, totalAmount: 211996, payment:  21842, remainingBalance: 190143,  transactionDate: ago(28) },
+    ],
+    [cid(15)]: [
+        { id: diid(15,1), cariAccountId: cid(15), materialDescription: 'Samsung Galaxy S24 Ultra (×20)',                quantity: 20, listPrice: 47999, salePrice: 47999, totalAmount: 959980, payment: 959980, remainingBalance: 0,       transactionDate: ago(7) },
+        { id: diid(15,2), cariAccountId: cid(15), materialDescription: 'Apple iPhone 15 Pro (×15)',                     quantity: 15, listPrice: 59999, salePrice: 59999, totalAmount: 899985, payment: 840028, remainingBalance: 59957,   transactionDate: ago(7) },
+        { id: diid(15,3), cariAccountId: cid(15), materialDescription: 'Apple iPad Pro 13" M2 WiFi (×8)',               quantity:  8, listPrice: 39999, salePrice: 39999, totalAmount: 319992, payment:       0, remainingBalance: 319992, transactionDate: ago(7) },
+    ],
+    [cid(16)]: [
+        { id: diid(16,1), cariAccountId: cid(16), materialDescription: 'Apple MacBook Pro M3 14" (×6)',                 quantity:  6, listPrice: 79999, salePrice: 79999, totalAmount: 479994, payment: 479994, remainingBalance: 0,       transactionDate: ago(4) },
+        { id: diid(16,2), cariAccountId: cid(16), materialDescription: 'Dell XPS 15 i7 32GB (×4)',                      quantity:  4, listPrice: 69999, salePrice: 69999, totalAmount: 279996, payment: 279996, remainingBalance: 0,       transactionDate: ago(4) },
+        { id: diid(16,3), cariAccountId: cid(16), materialDescription: 'HP Spectre x360 14" i7 32GB (×3)',              quantity:  3, listPrice: 47999, salePrice: 47999, totalAmount: 143997, payment: 143997, remainingBalance: 0,       transactionDate: ago(4) },
+        { id: diid(16,4), cariAccountId: cid(16), materialDescription: 'Lenovo ThinkPad X1 Carbon (×2)',                quantity:  2, listPrice: 52999, salePrice: 52999, totalAmount: 105998, payment:  59985, remainingBalance: 46013,  transactionDate: ago(4) },
+    ],
+};
+
+// ═════════════════════════════════════════════════════════════════════════════
+// 17. DASHBOARD SUMMARY (KPI özeti)
+// ═════════════════════════════════════════════════════════════════════════════
+export const DEMO_DASHBOARD_SUMMARY = {
+    totalSalesAmount:       11622283,   // DEMO_SALES_ORDERS Approved toplamı
+    totalOrderCount:        20,
+    totalProductCount:      30,
+    totalActiveCariCount:   16,
+    totalBankBalance:       DEMO_BANK_ACCOUNTS.reduce((s, b) => s + b.balance, 0),   // 6_125_000
+    totalCashBalance:       DEMO_CASH_ACCOUNTS.reduce((s, c) => s + c.balance, 0),   // 227_500
+    overdueReceivables:     DEMO_DUE_LIST.filter(d => d.overdueDays > 0).reduce((s, d) => s + d.openAmount, 0),  // 412_522
+    overdueCheckNoteCount:  DEMO_CHECK_NOTES.filter(n => n.status === CheckNoteStatus.Protested).length,          // 1
+    pendingQuoteCount:      DEMO_QUOTES.filter(q => q.status === QuoteStatus.Draft || q.status === QuoteStatus.Sent).length, // 3
+};
+

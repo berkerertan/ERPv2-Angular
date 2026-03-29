@@ -192,8 +192,8 @@ export class MembersComponent implements OnInit, OnDestroy {
 
     avatarColor(name: string): string {
         const colors = [
-            '#4c6ef5', '#7950f2', '#e64980', '#f03e3e',
-            '#e67700', '#2f9e44', '#0c8599', '#1971c2'
+            '#f97316', '#e11d48', '#e64980', '#f03e3e',
+            '#e67700', '#2f9e44', '#0c8599', '#c2410c'
         ];
         let hash = 0;
         for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);

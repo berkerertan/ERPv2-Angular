@@ -22,7 +22,7 @@ export class RevenueComponent implements OnInit {
       next: (summary) => {
         const totalMrr = summary.totalMonthlyRevenue;
         const byPlan = (summary.breakdown || []).map(bp => {
-          const planColors: Record<string, string> = { '1': '#6366f1', '2': '#8b5cf6', '3': '#a855f7' };
+          const planColors: Record<string, string> = { '1': '#f97316', '2': '#e11d48', '3': '#f59f00' };
           const planNames: Record<string, string> = { '1': 'Starter', '2': 'Pro', '3': 'Enterprise' };
           const planKey = bp.plan || '1';
           return {
@@ -143,25 +143,24 @@ export class RevenueComponent implements OnInit {
 
   getPlanGradient(planId: string): string {
     const map: Record<string, string> = {
-      starter: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-      pro: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
-      enterprise: 'linear-gradient(135deg, #a855f7, #9333ea)',
+      starter: 'linear-gradient(135deg, #f97316, #ea580c)',
+      pro: 'linear-gradient(135deg, #e11d48, #be123c)',
+      enterprise: 'linear-gradient(135deg, #f59f00, #e67700)',
     };
-    return map[planId?.toLowerCase()] ?? 'linear-gradient(135deg, #5c7cfa, #4263eb)';
+    return map[planId?.toLowerCase()] ?? 'linear-gradient(135deg, #f97316, #ea580c)';
   }
 
   /**
    * CSS conic-gradient string for the percentage ring.
-   * percentage 53.24 → "conic-gradient(#8b5cf6 0% 53.24%, #252736 53.24% 100%)"
    */
   planRingGradient(planId: string, percentage: number): string {
     const colors: Record<string, string> = {
-      starter: '#6366f1',
-      pro: '#8b5cf6',
-      enterprise: '#a855f7',
+      starter: '#f97316',
+      pro: '#e11d48',
+      enterprise: '#f59f00',
     };
-    const color = colors[planId?.toLowerCase()] ?? '#5c7cfa';
-    return `conic-gradient(${color} 0% ${percentage.toFixed(2)}%, #252736 ${percentage.toFixed(2)}% 100%)`;
+    const color = colors[planId?.toLowerCase()] ?? '#f97316';
+    return `conic-gradient(${color} 0% ${percentage.toFixed(2)}%, #2a1f14 ${percentage.toFixed(2)}% 100%)`;
   }
 
   // ─── KPI change class ────────────────────────────────────────────────────────

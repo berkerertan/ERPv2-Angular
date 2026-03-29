@@ -69,26 +69,26 @@ table {
 
 /* === CSS Variables (Design Tokens) === */
 :root {
-  /* Primary Colors */
-  --primary-50: #eef2ff;
-  --primary-100: #dbe4ff;
-  --primary-200: #bac8ff;
-  --primary-300: #91a7ff;
-  --primary-400: #748ffc;
-  --primary-500: #5c7cfa;
-  --primary-600: #4c6ef5;
-  --primary-700: #4263eb;
-  --primary-800: #3b5bdb;
-  --primary-900: #364fc7;
+  /* Primary Colors — Amber/Orange Palette */
+  --primary-50:  #fff7ed;
+  --primary-100: #ffedd5;
+  --primary-200: #fed7aa;
+  --primary-300: #fdba74;
+  --primary-400: #fb923c;
+  --primary-500: #f97316;
+  --primary-600: #ea580c;
+  --primary-700: #c2410c;
+  --primary-800: #9a3412;
+  --primary-900: #7c2d12;
 
-  /* Background Colors (Dark Mode) — Midnight Indigo Palette */
-  --bg-primary: #0a0d1a;
-  --bg-secondary: #101426;
-  --bg-card: #161b2e;
-  --bg-elevated: #1e2440;
-  --bg-hover: #252d4e;
-  --bg-sidebar: #0d1020;
-  --bg-input: #181e35;
+  /* Background Colors (Dark Mode) — Ember Dark Palette */
+  --bg-primary:   #0e0c0a;
+  --bg-secondary: #15110d;
+  --bg-card:      #1d1710;
+  --bg-elevated:  #271e15;
+  --bg-hover:     #33261a;
+  --bg-sidebar:   #0b0907;
+  --bg-input:     #1b1510;
 
   /* Text Colors */
   --text-primary: #f1f3f5;
@@ -107,13 +107,13 @@ table {
   --info-bg: rgba(116, 192, 252, 0.12);
 
   /* Borders */
-  --border-color: rgba(255, 255, 255, 0.07);
-  --border-light: rgba(255, 255, 255, 0.12);
+  --border-color: rgba(255, 140, 60, 0.08);
+  --border-light: rgba(255, 140, 60, 0.14);
   --border-focus: var(--primary-500);
 
   /* Glassmorphism */
-  --glass-bg: rgba(14, 18, 38, 0.78);
-  --glass-border: rgba(255, 255, 255, 0.09);
+  --glass-bg: rgba(20, 14, 8, 0.82);
+  --glass-border: rgba(255, 140, 60, 0.09);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
 
   /* Shadows */

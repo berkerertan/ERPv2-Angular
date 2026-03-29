@@ -1,3 +1,220 @@
+<!-- ═══ DOKUNMATIK MOD ══════════════════════════════════════ -->
+@if (touchMode()) {
+<div class="touch-pos-layout">
+
+  <!-- Top Bar -->
+  <div class="touch-topbar">
+    <div class="touch-search-wrap">
+      <span class="material-icons-outlined">search</span>
+      <input type="text" class="touch-search-input" placeholder="Ürün adı veya barkod..."
+             [(ngModel)]="searchTerm" (input)="onSearchInput()" />
+      @if (searchTerm) {
+        <button class="touch-clear-btn" (click)="clearSearch()">
+          <span class="material-icons-outlined">close</span>
+        </button>
+      }
+    </div>
+    <select class="touch-select" [(ngModel)]="selectedWarehouseId">
+      @for (w of warehouses; track w.id) {
+        <option [value]="w.id">{{ w.name }}</option>
+      }
+    </select>
+    <button class="touch-barcode-btn" (click)="openBarcodeScanner()" title="Barkod Tara">
+      <span class="material-icons-outlined">qr_code_scanner</span>
+    </button>
+    <button class="touch-desktop-btn" (click)="touchMode.set(false)" title="Masaüstü Moduna Geç">
+      <span class="material-icons-outlined">desktop_windows</span>
+      Masaüstü
+    </button>
+  </div>
+
+  <!-- 3-Panel Main -->
+  <div class="touch-main">
+
+    <!-- ─── Panel 1: Kategoriler ──────────────────── -->
+    <div class="touch-categories">
+      <button class="touch-cat-btn" [class.touch-cat-active]="activeCategory() === ''"
+              (click)="activeCategory.set('')">
+        <span class="material-icons-outlined">apps</span>
+        <span class="touch-cat-label">Tümü</span>
+        <span class="touch-cat-count">{{ productCatalog.length }}</span>
+      </button>
+      @for (cat of categories; track cat) {
+        <button class="touch-cat-btn" [class.touch-cat-active]="activeCategory() === cat"
+                (click)="activeCategory.set(cat)"
+                [style.--cat-clr]="getCategoryColor(cat)">
+          <span class="touch-cat-dot"></span>
+          <span class="touch-cat-label">{{ cat }}</span>
+          <span class="touch-cat-count">{{ getCategoryCount(cat) }}</span>
+        </button>
+      }
+    </div>
+
+    <!-- ─── Panel 2: Ürün Grid ────────────────────── -->
+    <div class="touch-products">
+      @if (filteredProducts.length === 0) {
+        <div class="touch-no-product">
+          <span class="material-icons-outlined">search_off</span>
+          <p>Ürün bulunamadı</p>
+        </div>
+      }
+      @for (p of filteredProducts; track p.id) {
+        <button class="touch-tile" (click)="addToCartFromGrid(p)"
+                [style.--tile-clr]="getCategoryColor(p.category)">
+          <div class="touch-tile-top">
+            <span class="touch-tile-cat">{{ p.category }}</span>
+          </div>
+          <div class="touch-tile-name">{{ p.name }}</div>
+          <div class="touch-tile-footer">
+            <span class="touch-tile-unit">{{ p.unit }}</span>
+            <span class="touch-tile-price">₺{{ p.unitPrice.toLocaleString('tr-TR') }}</span>
+          </div>
+        </button>
+      }
+    </div>
+
+    <!-- ─── Panel 3: Sepet + Ödeme ───────────────── -->
+    <div class="touch-cart-panel">
+
+      <!-- Sepet Başlığı -->
+      <div class="touch-cart-head">
+        <span class="material-icons-outlined">shopping_cart</span>
+        <span>Sepet</span>
+        @if (cartItemCount > 0) {
+          <span class="touch-cart-badge">{{ cartItemCount }}</span>
+        }
+        @if (cart().length > 0) {
+          <button class="touch-trash-btn" (click)="clearCart()" title="Temizle">
+            <span class="material-icons-outlined">delete_sweep</span>
+          </button>
+        }
+      </div>
+
+      <!-- Sepet Kalemleri -->
+      <div class="touch-cart-items">
+        @if (cart().length === 0) {
+          <div class="touch-cart-empty">
+            <span class="material-icons-outlined">point_of_sale</span>
+            <span>Ürün ekleyin</span>
+          </div>
+        }
+        @for (item of cart(); track item.barcode; let i = $index) {
+          <div class="touch-cart-row">
+            <div class="touch-cart-info">
+              <span class="touch-cart-idx">{{ i + 1 }}</span>
+              <span class="touch-cart-pname">{{ item.name }}</span>
+            </div>
+            <div class="touch-qty-row">
+              <button class="touch-qty-btn" (click)="updateQuantity(item, -1)">
+                <span class="material-icons-outlined">remove</span>
+              </button>
+              <span class="touch-qty-val">{{ item.quantity }}</span>
+              <button class="touch-qty-btn" (click)="updateQuantity(item, 1)">
+                <span class="material-icons-outlined">add</span>
+              </button>
+              <span class="touch-cart-line-total">₺{{ item.total.toLocaleString('tr-TR') }}</span>
+              <button class="touch-remove-btn" (click)="removeItem(item)">
+                <span class="material-icons-outlined">close</span>
+              </button>
+            </div>
+          </div>
+        }
+      </div>
+
+      <!-- Toplamlar -->
+      <div class="touch-totals">
+        <div class="touch-total-row">
+          <span>Ara Toplam</span><span>₺{{ cartTotal.toFixed(2) }}</span>
+        </div>
+        <div class="touch-total-row">
+          <span>KDV (%18)</span><span>₺{{ cartTax.toFixed(2) }}</span>
+        </div>
+        <div class="touch-grand">
+          <span>TOPLAM</span>
+          <span>₺{{ cartGrandTotal.toFixed(2) }}</span>
+        </div>
+      </div>
+
+      <!-- Ödeme Yöntemleri -->
+      <div class="touch-pay-methods">
+        <button class="touch-pay-btn touch-pay-cash"
+                [class.touch-pay-active]="paymentMethod() === 'cash'"
+                (click)="selectPayment('cash')">
+          <span class="material-icons-outlined">payments</span>
+          Nakit
+        </button>
+        <button class="touch-pay-btn touch-pay-card"
+                [class.touch-pay-active]="paymentMethod() === 'card'"
+                (click)="selectPayment('card')">
+          <span class="material-icons-outlined">credit_card</span>
+          Kart
+        </button>
+        <button class="touch-pay-btn touch-pay-credit"
+                [class.touch-pay-active]="paymentMethod() === 'credit'"
+                (click)="selectPayment('credit')">
+          <span class="material-icons-outlined">account_balance</span>
+          Veresiye
+        </button>
+      </div>
+
+      <!-- Veresiye: Alıcı seçimi -->
+      @if (paymentMethod() === 'credit') {
+        <div class="touch-buyer-wrap">
+          @if (!selectedBuyer()) {
+            <div class="touch-buyer-search">
+              <span class="material-icons-outlined">person_search</span>
+              <input type="text" placeholder="Alıcı ara..."
+                     [(ngModel)]="buyerSearchTerm"
+                     (input)="onBuyerSearchInput()"
+                     (focus)="onBuyerSearchFocus()"
+                     (blur)="onBuyerSearchBlur()" />
+            </div>
+            @if (showBuyerDropdown() && filteredBuyers.length > 0) {
+              <div class="touch-buyer-dropdown">
+                @for (b of filteredBuyers; track b.id) {
+                  <button class="touch-buyer-item" (mousedown)="selectBuyer(b)">
+                    <span class="touch-buyer-avatar">{{ b.name.charAt(0) }}</span>
+                    <span class="touch-buyer-name" [innerHTML]="highlightBuyerMatch(b.name)"></span>
+                    <span class="touch-buyer-phone">{{ b.phone }}</span>
+                  </button>
+                }
+              </div>
+            }
+          } @else {
+            <div class="touch-buyer-selected">
+              <span class="touch-buyer-avatar">{{ selectedBuyer()!.name.charAt(0) }}</span>
+              <span class="touch-buyer-name">{{ selectedBuyer()!.name }}</span>
+              <button class="touch-buyer-change" (click)="clearBuyerSelection()">
+                <span class="material-icons-outlined">swap_horiz</span>
+              </button>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Satışı Tamamla -->
+      <button class="touch-complete-btn"
+              (click)="completeSale()"
+              [disabled]="cart().length === 0 || isSaving() || (paymentMethod() === 'credit' && !selectedBuyer())">
+        @if (isSaving()) {
+          <div class="spinner spinner-sm"></div>
+          İşleniyor...
+        } @else {
+          <span class="material-icons-outlined">point_of_sale</span>
+          SATIŞ TAMAMLA
+          @if (cart().length > 0) {
+            <span class="touch-complete-amount">₺{{ cartGrandTotal.toFixed(2) }}</span>
+          }
+        }
+      </button>
+
+    </div>
+  </div>
+</div>
+}
+
+<!-- ═══ MASAÜSTÜ MOD ═════════════════════════════════════════ -->
+@if (!touchMode()) {
 <div class="pos-layout">
   <!-- ═══ LEFT: Main Area ══════════════════════════════ -->
   <div class="pos-main">
@@ -71,6 +288,12 @@
         title="Fiş Yazdır (Teklif)">
         <span class="material-icons-outlined">receipt_long</span>
         <span class="print-label">Fiş Yazdır</span>
+      </button>
+
+      <!-- Dokunmatik Mod geçişi -->
+      <button class="touch-mode-entry-btn" (click)="touchMode.set(true)" title="Dokunmatik Kiosk Moduna Geç">
+        <span class="material-icons-outlined">touch_app</span>
+        <span class="print-label">Dokunmatik Mod</span>
       </button>
     </div>
 
@@ -289,6 +512,7 @@
     </div>
   </div>
 </div>
+} <!-- /if !touchMode -->
 
 <!-- ═══ BARKOD TARAYICI MODALI ══════════════════════════ -->
 @if (showBarcodeScanner()) {

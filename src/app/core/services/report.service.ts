@@ -139,16 +139,16 @@ export class ReportService {
     }
 
     /** Satış raporu — tarih bazlı satış analizi */
-    getSalesReport(filter?: ReportFilter): Observable<SalesReportItem[]> {
+    getSalesReport(startDate?: string, endDate?: string): Observable<SalesReportItem[]> {
         return this.http.get<SalesReportItem[]>(`${this.apiUrl}/sales`, {
-            params: this.buildParams(filter)
+            params: this.buildParams({ startDate, endDate })
         });
     }
 
     /** Satın alma raporu — tedarikçi bazlı */
-    getPurchasesReport(filter?: ReportFilter): Observable<PurchaseReportItem[]> {
+    getPurchasesReport(startDate?: string, endDate?: string): Observable<PurchaseReportItem[]> {
         return this.http.get<PurchaseReportItem[]>(`${this.apiUrl}/purchases`, {
-            params: this.buildParams(filter)
+            params: this.buildParams({ startDate, endDate })
         });
     }
 
@@ -167,9 +167,9 @@ export class ReportService {
     }
 
     /** Gelir-gider raporu */
-    getIncomeExpense(filter?: ReportFilter): Observable<IncomeExpenseReport> {
+    getIncomeExpense(startDate?: string, endDate?: string): Observable<IncomeExpenseReport> {
         return this.http.get<IncomeExpenseReport>(`${this.apiUrl}/income-expense`, {
-            params: this.buildParams(filter)
+            params: this.buildParams({ startDate, endDate })
         });
     }
 

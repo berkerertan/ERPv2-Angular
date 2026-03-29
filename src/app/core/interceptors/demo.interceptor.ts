@@ -19,6 +19,13 @@ import {
     DEMO_ACTIVITY_LOGS, DEMO_ACTIVITY_SUMMARY,
     DEMO_MY_ACTIVITY_LOGS, DEMO_MY_ACTIVITY_SUMMARY,
     DEMO_PLATFORM_TENANTS, DEMO_PLATFORM_OVERVIEW,
+    DEMO_QUOTES,
+    DEMO_CHECK_NOTES,
+    DEMO_BANK_ACCOUNTS, DEMO_BANK_TRANSACTIONS,
+    DEMO_CASH_ACCOUNTS, DEMO_CASH_TRANSACTIONS,
+    DEMO_CHART_OF_ACCOUNTS,
+    DEMO_CARI_DEBT_ITEMS, DEMO_BUYER_EXTRA,
+    DEMO_DASHBOARD_SUMMARY,
 } from '../mock/demo-data';
 import { InvoiceType } from '../models/invoice.model';
 
@@ -102,12 +109,26 @@ export const demoInterceptor: HttpInterceptorFn = (req, next) => {
         if (path.includes('/details')) {
             const cariId = path.split('/').slice(-2)[0];
             const account = DEMO_CARIS.find(c => c.id === cariId) ?? DEMO_CARIS[0];
-            return ok({ account, items: [] });
+            const extra   = DEMO_BUYER_EXTRA[account.id];
+            const items   = DEMO_CARI_DEBT_ITEMS[account.id] ?? [];
+            return ok({ account: { ...account, ...(extra ?? {}) }, items });
         }
         // /api/cari-accounts/:id/debt-items
         if (path.includes('/debt-items')) {
-            if (method === 'GET') return ok([]);
+            const cariId = path.split('/').slice(-2)[0];
+            if (method === 'GET') return ok(DEMO_CARI_DEBT_ITEMS[cariId] ?? []);
             return ok(`"${newMockId()}"`);
+        }
+        // /api/cari-accounts/import-buyers-batch (POST via FormData)
+        if (path.includes('/import-buyers-batch') && method === 'POST') {
+            return ok({
+                totalFileCount: 1, totalCreatedCount: 12, totalFailedCount: 0,
+                files: [{ fileName: 'demo_import.xlsx', createdCount: 12, failedCount: 0, errors: [] }]
+            });
+        }
+        // /api/cari-accounts/:id/import-excel
+        if (path.includes('/import-excel') && method === 'POST') {
+            return ok({ createdCount: 8, failedCount: 0, errors: [] });
         }
         // /api/cari-accounts/:id
         const cariId = path.replace('/api/cari-accounts/', '').split('/')[0];
@@ -229,8 +250,31 @@ export const demoInterceptor: HttpInterceptorFn = (req, next) => {
         return ok(DEMO_ALL_INVOICES);
     }
 
+    // ── TEKLİFLER ─────────────────────────────────────────────────────────────
+    if (path.startsWith('/api/quotes')) {
+        if (method === 'POST') {
+            // convert-to-order
+            if (path.includes('/convert-to-order')) return ok(`"${newMockId()}"`);
+            // change-status
+            if (path.includes('/change-status')) return noContent();
+            return ok(`"${newMockId()}"`);
+        }
+        const qSeg = path.replace('/api/quotes/', '').split('/')[0];
+        if (qSeg && !path.endsWith('/quotes')) {
+            const found = DEMO_QUOTES.find(q => q.id === qSeg);
+            return ok(found ?? DEMO_QUOTES[0]);
+        }
+        // QuoteListItem shape (id, quoteNumber, customerName, status, dates, itemCount, grandTotal)
+        return ok(DEMO_QUOTES.map(q => ({
+            id: q.id, quoteNumber: q.quoteNumber, customerName: q.customerName,
+            status: q.status, quoteDateUtc: q.quoteDateUtc, validUntilUtc: q.validUntilUtc,
+            itemCount: q.itemCount, grandTotal: q.grandTotal, createdAtUtc: q.createdAtUtc
+        })));
+    }
+
     // ── RAPORLAR ─────────────────────────────────────────────────────────────
     if (path.startsWith('/api/reports')) {
+        if (path.includes('/dashboard-summary'))                  return ok(DEMO_DASHBOARD_SUMMARY);
         if (path.includes('/sales'))                              return ok(DEMO_SALES_REPORT);
         if (path.includes('/purchases'))                          return ok(DEMO_PURCHASES_REPORT);
         if (path.includes('/stock'))                              return ok(DEMO_STOCK_REPORT);
@@ -330,8 +374,74 @@ export const demoInterceptor: HttpInterceptorFn = (req, next) => {
         return ok(logs.slice((page-1)*pageSize, page*pageSize));
     }
 
-    // ── Muhasebe ─────────────────────────────────────────────────────────────
+    // ── MUHASEBE ─────────────────────────────────────────────────────────────
     if (path.startsWith('/api/accounting')) {
+        // Çek/Senet
+        if (path.includes('/check-notes')) {
+            if (method === 'POST') {
+                if (path.includes('/settle'))        return ok({ cariBalance: 0, treasuryBalance: 0 });
+                if (path.includes('/change-status')) return noContent();
+                return ok(`"${newMockId()}"`);
+            }
+            const cnSeg = path.split('/check-notes/').pop()?.split('/')[0] ?? '';
+            if (cnSeg && cnSeg !== 'check-notes') {
+                const found = DEMO_CHECK_NOTES.find(n => n.id === cnSeg);
+                return ok(found ?? DEMO_CHECK_NOTES[0]);
+            }
+            if (path.includes('/due-list')) return ok(DEMO_CHECK_NOTES.filter(n => n.status === 1 || n.status === 2));
+            return ok(DEMO_CHECK_NOTES);
+        }
+        // Banka Hesapları
+        if (path.includes('/bank-accounts')) {
+            if (method === 'POST') return ok(`"${newMockId()}"`);
+            if (path.includes('/transactions')) {
+                const baSeg = path.split('/bank-accounts/').pop()?.split('/')[0] ?? '';
+                return ok(DEMO_BANK_TRANSACTIONS.filter(t => !baSeg || t.bankAccountId === baSeg));
+            }
+            const baSeg = path.split('/bank-accounts/').pop()?.split('/')[0] ?? '';
+            if (baSeg && !baSeg.includes('bank-accounts')) {
+                const found = DEMO_BANK_ACCOUNTS.find(b => b.id === baSeg);
+                return ok(found ?? DEMO_BANK_ACCOUNTS[0]);
+            }
+            return ok(DEMO_BANK_ACCOUNTS);
+        }
+        // Kasa Hesapları
+        if (path.includes('/cash-accounts')) {
+            if (method === 'POST') return ok(`"${newMockId()}"`);
+            if (path.includes('/transactions')) {
+                const caSeg = path.split('/cash-accounts/').pop()?.split('/')[0] ?? '';
+                return ok(DEMO_CASH_TRANSACTIONS.filter(t => !caSeg || t.cashAccountId === caSeg));
+            }
+            const caSeg = path.split('/cash-accounts/').pop()?.split('/')[0] ?? '';
+            if (caSeg && !caSeg.includes('cash-accounts')) {
+                const found = DEMO_CASH_ACCOUNTS.find(c => c.id === caSeg);
+                return ok(found ?? DEMO_CASH_ACCOUNTS[0]);
+            }
+            return ok(DEMO_CASH_ACCOUNTS);
+        }
+        // Banka İşlemleri (direkt)
+        if (path.includes('/bank-transactions') && method === 'POST') return ok(`"${newMockId()}"`);
+        // Kasa İşlemleri (direkt)
+        if (path.includes('/cash-transactions') && method === 'POST') return ok(`"${newMockId()}"`);
+        // Tahsilat/Ödeme
+        if (path.includes('/collection-payment') && method === 'POST') {
+            return ok({ financeMovementId: newMockId(), cashTransactionId: newMockId(), bankTransactionId: newMockId(), cariBalance: 0, treasuryBalance: 0 });
+        }
+        // Hesap Planı
+        if (path.includes('/chart-of-accounts')) {
+            if (method === 'POST') return ok(`"${newMockId()}"`);
+            const coaSeg = path.split('/chart-of-accounts/').pop()?.split('/')[0] ?? '';
+            if (coaSeg && !coaSeg.includes('chart-of-accounts')) {
+                return ok(DEMO_CHART_OF_ACCOUNTS.find(a => a.id === coaSeg) ?? DEMO_CHART_OF_ACCOUNTS[0]);
+            }
+            return ok(DEMO_CHART_OF_ACCOUNTS);
+        }
+        // Muhasebe Fişleri (journal entries)
+        if (path.includes('/journal-entries')) {
+            if (method === 'POST') return ok(`"${newMockId()}"`);
+            return ok([]);
+        }
+        // Genel fallback
         return ok([]);
     }
 

@@ -1,6 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 
 interface NavItem {
     icon: string;
@@ -13,10 +14,14 @@ interface NavSection {
     items: NavItem[];
 }
 
+interface NavItemWithSection extends NavItem {
+    sectionTitle: string;
+}
+
 @Component({
     selector: 'app-sidebar',
     standalone: true,
-    imports: [CommonModule, RouterModule],
+    imports: [CommonModule, RouterModule, FormsModule],
     templateUrl: './sidebar.component.html',
     styleUrl: './sidebar.component.css'
 })
@@ -24,6 +29,7 @@ export class SidebarComponent {
     isCollapsed = signal(false);
     isMobileOpen = signal(false);
     isHoverExpanded = signal(false);
+    searchQuery = signal('');
 
     private hoverLeaveTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -56,8 +62,10 @@ export class SidebarComponent {
         {
             title: 'Stok Yönetimi',
             items: [
-                { icon: 'inventory_2', label: 'Ürünler', route: '/products' },
-                { icon: 'swap_horiz', label: 'Stok Hareketleri', route: '/stock-movements' },
+                { icon: 'inventory_2',   label: 'Ürünler',          route: '/products' },
+                { icon: 'swap_horiz',    label: 'Stok Hareketleri', route: '/stock-movements' },
+                { icon: 'fact_check',    label: 'Stok Sayımı',      route: '/inventory-count' },
+                { icon: 'label',         label: 'Etiket Bas',       route: '/label-print' },
             ]
         },
         {
@@ -110,8 +118,44 @@ export class SidebarComponent {
         }
     ];
 
+    /** Arama sorgusu varsa eşleşen menü öğelerini döner, yoksa null (= normal görünüm) */
+    readonly filteredNav = computed<NavItemWithSection[] | null>(() => {
+        const q = this.searchQuery().toLowerCase().trim();
+        if (!q) return null;
+        const results: NavItemWithSection[] = [];
+        for (const section of this.navSections) {
+            for (const item of section.items) {
+                if (
+                    item.label.toLowerCase().includes(q) ||
+                    section.title.toLowerCase().includes(q)
+                ) {
+                    results.push({ ...item, sectionTitle: section.title });
+                }
+            }
+        }
+        return results;
+    });
+
+    /** Eşleşen kısmı <mark> ile wrap'ler */
+    highlight(text: string): string {
+        const q = this.searchQuery().trim();
+        if (!q) return text;
+        const idx = text.toLowerCase().indexOf(q.toLowerCase());
+        if (idx === -1) return text;
+        return (
+            text.slice(0, idx) +
+            `<mark class="nav-highlight">${text.slice(idx, idx + q.length)}</mark>` +
+            text.slice(idx + q.length)
+        );
+    }
+
+    clearSearch(): void {
+        this.searchQuery.set('');
+    }
+
     toggleCollapse(): void {
         this.isCollapsed.update(v => !v);
+        if (this.isCollapsed()) this.clearSearch();
     }
 
     toggleMobile(): void {
@@ -120,5 +164,6 @@ export class SidebarComponent {
 
     closeMobile(): void {
         this.isMobileOpen.set(false);
+        this.clearSearch();
     }
 }

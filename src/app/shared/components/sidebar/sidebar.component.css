@@ -92,6 +92,123 @@
     margin: 0 auto;
 }
 
+/* Search — nav içinde */
+.sidebar-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 var(--space-3) 0;
+    padding: 8px 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    flex-shrink: 0;
+}
+.sidebar-search:focus-within {
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+.sidebar-search-icon {
+    font-size: 16px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    pointer-events: none;
+}
+.sidebar-search-input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 0.82rem;
+    outline: none;
+    font-family: inherit;
+}
+.sidebar-search-input::placeholder { color: var(--text-muted); }
+.sidebar-search-clear {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: none;
+    background: var(--bg-hover);
+    color: var(--text-muted);
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+    transition: background 0.12s, color 0.12s;
+}
+.sidebar-search-clear:hover { background: rgba(249,115,22,0.15); color: var(--primary-400); }
+.sidebar-search-clear .material-icons-outlined { font-size: 12px; }
+
+/* Kapalı modda arama ikonu */
+.nav-search-icon-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 10px;
+    margin-bottom: var(--space-2);
+    border: none;
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+}
+.nav-search-icon-btn:hover {
+    background: var(--bg-hover);
+    color: var(--primary-400);
+}
+.nav-search-icon-btn .material-icons-outlined { font-size: 20px; }
+
+/* Search results */
+.nav-search-results { padding-top: var(--space-1); }
+
+.nav-link--result {
+    flex-direction: row;
+    align-items: center;
+}
+.nav-result-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+    flex: 1;
+}
+.nav-result-section {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Highlight match */
+:host ::ng-deep .nav-highlight {
+    background: rgba(249, 115, 22, 0.22);
+    color: var(--primary-400);
+    border-radius: 2px;
+    padding: 0 1px;
+    font-style: normal;
+}
+
+/* Boş sonuç */
+.nav-search-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 28px 12px;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    text-align: center;
+}
+.nav-search-empty .material-icons-outlined { font-size: 28px; opacity: 0.4; }
+
 /* Navigation */
 .sidebar-nav {
     flex: 1;

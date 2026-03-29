@@ -327,7 +327,7 @@ export class EmailTemplatesComponent implements OnInit, OnDestroy {
 
       <!-- HEADER -->
       <tr>
-        <td style="background:linear-gradient(135deg,#4c6ef5 0%,#6d44e8 100%);
+        <td style="background:linear-gradient(135deg,#f97316 0%,#ea580c 100%);
                    padding:36px 48px;text-align:center">
           <div style="font-size:28px;font-weight:800;color:#ffffff;
                       letter-spacing:-1px;font-family:Arial,sans-serif">
@@ -376,7 +376,7 @@ export class EmailTemplatesComponent implements OnInit, OnDestroy {
           <p style="margin:0 0 16px;font-size:12px;color:#9ca3af">
             Yardım için
             <a href="mailto:destek@erp.local"
-               style="color:#4c6ef5;text-decoration:none">
+               style="color:#f97316;text-decoration:none">
               destek@erp.local
             </a>
           </p>

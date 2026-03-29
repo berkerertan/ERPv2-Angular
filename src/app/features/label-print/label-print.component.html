@@ -1,0 +1,306 @@
+<div class="lp-page">
+
+  <!-- ═══ BAŞLIK ═══════════════════════════════════════════════════════ -->
+  <div class="lp-header">
+    <div class="lp-header-left">
+      <span class="material-icons-outlined lp-header-icon">label</span>
+      <div>
+        <h1 class="lp-title">Etiket Yazdırma Sistemi</h1>
+        <p class="lp-subtitle">Excel ile toplu veya manuel tek tek etiket basın</p>
+      </div>
+    </div>
+    <div class="lp-header-actions">
+      <button class="btn-template" (click)="downloadTemplate()" title="Örnek Excel şablonunu indir">
+        <span class="material-icons-outlined">download</span>
+        Şablon İndir
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ ANA GRID ═════════════════════════════════════════════════════ -->
+  <div class="lp-grid">
+
+    <!-- ── SOL PANEL: Ayarlar ──────────────────────────────────────── -->
+    <div class="lp-left">
+
+      <!-- Etiket Boyutu -->
+      <div class="lp-card">
+        <div class="lp-card-title">
+          <span class="material-icons-outlined">straighten</span>
+          Etiket Boyutu
+        </div>
+        <div class="size-grid">
+          @for (s of sizes; track s.id) {
+            <button class="size-btn"
+                    [class.size-active]="selectedSizeId() === s.id"
+                    (click)="selectedSizeId.set(s.id)">
+              <span class="size-label">{{ s.label }}</span>
+              @if (s.isDefault) {
+                <span class="size-default-badge">varsayılan</span>
+              }
+            </button>
+          }
+        </div>
+
+        <!-- Seçilen boyut önizlemesi -->
+        <div class="size-preview-wrap">
+          <div class="size-preview-label">Seçili boyut:</div>
+          <div class="size-preview-box"
+               [style.width.px]="selectedSize().w * 1.6"
+               [style.height.px]="selectedSize().h * 1.6">
+            <span>{{ selectedSize().w }}×{{ selectedSize().h }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Yazdır Butonu -->
+      <button class="btn-print"
+              [disabled]="items().length === 0"
+              (click)="print()">
+        <span class="material-icons-outlined">print</span>
+        <span>
+          Yazdır
+          @if (totalLabelCount() > 0) {
+            <span class="print-count">({{ totalLabelCount() }} etiket)</span>
+          }
+        </span>
+      </button>
+
+      @if (items().length > 0) {
+        <button class="btn-preview" (click)="togglePreview()">
+          <span class="material-icons-outlined">{{ showPreview() ? 'visibility_off' : 'visibility' }}</span>
+          {{ showPreview() ? 'Önizlemeyi Gizle' : 'Etiket Önizle' }}
+        </button>
+      }
+    </div>
+
+    <!-- ── SAĞ PANEL: İçerik ───────────────────────────────────────── -->
+    <div class="lp-right">
+
+      <!-- Excel Yükleme Alanı -->
+      <div class="lp-card">
+        <div class="lp-card-title">
+          <span class="material-icons-outlined">upload_file</span>
+          Excel / CSV Yükle
+        </div>
+
+        <div class="drop-zone"
+             [class.drop-active]="isDragging()"
+             [class.drop-loading]="isLoading()"
+             (dragover)="onDragOver($event)"
+             (dragleave)="onDragLeave()"
+             (drop)="onDrop($event)"
+             (click)="fileInput.click()">
+          <input #fileInput type="file" accept=".xlsx,.xls,.csv" hidden (change)="onFileInput($event)" />
+          @if (isLoading()) {
+            <div class="spinner"></div>
+            <p>Dosya okunuyor...</p>
+          } @else {
+            <span class="material-icons-outlined drop-icon">table_chart</span>
+            <p class="drop-main">Dosyayı sürükle bırak veya tıkla</p>
+            <p class="drop-sub">.xlsx · .xls · .csv — Sütunlar: Ürün Adı | Ambalaj Boyutu | Barkod</p>
+          }
+        </div>
+      </div>
+
+      <!-- Sütun Eşleme (otomatik başlık tespitinde gösterilir) -->
+      @if (showColMap()) {
+        <div class="lp-card col-map-card">
+          <div class="lp-card-title">
+            <span class="material-icons-outlined">tune</span>
+            Sütun Eşleme
+            @if (colMapApplied()) {
+              <span class="col-map-applied-badge">
+                <span class="material-icons-outlined">check_circle</span>
+                Uygulandı
+              </span>
+            }
+          </div>
+
+          @if (!colMapApplied()) {
+            <p class="col-map-hint">Başlıklar tespit edildi. Doğru sütunları seçip <strong>Uygula</strong>'ya basın:</p>
+            <div class="col-map-row">
+              <label>Ürün Adı</label>
+              <select [ngModel]="colName()" (ngModelChange)="colName.set(+$event)">
+                @for (h of detectedHeaders; track $index) {
+                  <option [value]="$index">{{ $index + 1 }} — {{ h }}</option>
+                }
+              </select>
+            </div>
+            <div class="col-map-row">
+              <label>Barkod</label>
+              <select [ngModel]="colBarcode()" (ngModelChange)="colBarcode.set(+$event)">
+                @for (h of detectedHeaders; track $index) {
+                  <option [value]="$index">{{ $index + 1 }} — {{ h }}</option>
+                }
+              </select>
+            </div>
+            <button class="btn-apply-map" (click)="applyColMapping()">
+              <span class="material-icons-outlined">check</span>
+              Uygula
+            </button>
+          } @else {
+            <p class="col-map-hint">
+              Ürün Adı: <strong>{{ detectedHeaders[colName()] }}</strong> &nbsp;·&nbsp;
+              Barkod: <strong>{{ detectedHeaders[colBarcode()] }}</strong>
+            </p>
+            <p class="col-map-reload-hint">Farklı sütun seçmek için dosyayı tekrar yükleyin.</p>
+          }
+        </div>
+      }
+
+      <!-- Manuel Ekleme -->
+      <div class="lp-card">
+        <div class="lp-card-title">
+          <span class="material-icons-outlined">add_circle_outline</span>
+          Manuel Ürün Ekle
+        </div>
+        <div class="manual-form">
+          <div class="manual-row">
+            <div class="form-field">
+              <label>Ürün Adı</label>
+              <input type="text" [ngModel]="manualName()" (ngModelChange)="manualName.set($event)"
+                     placeholder="MB ENAMEL PARLAK ANTRASİT 0,75 L" />
+            </div>
+          </div>
+          <div class="manual-row">
+            <div class="form-field">
+              <label>Barkod <span class="required">*</span></label>
+              <input type="text" [ngModel]="manualBarcode()" (ngModelChange)="manualBarcode.set($event)"
+                     placeholder="8692070832814"
+                     (keydown.enter)="addManual()" />
+            </div>
+            <div class="form-field form-field--xs">
+              <label>Adet</label>
+              <input type="number" [ngModel]="manualQty()" (ngModelChange)="manualQty.set(+$event)" min="1" max="999" />
+            </div>
+            <button class="btn-add-manual" (click)="addManual()">
+              <span class="material-icons-outlined">add</span>
+              Ekle
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ürün Listesi -->
+      @if (items().length > 0) {
+        <div class="lp-card">
+          <div class="lp-card-title-row">
+            <div class="lp-card-title">
+              <span class="material-icons-outlined">list_alt</span>
+              Ürün Listesi
+              <span class="item-badge">{{ items().length }} ürün · {{ totalLabelCount() }} etiket</span>
+            </div>
+            <button class="btn-clear-all" (click)="clearAll()">
+              <span class="material-icons-outlined">delete_sweep</span>
+              Tümünü Sil
+            </button>
+          </div>
+
+          <div class="item-table-wrap">
+            <table class="item-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Ürün Adı</th>
+                  <th>Barkod</th>
+                  <th class="col-qty">Adet</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of items(); track item.id; let idx = $index) {
+                  <tr>
+                    <td class="col-idx">{{ idx + 1 }}</td>
+                    <td class="col-name">{{ item.name || '—' }}</td>
+                    <td class="col-barcode">
+                      <code>{{ item.barcode }}</code>
+                    </td>
+                    <td class="col-qty">
+                      <input class="qty-input" type="number" [value]="item.qty" min="1" max="999"
+                             (change)="updateQty(item.id, +$any($event.target).value)" />
+                    </td>
+                    <td class="col-del">
+                      <button class="btn-remove" (click)="removeItem(item.id)">
+                        <span class="material-icons-outlined">close</span>
+                      </button>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- ═══ ETİKET ÖNİZLEMESİ ════════════════════════════════════════════ -->
+  <div class="preview-section">
+    <div class="preview-header">
+      <span class="material-icons-outlined">preview</span>
+      Etiket Önizleme
+      <span class="preview-size-tag">{{ selectedSize().label }}</span>
+      @if (items().length === 0 && !isFormTouched()) {
+        <span class="preview-demo-tag">Örnek</span>
+      }
+      @if (items().length === 0 && isFormTouched()) {
+        <span class="preview-live-tag">Canlı</span>
+      }
+    </div>
+
+    @if (items().length > 0 && showPreview()) {
+      <!-- Gerçek etiketler -->
+      <div class="preview-grid">
+        @for (item of flatLabels().slice(0, 30); track $index) {
+          <div class="preview-label"
+               [style.width.px]="selectedSize().w * 2.2"
+               [style.height.px]="selectedSize().h * 2.2">
+            <div class="pv-name">{{ item.name }}</div>
+            <div class="pv-barcode-wrap">
+              <svg #barcodeEl
+                   [attr.data-barcode]="item.barcode"
+                   class="pv-barcode-svg">
+              </svg>
+              <div class="pv-barcode-num">{{ item.barcode }}</div>
+            </div>
+          </div>
+        }
+        @if (flatLabels().length > 30) {
+          <div class="preview-more">
+            +{{ flatLabels().length - 30 }} etiket daha...
+          </div>
+        }
+      </div>
+    } @else if (items().length === 0) {
+      <!-- Canlı önizleme — kullanıcı yazarken anında güncellenir -->
+      <div class="preview-grid">
+        <div class="preview-label" [class.preview-label--demo]="!isFormTouched()"
+             [class.preview-label--live]="isFormTouched()"
+             [style.width.px]="selectedSize().w * 2.2"
+             [style.height.px]="selectedSize().h * 2.2">
+          <div class="pv-name">{{ livePreviewLabel().name }}</div>
+          <div class="pv-barcode-wrap">
+            <svg #barcodeEl
+                 [attr.data-barcode]="livePreviewLabel().barcode"
+                 class="pv-barcode-svg">
+            </svg>
+            <div class="pv-barcode-num">{{ livePreviewLabel().barcode }}</div>
+          </div>
+        </div>
+      </div>
+      @if (!isFormTouched()) {
+        <p class="preview-demo-hint">
+          <span class="material-icons-outlined">info</span>
+          Yukarıdan ürün adı ve barkod yazmaya başlayın — etiket canlı olarak burada görünecek.
+        </p>
+      } @else {
+        <p class="preview-demo-hint preview-demo-hint--live">
+          <span class="material-icons-outlined">edit</span>
+          Canlı önizleme — yazdıklarınız anında etikete yansıyor.
+        </p>
+      }
+    }
+  </div>
+
+</div>

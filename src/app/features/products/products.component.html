@@ -263,6 +263,26 @@
         <input class="form-input" [(ngModel)]="formData.description" placeholder="Opsiyonel aciklama" />
       </div>
 
+      <!-- Stok Seviyeleri -->
+      <div class="form-section-title">
+        <span class="material-icons-outlined" style="font-size:16px;color:var(--primary-400)">warning_amber</span>
+        Stok Uyarı Seviyeleri
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Minimum Stok</label>
+          <input class="form-input" type="number" min="0" [(ngModel)]="formData.minimumStockLevel"
+                 placeholder="Örn: 10" />
+          <span class="form-hint">Bu seviyenin altında uyarı verilir</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Kritik Stok Seviyesi</label>
+          <input class="form-input" type="number" min="0" [(ngModel)]="formData.criticalStockLevel"
+                 placeholder="Örn: 5" />
+          <span class="form-hint">Bu seviyenin altında acil uyarı verilir</span>
+        </div>
+      </div>
+
       <div class="form-group">
         <label class="form-label">Urun Gorseli</label>
         <div class="modal-image-actions">

@@ -41,6 +41,8 @@ interface ProductFormData {
     unit: string;
     categoryName: string;
     description: string;
+    minimumStockLevel: number | null;
+    criticalStockLevel: number | null;
 }
 
 interface UnknownBarcodePrompt {
@@ -303,13 +305,15 @@ export class ProductsComponent implements OnInit, OnDestroy {
         this.editingProduct.set(product);
         this.clearPendingModalImage();
         this.formData = {
-            code: product.code,
-            name: product.name,
-            barcode: product.barcode,
-            unitPrice: product.unitPrice,
-            unit: product.unit,
-            categoryName: product.categoryName,
-            description: product.description
+            code:               product.code,
+            name:               product.name,
+            barcode:            product.barcode,
+            unitPrice:          product.unitPrice,
+            unit:               product.unit,
+            categoryName:       product.categoryName,
+            description:        product.description,
+            minimumStockLevel:  product.raw.minimumStockLevel ?? null,
+            criticalStockLevel: product.raw.criticalStockLevel ?? null
         };
         this.showModal.set(true);
     }
@@ -345,7 +349,9 @@ export class ProductsComponent implements OnInit, OnDestroy {
                 defaultSalePrice: Number(this.formData.unitPrice || 0),
                 unit: this.normalizeUnit(this.formData.unit),
                 category: this.normalizeCategory(this.formData.categoryName),
-                shortDescription: this.nullIfEmpty(this.formData.description)
+                shortDescription: this.nullIfEmpty(this.formData.description),
+                minimumStockLevel: this.formData.minimumStockLevel ?? undefined,
+                criticalStockLevel: this.formData.criticalStockLevel ?? undefined
             });
 
             this.productService.update(editing.id, updatePayload)
@@ -380,7 +386,8 @@ export class ProductsComponent implements OnInit, OnDestroy {
             qrCode: barcodeFields.qrCode,
             isActive: true,
             defaultSalePrice: Number(this.formData.unitPrice || 0),
-            criticalStockLevel: 1
+            minimumStockLevel: this.formData.minimumStockLevel ?? undefined,
+            criticalStockLevel: this.formData.criticalStockLevel ?? 1
         };
 
         this.productService.create(createPayload)
@@ -914,7 +921,9 @@ export class ProductsComponent implements OnInit, OnDestroy {
             unitPrice: 0,
             unit: 'EA',
             categoryName: 'Genel',
-            description: ''
+            description: '',
+            minimumStockLevel: null,
+            criticalStockLevel: null
         };
     }
 }

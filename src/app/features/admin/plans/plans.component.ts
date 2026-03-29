@@ -240,26 +240,26 @@ export class PlansComponent implements OnInit {
   getPlanColor(color: string): string {
     switch (color) {
       case 'blue':
-        return 'linear-gradient(90deg, #4c6ef5, #3b5bdb)';
+        return 'linear-gradient(90deg, #f97316, #ea580c)';
       case 'purple':
-        return 'linear-gradient(90deg, #7950f2, #6741d9)';
+        return 'linear-gradient(90deg, #e11d48, #be123c)';
       case 'gold':
         return 'linear-gradient(90deg, #f59f00, #e67700)';
       default:
-        return 'linear-gradient(90deg, #4c6ef5, #3b5bdb)';
+        return 'linear-gradient(90deg, #f97316, #ea580c)';
     }
   }
 
   getPlanIconGradient(color: string): string {
     switch (color) {
       case 'blue':
-        return 'linear-gradient(135deg, #4c6ef5, #3b5bdb)';
+        return 'linear-gradient(135deg, #f97316, #ea580c)';
       case 'purple':
-        return 'linear-gradient(135deg, #7950f2, #6741d9)';
+        return 'linear-gradient(135deg, #e11d48, #be123c)';
       case 'gold':
         return 'linear-gradient(135deg, #f59f00, #e67700)';
       default:
-        return 'linear-gradient(135deg, #4c6ef5, #3b5bdb)';
+        return 'linear-gradient(135deg, #f97316, #ea580c)';
     }
   }
 

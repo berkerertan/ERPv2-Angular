@@ -1,266 +1,458 @@
-<div class="page-container">
-    <div class="page-header">
-        <div>
-            <h1 class="page-title">Raporlar</h1>
-            <p class="page-subtitle">İş analizleri ve raporlar</p>
-        </div>
+<div class="reports-page">
+
+  <!-- ── Page Header ───────────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="page-title-group">
+      <span class="material-icons-outlined page-icon">assessment</span>
+      <div>
+        <h1 class="page-title">Rapor Merkezi</h1>
+        <p class="page-subtitle">{{ dateRange().label }}</p>
+      </div>
     </div>
+    <button class="btn-export" (click)="exportPdf()" [disabled]="isLoading() || isExporting()">
+      <span class="material-icons-outlined">picture_as_pdf</span>
+      {{ isExporting() ? 'Hazırlanıyor...' : 'PDF İndir' }}
+    </button>
+  </div>
 
-    <div class="reports-grid">
-        @for (r of reports; track r.id) {
-        <div class="report-card card" [class.active]="activeReport() === r.id" (click)="selectReport(r.id)">
-            <div class="report-card-icon">
-                <span class="material-icons-outlined">{{ r.icon }}</span>
+  <!-- ── Layout ─────────────────────────────────────────────────── -->
+  <div class="reports-layout">
+
+    <!-- Left Sidebar: Report Types -->
+    <aside class="reports-sidebar">
+      <div class="sidebar-section-label">Rapor Türü</div>
+      @for (rpt of reportTypes; track rpt.id) {
+        <button class="report-nav-item" [class.active]="activeReport() === rpt.id"
+                (click)="selectReport(rpt.id)">
+          <span class="material-icons-outlined rni-icon">{{ rpt.icon }}</span>
+          <div class="rni-text">
+            <span class="rni-label">{{ rpt.label }}</span>
+            <span class="rni-desc">{{ rpt.description }}</span>
+          </div>
+        </button>
+      }
+    </aside>
+
+    <!-- Main Content -->
+    <main class="reports-main">
+
+      <!-- Period Filter Bar -->
+      <div class="period-bar">
+        <div class="period-tabs">
+          @for (p of periods; track p.id) {
+            <button class="period-tab" [class.active]="activePeriod() === p.id"
+                    (click)="selectPeriod(p.id)">{{ p.label }}</button>
+          }
+        </div>
+
+        @if (activePeriod() === 'custom') {
+          <div class="custom-range">
+            <div class="range-group">
+              <label>Başlangıç</label>
+              <input type="date" [ngModel]="customStart()" (ngModelChange)="customStart.set($event)" class="date-input" />
             </div>
-            <div class="report-card-info">
-                <h3>{{ r.label }}</h3>
-                <p>{{ r.description }}</p>
+            <div class="range-group">
+              <label>Bitiş</label>
+              <input type="date" [ngModel]="customEnd()" (ngModelChange)="customEnd.set($event)" class="date-input" />
             </div>
-            <span class="material-icons-outlined report-arrow">chevron_right</span>
-        </div>
+            <button class="btn-apply" (click)="applyCustomRange()">
+              <span class="material-icons-outlined">search</span> Uygula
+            </button>
+          </div>
         }
-    </div>
+      </div>
 
-    <!-- Report Content Area -->
-    <div class="report-content card">
-        <div class="report-content-header">
-            <h2>{{ reports.find(r => r.id === activeReport())?.label }}</h2>
-            <div class="report-actions">
-                <button class="btn btn-secondary btn-sm" (click)="loadReport(activeReport())">
-                    <span class="material-icons-outlined">refresh</span> Yenile
-                </button>
+      <!-- Loading Overlay -->
+      @if (isLoading()) {
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Rapor yükleniyor...</p>
+        </div>
+      }
+
+      <!-- Error State -->
+      @if (!isLoading() && errorMessage()) {
+        <div class="error-state">
+          <span class="material-icons-outlined">error_outline</span>
+          <p>{{ errorMessage() }}</p>
+          <button class="btn-retry" (click)="loadCurrentReport()">Tekrar Dene</button>
+        </div>
+      }
+
+      <!-- ── SUMMARY ──────────────────────────────────────────────── -->
+      @if (!isLoading() && activeReport() === 'summary' && summaryData()) {
+        <div class="report-content">
+          <div class="report-section-title">
+            <span class="material-icons-outlined">monitoring</span> Genel KPI Özeti
+          </div>
+          <div class="kpi-grid-report">
+            <div class="kpi-tile primary">
+              <div class="kt-icon"><span class="material-icons-outlined">trending_up</span></div>
+              <div class="kt-body">
+                <div class="kt-val">{{ fc(summaryData()!.totalSalesAmount) }}</div>
+                <div class="kt-label">Toplam Satış</div>
+                <div class="kt-sub">{{ num(summaryData()!.totalOrderCount) }} onaylı sipariş</div>
+              </div>
             </div>
+            <div class="kpi-tile success">
+              <div class="kt-icon"><span class="material-icons-outlined">account_balance</span></div>
+              <div class="kt-body">
+                <div class="kt-val">{{ fc(summaryData()!.totalBankBalance) }}</div>
+                <div class="kt-label">Banka Bakiyesi</div>
+                <div class="kt-sub">Konsolide tüm hesaplar</div>
+              </div>
+            </div>
+            <div class="kpi-tile info">
+              <div class="kt-icon"><span class="material-icons-outlined">payments</span></div>
+              <div class="kt-body">
+                <div class="kt-val">{{ fc(summaryData()!.totalCashBalance) }}</div>
+                <div class="kt-label">Kasa Bakiyesi</div>
+                <div class="kt-sub">Toplam nakit mevcudu</div>
+              </div>
+            </div>
+            <div class="kpi-tile danger">
+              <div class="kt-icon"><span class="material-icons-outlined">warning</span></div>
+              <div class="kt-body">
+                <div class="kt-val">{{ fc(summaryData()!.overdueReceivables) }}</div>
+                <div class="kt-label">Vadesi Geç. Alacak</div>
+                <div class="kt-sub">{{ summaryData()!.overdueCheckNoteCount }} çek/senet vadeli</div>
+              </div>
+            </div>
+            <div class="kpi-tile warning">
+              <div class="kt-icon"><span class="material-icons-outlined">description</span></div>
+              <div class="kt-body">
+                <div class="kt-val">{{ num(summaryData()!.pendingQuoteCount) }}</div>
+                <div class="kt-label">Bekleyen Teklif</div>
+                <div class="kt-sub">Yanıt bekliyor</div>
+              </div>
+            </div>
+            <div class="kpi-tile neutral">
+              <div class="kt-icon"><span class="material-icons-outlined">people</span></div>
+              <div class="kt-body">
+                <div class="kt-val">{{ num(summaryData()!.totalActiveCariCount) }}</div>
+                <div class="kt-label">Aktif Cari</div>
+                <div class="kt-sub">{{ num(summaryData()!.totalProductCount) }} kayıtlı ürün</div>
+              </div>
+            </div>
+          </div>
         </div>
+      }
 
-        <!-- Loading -->
-        @if (isLoading()) {
-        <div class="report-placeholder">
-            <span class="material-icons-outlined">hourglass_empty</span>
-            <h3>Yükleniyor...</h3>
-        </div>
-        }
-
-        <!-- Error -->
-        @if (errorMessage() && !isLoading()) {
-        <div class="report-placeholder">
-            <span class="material-icons-outlined">error_outline</span>
-            <h3>Hata</h3>
-            <p>{{ errorMessage() }}</p>
-        </div>
-        }
-
-        <!-- Stock Report -->
-        @if (activeReport() === 'stock' && !isLoading() && !errorMessage()) {
-        @if (stockData().length === 0) {
-        <div class="report-placeholder">
-            <span class="material-icons-outlined">inventory</span>
-            <p>Stok verisi bulunamadı.</p>
-        </div>
-        } @else {
-        <table class="data-table">
-            <thead>
+      <!-- ── SALES ──────────────────────────────────────────────────── -->
+      @if (!isLoading() && activeReport() === 'sales') {
+        <div class="report-content">
+          <div class="report-totals-bar">
+            <div class="total-chip">
+              <span class="material-icons-outlined">receipt</span>
+              <span>{{ num(salesTotalOrders) }} sipariş</span>
+            </div>
+            <div class="total-chip accent">
+              <span class="material-icons-outlined">monetization_on</span>
+              <span>{{ fc(salesTotalAmount) }} toplam</span>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table class="report-table">
+              <thead>
                 <tr>
-                    <th>Ürün</th>
-                    <th>Barkod</th>
-                    <th>Depo</th>
-                    <th>Bakiye</th>
-                    <th>Birim</th>
-                    <th>Toplam Değer</th>
+                  <th>Tarih</th>
+                  <th class="right">Sipariş</th>
+                  <th class="right">Toplam Tutar</th>
+                  <th>Öne Çıkan Ürün</th>
                 </tr>
-            </thead>
-            <tbody>
-                @for (item of stockData(); track item.productId) {
-                <tr>
-                    <td>{{ item.productName }}</td>
-                    <td>{{ item.barcode }}</td>
-                    <td>{{ item.warehouseName }}</td>
-                    <td>{{ item.balance }}</td>
-                    <td>{{ item.unit }}</td>
-                    <td>{{ formatCurrency(item.totalValue) }}</td>
-                </tr>
+              </thead>
+              <tbody>
+                @for (row of salesData(); track row.date) {
+                  <tr>
+                    <td class="date-cell">{{ row.date }}</td>
+                    <td class="right badge-cell"><span class="num-badge">{{ num(row.orderCount) }}</span></td>
+                    <td class="right amount-cell">{{ fc(row.totalAmount) }}</td>
+                    <td class="product-cell">{{ row.topProduct || '—' }}</td>
+                  </tr>
                 }
-            </tbody>
-        </table>
-        }
-        }
-
-        <!-- Sales Report -->
-        @if (activeReport() === 'sales' && !isLoading() && !errorMessage()) {
-        @if (salesData().length === 0) {
-        <div class="report-placeholder">
-            <span class="material-icons-outlined">shopping_cart</span>
-            <p>Satış verisi bulunamadı.</p>
-        </div>
-        } @else {
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Tarih</th>
-                    <th>Sipariş Sayısı</th>
-                    <th>Toplam Tutar</th>
-                    <th>En Çok Satan</th>
-                </tr>
-            </thead>
-            <tbody>
-                @for (item of salesData(); track item.date) {
-                <tr>
-                    <td>{{ item.date }}</td>
-                    <td>{{ item.orderCount }}</td>
-                    <td>{{ formatCurrency(item.totalAmount) }}</td>
-                    <td>{{ item.topProduct }}</td>
-                </tr>
+                @if (!salesData().length) {
+                  <tr><td colspan="4" class="empty-row">Bu dönemde satış verisi bulunamadı.</td></tr>
                 }
-            </tbody>
-        </table>
-        }
-        }
-
-        <!-- Purchases Report -->
-        @if (activeReport() === 'purchases' && !isLoading() && !errorMessage()) {
-        @if (purchasesData().length === 0) {
-        <div class="report-placeholder">
-            <span class="material-icons-outlined">local_shipping</span>
-            <p>Satın alma verisi bulunamadı.</p>
+              </tbody>
+              @if (salesData().length) {
+                <tfoot>
+                  <tr class="total-row">
+                    <td>TOPLAM</td>
+                    <td class="right">{{ num(salesTotalOrders) }}</td>
+                    <td class="right">{{ fc(salesTotalAmount) }}</td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              }
+            </table>
+          </div>
         </div>
-        } @else {
-        <table class="data-table">
-            <thead>
+      }
+
+      <!-- ── PURCHASES ──────────────────────────────────────────────── -->
+      @if (!isLoading() && activeReport() === 'purchases') {
+        <div class="report-content">
+          <div class="report-totals-bar">
+            <div class="total-chip">
+              <span class="material-icons-outlined">local_shipping</span>
+              <span>{{ num(purchasesTotalOrders) }} sipariş</span>
+            </div>
+            <div class="total-chip accent">
+              <span class="material-icons-outlined">monetization_on</span>
+              <span>{{ fc(purchasesTotalAmount) }} toplam</span>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table class="report-table">
+              <thead>
                 <tr>
-                    <th>Tarih</th>
-                    <th>Sipariş Sayısı</th>
-                    <th>Toplam Tutar</th>
-                    <th>En Çok Tedarikçi</th>
+                  <th>Tarih</th>
+                  <th class="right">Sipariş</th>
+                  <th class="right">Toplam Tutar</th>
+                  <th>Öne Çıkan Tedarikçi</th>
                 </tr>
-            </thead>
-            <tbody>
-                @for (item of purchasesData(); track item.date) {
-                <tr>
-                    <td>{{ item.date }}</td>
-                    <td>{{ item.orderCount }}</td>
-                    <td>{{ formatCurrency(item.totalAmount) }}</td>
-                    <td>{{ item.topSupplier }}</td>
-                </tr>
+              </thead>
+              <tbody>
+                @for (row of purchasesData(); track row.date) {
+                  <tr>
+                    <td class="date-cell">{{ row.date }}</td>
+                    <td class="right badge-cell"><span class="num-badge">{{ num(row.orderCount) }}</span></td>
+                    <td class="right amount-cell">{{ fc(row.totalAmount) }}</td>
+                    <td>{{ row.topSupplier || '—' }}</td>
+                  </tr>
                 }
-            </tbody>
-        </table>
-        }
-        }
-
-        <!-- Cari Balances -->
-        @if (activeReport() === 'cari-balances' && !isLoading() && !errorMessage()) {
-        @if (cariBalancesData().length === 0) {
-        <div class="report-placeholder">
-            <span class="material-icons-outlined">account_balance_wallet</span>
-            <p>Cari bakiye verisi bulunamadı.</p>
+                @if (!purchasesData().length) {
+                  <tr><td colspan="4" class="empty-row">Bu dönemde alım verisi bulunamadı.</td></tr>
+                }
+              </tbody>
+              @if (purchasesData().length) {
+                <tfoot>
+                  <tr class="total-row">
+                    <td>TOPLAM</td>
+                    <td class="right">{{ num(purchasesTotalOrders) }}</td>
+                    <td class="right">{{ fc(purchasesTotalAmount) }}</td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              }
+            </table>
+          </div>
         </div>
-        } @else {
-        <table class="data-table">
-            <thead>
+      }
+
+      <!-- ── STOCK ──────────────────────────────────────────────────── -->
+      @if (!isLoading() && activeReport() === 'stock') {
+        <div class="report-content">
+          <div class="report-totals-bar">
+            <div class="total-chip">
+              <span class="material-icons-outlined">inventory_2</span>
+              <span>{{ stockData().length }} ürün kalemi</span>
+            </div>
+            <div class="total-chip accent">
+              <span class="material-icons-outlined">account_balance_wallet</span>
+              <span>{{ fc(stockTotalValue) }} toplam stok değeri</span>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table class="report-table">
+              <thead>
                 <tr>
-                    <th>Hesap Adı</th>
-                    <th>Tür</th>
-                    <th>Bakiye</th>
-                    <th>Son İşlem</th>
+                  <th>Ürün</th>
+                  <th>Barkod</th>
+                  <th>Depo</th>
+                  <th class="right">Miktar</th>
+                  <th>Birim</th>
+                  <th class="right">Değer</th>
                 </tr>
-            </thead>
-            <tbody>
-                @for (item of cariBalancesData(); track item.cariAccountId) {
-                <tr>
-                    <td>{{ item.name }}</td>
-                    <td>{{ item.type }}</td>
-                    <td [class.text-success]="item.balance >= 0" [class.text-danger]="item.balance < 0">
-                        {{ formatCurrency(item.balance) }}
+              </thead>
+              <tbody>
+                @for (row of stockData(); track row.productId) {
+                  <tr>
+                    <td class="product-name-cell">{{ row.productName }}</td>
+                    <td class="barcode-cell">{{ row.barcode || '—' }}</td>
+                    <td>{{ row.warehouseName }}</td>
+                    <td class="right">
+                      <span [class]="row.balance <= 0 ? 'stock-zero' : row.balance < 10 ? 'stock-low' : 'stock-ok'">
+                        {{ num(row.balance) }}
+                      </span>
                     </td>
-                    <td>{{ item.lastTransaction }}</td>
-                </tr>
+                    <td>{{ row.unit }}</td>
+                    <td class="right amount-cell">{{ fc(row.totalValue) }}</td>
+                  </tr>
                 }
-            </tbody>
-        </table>
-        }
-        }
+                @if (!stockData().length) {
+                  <tr><td colspan="6" class="empty-row">Stok kaydı bulunamadı.</td></tr>
+                }
+              </tbody>
+              @if (stockData().length) {
+                <tfoot>
+                  <tr class="total-row">
+                    <td colspan="3">TOPLAM</td>
+                    <td class="right">{{ num(stockTotalUnits) }}</td>
+                    <td></td>
+                    <td class="right">{{ fc(stockTotalValue) }}</td>
+                  </tr>
+                </tfoot>
+              }
+            </table>
+          </div>
+        </div>
+      }
 
-        <!-- Cari Aging -->
-        @if (activeReport() === 'cari-aging' && !isLoading() && !errorMessage()) {
-        @if (cariAgingData().length === 0) {
-        <div class="report-placeholder">
-            <span class="material-icons-outlined">schedule</span>
-            <p>Yaşlandırma verisi bulunamadı.</p>
-        </div>
-        } @else {
-        <table class="data-table">
-            <thead>
+      <!-- ── CARİ BAKİYELER ─────────────────────────────────────────── -->
+      @if (!isLoading() && activeReport() === 'cari-balances') {
+        <div class="report-content">
+          <div class="report-totals-bar">
+            <div class="total-chip">
+              <span class="material-icons-outlined">people</span>
+              <span>{{ cariBalancesData().length }} cari hesap</span>
+            </div>
+            <div class="total-chip" [class.accent]="cariTotalBalance < 0" [class.danger-chip]="cariTotalBalance > 0">
+              <span class="material-icons-outlined">account_balance_wallet</span>
+              <span>Net: {{ fc(cariTotalBalance) }}</span>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table class="report-table">
+              <thead>
                 <tr>
-                    <th>Hesap Adı</th>
-                    <th>Güncel</th>
-                    <th>0-30 Gün</th>
-                    <th>31-60 Gün</th>
-                    <th>61-90 Gün</th>
-                    <th>90+ Gün</th>
-                    <th>Toplam</th>
+                  <th>Cari Adı</th>
+                  <th>Tür</th>
+                  <th class="right">Bakiye</th>
+                  <th>Son İşlem</th>
                 </tr>
-            </thead>
-            <tbody>
-                @for (item of cariAgingData(); track item.cariAccountId) {
-                <tr>
-                    <td>{{ item.name }}</td>
-                    <td>{{ formatCurrency(item.current) }}</td>
-                    <td>{{ formatCurrency(item.days30) }}</td>
-                    <td>{{ formatCurrency(item.days60) }}</td>
-                    <td>{{ formatCurrency(item.days90) }}</td>
-                    <td>{{ formatCurrency(item.over90) }}</td>
-                    <td><strong>{{ formatCurrency(item.total) }}</strong></td>
-                </tr>
+              </thead>
+              <tbody>
+                @for (row of cariBalancesData(); track row.cariAccountId) {
+                  <tr>
+                    <td class="product-name-cell">{{ row.name }}</td>
+                    <td><span class="type-badge">{{ row.type }}</span></td>
+                    <td class="right">
+                      <span [class]="row.balance > 0 ? 'amount-neg' : row.balance < 0 ? 'amount-pos' : ''">
+                        {{ fc(row.balance) }}
+                      </span>
+                    </td>
+                    <td class="date-cell">{{ row.lastTransaction || '—' }}</td>
+                  </tr>
                 }
-            </tbody>
-        </table>
-        }
-        }
+                @if (!cariBalancesData().length) {
+                  <tr><td colspan="4" class="empty-row">Cari hesap bulunamadı.</td></tr>
+                }
+              </tbody>
+              @if (cariBalancesData().length) {
+                <tfoot>
+                  <tr class="total-row">
+                    <td colspan="2">TOPLAM NET BAKİYE</td>
+                    <td class="right">{{ fc(cariTotalBalance) }}</td>
+                    <td></td>
+                  </tr>
+                </tfoot>
+              }
+            </table>
+          </div>
+        </div>
+      }
 
-        <!-- Income-Expense -->
-        @if (activeReport() === 'income-expense' && !isLoading() && !errorMessage()) {
-        @if (!incomeExpenseData()) {
-        <div class="report-placeholder">
-            <span class="material-icons-outlined">bar_chart</span>
-            <p>Gelir-gider verisi bulunamadı.</p>
-        </div>
-        } @else {
-        <div class="income-expense-summary" style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-            <div class="card" style="flex: 1; padding: 1rem; text-align: center;">
-                <p style="color: var(--text-secondary); font-size: 0.85rem;">Toplam Gelir</p>
-                <p style="font-size: 1.5rem; font-weight: 700; color: #51cf66;">{{ formatCurrency(incomeExpenseData()!.totalIncome) }}</p>
-            </div>
-            <div class="card" style="flex: 1; padding: 1rem; text-align: center;">
-                <p style="color: var(--text-secondary); font-size: 0.85rem;">Toplam Gider</p>
-                <p style="font-size: 1.5rem; font-weight: 700; color: #ff6b6b;">{{ formatCurrency(incomeExpenseData()!.totalExpense) }}</p>
-            </div>
-            <div class="card" style="flex: 1; padding: 1rem; text-align: center;">
-                <p style="color: var(--text-secondary); font-size: 0.85rem;">Net Kar</p>
-                <p style="font-size: 1.5rem; font-weight: 700;" [style.color]="incomeExpenseData()!.netProfit >= 0 ? '#51cf66' : '#ff6b6b'">
-                    {{ formatCurrency(incomeExpenseData()!.netProfit) }}
-                </p>
-            </div>
-        </div>
-        @if (incomeExpenseData()!.items.length > 0) {
-        <table class="data-table">
-            <thead>
+      <!-- ── CARİ YAŞLANDIRMA ──────────────────────────────────────── -->
+      @if (!isLoading() && activeReport() === 'cari-aging') {
+        <div class="report-content">
+          <div class="table-wrapper">
+            <table class="report-table aging-table">
+              <thead>
                 <tr>
-                    <th>Tarih</th>
-                    <th>Gelir</th>
-                    <th>Gider</th>
+                  <th>Cari</th>
+                  <th class="right">Cari</th>
+                  <th class="right age-col">0–30 Gün</th>
+                  <th class="right age-col age-warn">31–60 Gün</th>
+                  <th class="right age-col age-danger">61–90 Gün</th>
+                  <th class="right age-col age-critical">&gt;90 Gün</th>
+                  <th class="right">Toplam</th>
                 </tr>
-            </thead>
-            <tbody>
-                @for (item of incomeExpenseData()!.items; track item.date) {
-                <tr>
-                    <td>{{ item.date }}</td>
-                    <td class="text-success">{{ formatCurrency(item.income) }}</td>
-                    <td class="text-danger">{{ formatCurrency(item.expense) }}</td>
-                </tr>
+              </thead>
+              <tbody>
+                @for (row of cariAgingData(); track row.cariAccountId) {
+                  <tr>
+                    <td class="product-name-cell">{{ row.name }}</td>
+                    <td class="right">{{ fc(row.current) }}</td>
+                    <td class="right">{{ fc(row.days30) }}</td>
+                    <td class="right age-warn">{{ fc(row.days60) }}</td>
+                    <td class="right age-danger">{{ fc(row.days90) }}</td>
+                    <td class="right age-critical">{{ fc(row.over90) }}</td>
+                    <td class="right amount-cell"><b>{{ fc(row.total) }}</b></td>
+                  </tr>
                 }
-            </tbody>
-        </table>
-        }
-        }
-        }
-    </div>
+                @if (!cariAgingData().length) {
+                  <tr><td colspan="7" class="empty-row">Yaşlandırma verisi bulunamadı.</td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
+
+      <!-- ── GELİR-GİDER ─────────────────────────────────────────────── -->
+      @if (!isLoading() && activeReport() === 'income-expense' && incomeExpenseData()) {
+        <div class="report-content">
+          <div class="ie-summary">
+            <div class="ie-card income">
+              <span class="material-icons-outlined">arrow_upward</span>
+              <div>
+                <div class="ie-val">{{ fc(incomeExpenseData()!.totalIncome) }}</div>
+                <div class="ie-label">Toplam Gelir</div>
+              </div>
+            </div>
+            <div class="ie-card expense">
+              <span class="material-icons-outlined">arrow_downward</span>
+              <div>
+                <div class="ie-val">{{ fc(incomeExpenseData()!.totalExpense) }}</div>
+                <div class="ie-label">Toplam Gider</div>
+              </div>
+            </div>
+            <div class="ie-card" [class.profit]="incomeExpenseData()!.netProfit >= 0" [class.loss]="incomeExpenseData()!.netProfit < 0">
+              <span class="material-icons-outlined">{{ incomeExpenseData()!.netProfit >= 0 ? 'trending_up' : 'trending_down' }}</span>
+              <div>
+                <div class="ie-val">{{ fc(incomeExpenseData()!.netProfit) }}</div>
+                <div class="ie-label">Net {{ incomeExpenseData()!.netProfit >= 0 ? 'Kâr' : 'Zarar' }}</div>
+              </div>
+            </div>
+          </div>
+
+          @if (incomeExpenseData()!.items.length) {
+            <div class="table-wrapper" style="margin-top:20px">
+              <table class="report-table">
+                <thead>
+                  <tr>
+                    <th>Dönem</th>
+                    <th class="right">Gelir</th>
+                    <th class="right">Gider</th>
+                    <th class="right">Net</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (item of incomeExpenseData()!.items; track item.date) {
+                    <tr>
+                      <td class="date-cell">{{ item.date }}</td>
+                      <td class="right amount-pos">{{ fc(item.income) }}</td>
+                      <td class="right amount-neg">{{ fc(item.expense) }}</td>
+                      <td class="right" [class.amount-pos]="(item.income - item.expense) >= 0" [class.amount-neg]="(item.income - item.expense) < 0">
+                        <b>{{ fc(item.income - item.expense) }}</b>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </div>
+      }
+
+      @if (!isLoading() && activeReport() === 'income-expense' && !incomeExpenseData()) {
+        <div class="empty-content">
+          <span class="material-icons-outlined">bar_chart</span>
+          <p>Bu dönemde gelir-gider verisi bulunamadı.</p>
+        </div>
+      }
+
+    </main>
+  </div>
 </div>

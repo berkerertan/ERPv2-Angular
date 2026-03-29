@@ -1,129 +1,456 @@
 <div class="page-container">
-    <div class="page-header">
-        <div>
-            <h1 class="page-title">Stok Hareketleri</h1>
-            <p class="page-subtitle">Stok giriş/çıkış hareketlerini ve bakiyeleri takip edin</p>
-        </div>
-        <button class="btn btn-primary" (click)="openAddModal()">
-            <span class="material-icons-outlined">add</span>
-            Yeni Hareket
-        </button>
-    </div>
 
-    <div class="tabs">
-        <button class="tab" [class.active]="activeTab() === 'movements'"
-            (click)="activeTab.set('movements')">Hareketler</button>
-        <button class="tab" [class.active]="activeTab() === 'balances'"
-            (click)="activeTab.set('balances')">Bakiyeler</button>
+  <!-- HEADER -->
+  <div class="page-header">
+    <div>
+      <h1 class="page-title">
+        <span class="material-icons-outlined page-title-icon" style="color:var(--primary-400)">swap_horiz</span>
+        Stok Hareketleri
+      </h1>
+      <p class="page-subtitle">Giriş/çıkış hareketleri, bakiyeler ve kritik uyarılar</p>
     </div>
+    <div class="page-header-actions">
+      <button class="btn btn-secondary" (click)="openTransferModal()">
+        <span class="material-icons-outlined">swap_calls</span>
+        Depo Transferi
+      </button>
+      <button class="btn btn-primary" (click)="openAddModal()">
+        <span class="material-icons-outlined">add</span>
+        Yeni Hareket
+      </button>
+    </div>
+  </div>
 
+  <!-- STAT CARDS -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(249,115,22,0.12);color:var(--primary-400)">
+        <span class="material-icons-outlined">swap_horiz</span>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ movements().length }}</span>
+        <span class="stat-label">Toplam Hareket</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:var(--success-bg);color:var(--success)">
+        <span class="material-icons-outlined">arrow_downward</span>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ inCount() }}</span>
+        <span class="stat-label">Giriş</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:var(--danger-bg,rgba(239,68,68,0.1));color:var(--danger)">
+        <span class="material-icons-outlined">arrow_upward</span>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ outCount() }}</span>
+        <span class="stat-label">Çıkış</span>
+      </div>
+    </div>
+    <div class="stat-card stat-card--alert" [class.has-alerts]="alertCount() > 0" (click)="activeTab.set('alerts')">
+      <div class="stat-icon" style="background:rgba(234,179,8,0.12);color:#eab308">
+        <span class="material-icons-outlined">warning_amber</span>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ alertCount() }}</span>
+        <span class="stat-label">Kritik Uyarı</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab" [class.active]="activeTab()==='movements'" (click)="activeTab.set('movements')">
+      <span class="material-icons-outlined">list_alt</span>
+      Hareketler
+    </button>
+    <button class="tab" [class.active]="activeTab()==='balances'" (click)="activeTab.set('balances')">
+      <span class="material-icons-outlined">account_balance</span>
+      Bakiyeler
+    </button>
+    <button class="tab tab--alert" [class.active]="activeTab()==='alerts'" (click)="activeTab.set('alerts')">
+      <span class="material-icons-outlined">warning_amber</span>
+      Kritik Uyarılar
+      @if (alertCount() > 0) {
+        <span class="tab-badge">{{ alertCount() }}</span>
+      }
+    </button>
+  </div>
+
+  <!-- ═══ HAREKETLER SEKMESİ ═══ -->
+  @if (activeTab() === 'movements') {
     <div class="toolbar">
-        <div class="toolbar-search">
-            <span class="material-icons-outlined search-icon">search</span>
-            <input type="text" placeholder="Ürün veya depo ara..." [(ngModel)]="searchTerm" />
-        </div>
+      <div class="toolbar-search">
+        <span class="material-icons-outlined search-icon">search</span>
+        <input type="text" placeholder="Ürün, depo veya açıklama ara…" [(ngModel)]="searchTerm" />
+      </div>
+      <div class="toolbar-filters">
+        <button class="filter-btn" [class.filter-active]="typeFilter()==='all'"   (click)="typeFilter.set('all')">Tümü</button>
+        <button class="filter-btn filter-in"  [class.filter-active]="typeFilter()==='In'"   (click)="typeFilter.set('In')">
+          <span class="material-icons-outlined" style="font-size:14px">arrow_downward</span> Giriş
+        </button>
+        <button class="filter-btn filter-out" [class.filter-active]="typeFilter()==='Out'"  (click)="typeFilter.set('Out')">
+          <span class="material-icons-outlined" style="font-size:14px">arrow_upward</span> Çıkış
+        </button>
+      </div>
     </div>
 
-    @if (activeTab() === 'movements') {
     <div class="table-container">
+      @if (isLoadingMovements()) {
+        <div class="loading-panel"><div class="spinner"></div><span>Yükleniyor…</span></div>
+      } @else {
         <table class="data-table">
-            <thead>
-                <tr>
-                    <th class="sortable" [class.sorted]="sortColumn==='productName'" (click)="sort('productName')">Ürün <span class="sort-icon material-icons-outlined">{{ sortColumn==='productName' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
-                    <th class="sortable" [class.sorted]="sortColumn==='warehouseName'" (click)="sort('warehouseName')">Depo <span class="sort-icon material-icons-outlined">{{ sortColumn==='warehouseName' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
-                    <th class="sortable" [class.sorted]="sortColumn==='movementType'" (click)="sort('movementType')">Tür <span class="sort-icon material-icons-outlined">{{ sortColumn==='movementType' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
-                    <th class="sortable" [class.sorted]="sortColumn==='quantity'" (click)="sort('quantity')">Miktar <span class="sort-icon material-icons-outlined">{{ sortColumn==='quantity' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
-                    <th>Açıklama</th>
-                    <th class="sortable" [class.sorted]="sortColumn==='createdAt'" (click)="sort('createdAt')">Tarih <span class="sort-icon material-icons-outlined">{{ sortColumn==='createdAt' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
-                    <th>İşlemler</th>
-                </tr>
-            </thead>
-            <tbody>
-                @for (m of filteredMovements; track m.id) {
-                <tr>
-                    <td class="font-medium" style="color: var(--text-primary);">{{ m.productName }}</td>
-                    <td>{{ m.warehouseName }}</td>
-                    <td>
-                        <span class="badge" [class.badge-success]="m.movementType === 'In'"
-                            [class.badge-danger]="m.movementType === 'Out'">
-                            <span class="material-icons-outlined" style="font-size:12px;">{{ m.movementType === 'In' ?
-                                'arrow_downward' : 'arrow_upward' }}</span>
-                            {{ m.movementType === 'In' ? 'Giriş' : 'Çıkış' }}
-                        </span>
-                    </td>
-                    <td class="font-semibold">{{ m.quantity }}</td>
-                    <td class="text-muted">{{ m.description }}</td>
-                    <td class="text-muted">{{ m.createdAt }}</td>
-                    <td>
-                        <div class="actions-cell">
-                            <button class="action-btn delete" title="Sil" (click)="deleteMovement(m.id)">
-                                <span class="material-icons-outlined">delete</span>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-                }
-            </tbody>
+          <thead>
+            <tr>
+              <th class="sortable" [class.sorted]="sortColumn==='productName'" (click)="sort('productName')">
+                Ürün <span class="sort-icon material-icons-outlined">{{ sortColumn==='productName' ? (sortDir==='asc'?'arrow_upward':'arrow_downward') : 'unfold_more' }}</span>
+              </th>
+              <th class="sortable" [class.sorted]="sortColumn==='warehouseName'" (click)="sort('warehouseName')">
+                Depo <span class="sort-icon material-icons-outlined">{{ sortColumn==='warehouseName' ? (sortDir==='asc'?'arrow_upward':'arrow_downward') : 'unfold_more' }}</span>
+              </th>
+              <th>Tür</th>
+              <th class="sortable" [class.sorted]="sortColumn==='quantity'" (click)="sort('quantity')">
+                Miktar <span class="sort-icon material-icons-outlined">{{ sortColumn==='quantity' ? (sortDir==='asc'?'arrow_upward':'arrow_downward') : 'unfold_more' }}</span>
+              </th>
+              <th class="sortable" [class.sorted]="sortColumn==='unitPrice'" (click)="sort('unitPrice')">
+                Birim Fiyat <span class="sort-icon material-icons-outlined">{{ sortColumn==='unitPrice' ? (sortDir==='asc'?'arrow_upward':'arrow_downward') : 'unfold_more' }}</span>
+              </th>
+              <th>Açıklama / Ref</th>
+              <th class="sortable" [class.sorted]="sortColumn==='createdAt'" (click)="sort('createdAt')">
+                Tarih <span class="sort-icon material-icons-outlined">{{ sortColumn==='createdAt' ? (sortDir==='asc'?'arrow_upward':'arrow_downward') : 'unfold_more' }}</span>
+              </th>
+              <th>İşlemler</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (m of filteredMovements; track m.id) {
+              <tr>
+                <td class="font-medium" style="color:var(--text-primary)">{{ m.productName }}</td>
+                <td>{{ m.warehouseName }}</td>
+                <td>
+                  <span class="badge" [class.badge-success]="m.movementType==='In'" [class.badge-danger]="m.movementType==='Out'">
+                    <span class="material-icons-outlined" style="font-size:12px">{{ m.movementType==='In' ? 'arrow_downward' : 'arrow_upward' }}</span>
+                    {{ m.movementType==='In' ? 'Giriş' : 'Çıkış' }}
+                  </span>
+                </td>
+                <td class="font-semibold">{{ m.quantity | number }}</td>
+                <td class="amount">{{ m.unitPrice | number:'1.2-2' }} ₺</td>
+                <td class="text-muted">{{ m.description || '—' }}</td>
+                <td class="text-muted">{{ m.createdAt }}</td>
+                <td>
+                  <div class="actions-cell">
+                    <button class="action-btn delete" title="Sil" (click)="deleteMovement(m.id)">
+                      <span class="material-icons-outlined">delete</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+            @if (!filteredMovements.length) {
+              <tr><td colspan="8">
+                <div class="empty-state" style="padding:32px 0">
+                  <span class="material-icons-outlined">inbox</span>
+                  <p>Hareket bulunamadı</p>
+                </div>
+              </td></tr>
+            }
+          </tbody>
         </table>
+      }
     </div>
+  }
+
+  <!-- ═══ BAKİYELER SEKMESİ ═══ -->
+  @if (activeTab() === 'balances') {
+    <div class="table-container">
+      @if (isLoadingBalances()) {
+        <div class="loading-panel"><div class="spinner"></div><span>Yükleniyor…</span></div>
+      } @else {
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Ürün</th>
+              <th>Barkod</th>
+              <th>Depo</th>
+              <th>Birim</th>
+              <th>Bakiye</th>
+              <th>Toplam Değer</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (b of balances(); track b.productId + (b.warehouseName||'')) {
+              <tr>
+                <td class="font-medium" style="color:var(--text-primary)">{{ b.productName || b.productId }}</td>
+                <td><code class="barcode-badge">{{ b.barcode || '—' }}</code></td>
+                <td>{{ b.warehouseName || '—' }}</td>
+                <td>{{ b.unit || '—' }}</td>
+                <td>
+                  <span class="font-semibold" [style.color]="b.balance > 0 ? 'var(--success)' : b.balance < 0 ? 'var(--danger)' : 'var(--text-tertiary)'">
+                    {{ b.balance | number }}
+                  </span>
+                </td>
+                <td class="amount">{{ b.totalValue | number:'1.2-2' }} ₺</td>
+              </tr>
+            }
+            @if (!balances().length) {
+              <tr><td colspan="6">
+                <div class="empty-state" style="padding:32px 0">
+                  <span class="material-icons-outlined">account_balance</span>
+                  <p>Stok bakiyesi bulunamadı</p>
+                </div>
+              </td></tr>
+            }
+          </tbody>
+        </table>
+      }
+    </div>
+  }
+
+  <!-- ═══ KRİTİK UYARILAR SEKMESİ ═══ -->
+  @if (activeTab() === 'alerts') {
+    @if (isLoadingAlerts()) {
+      <div class="loading-panel"><div class="spinner"></div><span>Uyarılar yükleniyor…</span></div>
+    } @else if (!alerts().length) {
+      <div class="empty-state" style="padding:60px 0">
+        <span class="material-icons-outlined" style="color:var(--success)">check_circle</span>
+        <h3>Kritik Stok Yok</h3>
+        <p>Tüm ürünler minimum stok seviyesinin üzerinde.</p>
+      </div>
     } @else {
-    <div class="table-container">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Ürün</th>
-                    <th>Depo</th>
-                    <th>Bakiye</th>
-                </tr>
-            </thead>
-            <tbody>
-                @for (b of balances(); track b.productName + b.warehouseName) {
-                <tr>
-                    <td class="font-medium" style="color: var(--text-primary);">{{ b.productName }}</td>
-                    <td>{{ b.warehouseName }}</td>
-                    <td>
-                        <span class="font-semibold" [class.amount]="true" [class.positive]="b.balance > 0"
-                            [class.negative]="b.balance <= 0">
-                            {{ b.balance }}
-                        </span>
-                    </td>
-                </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+      <div class="alerts-grid">
+        @for (a of alerts(); track a.productId + a.warehouseId) {
+          <div class="alert-card" [class.alert-card--critical]="alertSeverity(a)==='critical'">
+            <div class="alert-card-header">
+              <span class="material-icons-outlined alert-icon">{{ alertSeverity(a)==='critical' ? 'error' : 'warning_amber' }}</span>
+              <div class="alert-card-title">
+                <span class="alert-product-name">{{ a.productName || a.productId }}</span>
+                <span class="alert-warehouse">{{ a.warehouseCode || warehouseName(a.warehouseId) }}</span>
+              </div>
+              <span class="alert-severity-badge" [class.badge-danger]="alertSeverity(a)==='critical'" [class.badge-warning]="alertSeverity(a)==='low'">
+                {{ alertSeverity(a)==='critical' ? 'Tükendi' : 'Kritik' }}
+              </span>
+            </div>
+            <div class="alert-card-body">
+              <div class="alert-stat">
+                <span class="alert-stat-label">Mevcut</span>
+                <span class="alert-stat-value" [style.color]="a.currentQuantity <= 0 ? 'var(--danger)' : 'var(--warning)'">{{ a.currentQuantity }}</span>
+              </div>
+              <div class="alert-divider"></div>
+              <div class="alert-stat">
+                <span class="alert-stat-label">Kritik Seviye</span>
+                <span class="alert-stat-value">{{ a.criticalStockLevel }}</span>
+              </div>
+              <div class="alert-divider"></div>
+              <div class="alert-stat">
+                <span class="alert-stat-label">Eksik Miktar</span>
+                <span class="alert-stat-value" style="color:var(--danger)">{{ a.missingQuantity }}</span>
+              </div>
+            </div>
+            <button class="btn btn-sm btn-primary alert-action-btn"
+                    (click)="formData.productId=a.productId; formData.productName=a.productName||''; formData.movementType='In'; formData.warehouseId=a.warehouseId; formData.quantity=a.missingQuantity; showModal.set(true)">
+              <span class="material-icons-outlined">add</span>
+              Stok Girişi Yap
+            </button>
+          </div>
+        }
+      </div>
     }
+  }
+
 </div>
 
+<!-- ═══ YENİ HAREKET MODALI ═══ -->
 @if (showModal()) {
-<div class="overlay" (click)="closeModal()"></div>
-<div class="modal" style="width: 480px;">
+  <div class="overlay" (click)="closeModal()"></div>
+  <div class="modal" style="width:520px">
     <div class="modal-header">
-        <h2>Yeni Stok Hareketi</h2>
-        <button class="modal-close" (click)="closeModal()"><span class="material-icons-outlined">close</span></button>
+      <h2>Yeni Stok Hareketi</h2>
+      <button class="modal-close" (click)="closeModal()"><span class="material-icons-outlined">close</span></button>
     </div>
     <div class="modal-form">
-        <div class="form-group">
-            <label class="form-label">Hareket Türü</label>
-            <select class="form-input" [(ngModel)]="formData.movementType">
-                <option value="In">Giriş (In)</option>
-                <option value="Out">Çıkış (Out)</option>
-            </select>
+
+      <!-- Hareket Türü -->
+      <div class="form-group">
+        <label class="form-label">Hareket Türü</label>
+        <div class="movement-type-toggle">
+          <button class="movement-type-btn" [class.active-in]="formData.movementType==='In'" (click)="formData.movementType='In'">
+            <span class="material-icons-outlined">arrow_downward</span> Giriş
+          </button>
+          <button class="movement-type-btn" [class.active-out]="formData.movementType==='Out'" (click)="formData.movementType='Out'">
+            <span class="material-icons-outlined">arrow_upward</span> Çıkış
+          </button>
         </div>
-        <div class="form-group">
-            <label class="form-label">Miktar</label>
-            <input class="form-input" type="number" [(ngModel)]="formData.quantity" />
+      </div>
+
+      <!-- Ürün Seçici -->
+      <div class="form-group">
+        <label class="form-label">Ürün <span style="color:var(--danger)">*</span></label>
+        <div class="product-picker-wrap">
+          <div class="product-picker-input-row">
+            <span class="material-icons-outlined picker-icon">inventory_2</span>
+            <input class="form-input product-picker-input"
+                   [value]="formData.productName"
+                   (input)="onProductInput($any($event.target).value)"
+                   (blur)="showProductSuggestions.set(false)"
+                   placeholder="Ürün adı veya barkod ile ara…" />
+          </div>
+          @if (showProductSuggestions() && productSuggestions().length) {
+            <div class="suggestions-list">
+              @for (s of productSuggestions(); track s.id) {
+                <div class="suggestion-item" (mousedown)="selectProduct(s)">
+                  <span class="sug-name">{{ s.label || s.name }}</span>
+                  @if (s.subtitle) { <span class="sug-sub">{{ s.subtitle }}</span> }
+                </div>
+              }
+            </div>
+          }
         </div>
+        @if (formData.productId) {
+          <div class="picker-selected-info">
+            <span class="material-icons-outlined" style="font-size:14px;color:var(--success)">check_circle</span>
+            Ürün seçildi
+          </div>
+        }
+      </div>
+
+      <!-- Depo -->
+      <div class="form-group">
+        <label class="form-label">Depo <span style="color:var(--danger)">*</span></label>
+        <select class="form-input" [(ngModel)]="formData.warehouseId">
+          <option value="">Depo seçin…</option>
+          @for (w of warehouses(); track w.id) {
+            <option [value]="w.id">{{ w.name }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-row">
+        <!-- Miktar -->
         <div class="form-group">
-            <label class="form-label">Açıklama</label>
-            <input class="form-input" [(ngModel)]="formData.description" placeholder="Hareket açıklaması" />
+          <label class="form-label">Miktar <span style="color:var(--danger)">*</span></label>
+          <input class="form-input" type="number" min="1" [(ngModel)]="formData.quantity" />
         </div>
+        <!-- Birim Fiyat -->
+        <div class="form-group">
+          <label class="form-label">Birim Fiyat (₺)</label>
+          <input class="form-input" type="number" min="0" step="0.01" [(ngModel)]="formData.unitPrice" />
+        </div>
+      </div>
+
+      <!-- Referans No -->
+      <div class="form-group">
+        <label class="form-label">Referans / Açıklama</label>
+        <input class="form-input" [(ngModel)]="formData.referenceNo" placeholder="Örn: Sipariş #1234, Sayım düzeltmesi…" />
+      </div>
     </div>
     <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="closeModal()">İptal</button>
-        <button class="btn btn-primary" (click)="saveMovement()">
-            <span class="material-icons-outlined">save</span> Kaydet
-        </button>
+      <button class="btn btn-secondary" (click)="closeModal()">İptal</button>
+      <button class="btn btn-primary" (click)="saveMovement()" [disabled]="isSaving()">
+        @if (isSaving()) { <div class="spinner spinner-sm"></div> Kaydediliyor… }
+        @else {
+          <span class="material-icons-outlined">save</span>
+          Kaydet
+        }
+      </button>
     </div>
-</div>
+  </div>
+}
+
+<!-- ═══ TRANSFER MODALI ═══ -->
+@if (showTransferModal()) {
+  <div class="overlay" (click)="closeTransferModal()"></div>
+  <div class="modal" style="width:520px">
+    <div class="modal-header">
+      <h2>
+        <span class="material-icons-outlined" style="vertical-align:middle;color:var(--primary-400)">swap_calls</span>
+        Depolar Arası Transfer
+      </h2>
+      <button class="modal-close" (click)="closeTransferModal()"><span class="material-icons-outlined">close</span></button>
+    </div>
+    <div class="modal-form">
+
+      <!-- Ürün -->
+      <div class="form-group">
+        <label class="form-label">Ürün <span style="color:var(--danger)">*</span></label>
+        <div class="product-picker-wrap">
+          <div class="product-picker-input-row">
+            <span class="material-icons-outlined picker-icon">inventory_2</span>
+            <input class="form-input product-picker-input"
+                   [value]="transferData.productName"
+                   (input)="onTransferProductInput($any($event.target).value)"
+                   (blur)="showTransferSuggestions.set(false)"
+                   placeholder="Ürün adı veya barkod ile ara…" />
+          </div>
+          @if (showTransferSuggestions() && transferSuggestions().length) {
+            <div class="suggestions-list">
+              @for (s of transferSuggestions(); track s.id) {
+                <div class="suggestion-item" (mousedown)="selectTransferProduct(s)">
+                  <span class="sug-name">{{ s.label || s.name }}</span>
+                  @if (s.subtitle) { <span class="sug-sub">{{ s.subtitle }}</span> }
+                </div>
+              }
+            </div>
+          }
+        </div>
+        @if (transferData.productId) {
+          <div class="picker-selected-info">
+            <span class="material-icons-outlined" style="font-size:14px;color:var(--success)">check_circle</span>
+            Ürün seçildi
+          </div>
+        }
+      </div>
+
+      <!-- Kaynak → Hedef -->
+      <div class="transfer-route">
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Kaynak Depo</label>
+          <select class="form-input" [(ngModel)]="transferData.sourceWarehouseId">
+            <option value="">Seçin…</option>
+            @for (w of warehouses(); track w.id) {
+              <option [value]="w.id">{{ w.name }}</option>
+            }
+          </select>
+        </div>
+        <span class="transfer-arrow material-icons-outlined">arrow_forward</span>
+        <div class="form-group" style="flex:1">
+          <label class="form-label">Hedef Depo</label>
+          <select class="form-input" [(ngModel)]="transferData.destinationWarehouseId">
+            <option value="">Seçin…</option>
+            @for (w of warehouses(); track w.id) {
+              <option [value]="w.id">{{ w.name }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Miktar <span style="color:var(--danger)">*</span></label>
+          <input class="form-input" type="number" min="1" [(ngModel)]="transferData.quantity" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Birim Fiyat (₺)</label>
+          <input class="form-input" type="number" min="0" step="0.01" [(ngModel)]="transferData.unitPrice" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Referans / Açıklama</label>
+        <input class="form-input" [(ngModel)]="transferData.referenceNo" placeholder="İsteğe bağlı açıklama" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeTransferModal()">İptal</button>
+      <button class="btn btn-primary" (click)="saveTransfer()" [disabled]="isTransferring()">
+        @if (isTransferring()) { <div class="spinner spinner-sm"></div> Transfer ediliyor… }
+        @else {
+          <span class="material-icons-outlined">swap_calls</span>
+          Transferi Tamamla
+        }
+      </button>
+    </div>
+  </div>
 }
