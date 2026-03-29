@@ -48,13 +48,17 @@ export interface Quote {
 export interface QuoteListItem {
     id: string;
     quoteNumber: string;
-    customerName: string;
-    status: QuoteStatus;
     quoteDateUtc: string;
     validUntilUtc: string;
-    itemCount: number;
+    cariAccountId?: string;
+    cariAccountTitle: string;
+    status: QuoteStatus;
+    subTotal: number;
+    totalDiscount: number;
+    totalTax: number;
     grandTotal: number;
-    createdAtUtc: string;
+    lineCount: number;
+    notes?: string;
 }
 
 export interface UpsertQuoteRequest {
