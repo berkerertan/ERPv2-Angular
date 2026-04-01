@@ -26,6 +26,7 @@ import {
     DEMO_CHART_OF_ACCOUNTS,
     DEMO_CARI_DEBT_ITEMS, DEMO_BUYER_EXTRA,
     DEMO_DASHBOARD_SUMMARY,
+    DEMO_POS_CARTS,
 } from '../mock/demo-data';
 import { InvoiceType } from '../models/invoice.model';
 
@@ -64,6 +65,7 @@ export const demoInterceptor: HttpInterceptorFn = (req, next) => {
     // Auth endpoint'leri geçir (login/logout/refresh backend'e gitmeli)
     const url = req.url;
     if (url.includes('/api/Auth') || url.includes('/api/auth')) return next(req);
+    if (url.toLowerCase().includes('/api/documentscanner')) return next(req);
 
     const path   = getPath(url);
     const method = req.method.toUpperCase();
@@ -372,6 +374,43 @@ export const demoInterceptor: HttpInterceptorFn = (req, next) => {
         const page     = parseInt(req.params.get('page')     || '1');
         const pageSize = parseInt(req.params.get('pageSize') || '50');
         return ok(logs.slice((page-1)*pageSize, page*pageSize));
+    }
+
+    // ── POS SEPETLERİ ────────────────────────────────────────────────────────
+    if (path.toLowerCase().startsWith('/api/poscart')) {
+        // GET /api/PosCart/ByToken/{token} — AllowAnonymous, paylaşım linki
+        if (path.toLowerCase().includes('/bytoken/')) {
+            const token = path.split('/').pop()?.toUpperCase() ?? '';
+            const found = DEMO_POS_CARTS.find(c => c.shareToken === token);
+            if (found) {
+                return ok({
+                    id: found.id, shareToken: found.shareToken, label: found.label,
+                    buyerId: found.buyerId, buyerName: found.buyerName,
+                    paymentMethod: found.paymentMethod, warehouseId: 'demo-wh-01',
+                    items: found.items, createdAt: found.createdAt, updatedAt: found.updatedAt,
+                });
+            }
+            return ok(null);
+        }
+        // POST /api/PosCart/Save
+        if (method === 'POST') {
+            const body: any = req.body ?? {};
+            const newId = newMockId();
+            const newToken = 'DM' + Math.random().toString(36).substring(2, 8).toUpperCase();
+            const label = body.label || 'Demo Sepet';
+            return ok({ id: newId, shareToken: newToken, label, updatedAt: new Date().toISOString() });
+        }
+        // GET /api/PosCart/List
+        if (method === 'GET') {
+            return ok(DEMO_POS_CARTS.map(c => ({
+                id: c.id, shareToken: c.shareToken, label: c.label,
+                buyerName: c.buyerName, paymentMethod: c.paymentMethod,
+                itemCount: c.items.length,
+                grandTotal: c.items.reduce((s: number, i: any) => s + i.total, 0),
+                createdAt: c.createdAt, updatedAt: c.updatedAt,
+            })));
+        }
+        return noContent();
     }
 
     // ── MUHASEBE ─────────────────────────────────────────────────────────────

@@ -895,3 +895,38 @@ export const DEMO_DASHBOARD_SUMMARY = {
     pendingQuoteCount:      DEMO_QUOTES.filter(q => q.status === QuoteStatus.Draft || q.status === QuoteStatus.Sent).length, // 3
 };
 
+// ═════════════════════════════════════════════════════════════════════════════
+// 18. POS KAYITLI SEPETLERİ
+// ═════════════════════════════════════════════════════════════════════════════
+export const DEMO_POS_CARTS = [
+    {
+        id:            '00000099-0000-0000-0000-000000000001',
+        shareToken:    'DEMOABC1',
+        label:         'Masa 3 Siparişi',
+        buyerId:       null,
+        buyerName:     'Bireysel Müşteri',
+        paymentMethod: 'cash',
+        warehouseId:   DEMO_WH_ID,
+        items: [
+            { productId: pid(1), name: 'Samsung Galaxy S24 Ultra', barcode: '8690000000001', quantity: 1, unitPrice: 59999, total: 59999 },
+            { productId: pid(16), name: 'Type-C Şarj Kablosu', barcode: '8690000000016', quantity: 2, unitPrice: 299, total: 598 },
+        ],
+        createdAt: new Date(Date.now() - 25 * 60000).toISOString(),
+        updatedAt: new Date(Date.now() - 5  * 60000).toISOString(),
+    },
+    {
+        id:            '00000099-0000-0000-0000-000000000002',
+        shareToken:    'DEMODEF2',
+        label:         'Toptan Sipariş',
+        buyerId:       cid(2),
+        buyerName:     'Teknosel Bilişim Ltd.',
+        paymentMethod: 'credit_card',
+        warehouseId:   DEMO_WH_ID,
+        items: [
+            { productId: pid(5), name: 'Apple iPhone 15 Pro', barcode: '8690000000005', quantity: 3, unitPrice: 72999, total: 218997 },
+        ],
+        createdAt: new Date(Date.now() - 60 * 60000).toISOString(),
+        updatedAt: new Date(Date.now() - 45 * 60000).toISOString(),
+    },
+];
+

@@ -15,6 +15,11 @@ export const routes: Routes = [
         loadComponent: () => import('./features/auth/register/register.component').then(m => m.RegisterComponent),
         canActivate: [guestGuard]
     },
+    // OAuth callback — guestGuard dışında, her zaman erişilebilir
+    {
+        path: 'auth/callback',
+        loadComponent: () => import('./features/auth/oauth-callback/oauth-callback.component').then(m => m.OAuthCallbackComponent)
+    },
     // Auth layout (login vb.)
     {
         path: 'auth',
@@ -194,6 +199,10 @@ export const routes: Routes = [
             {
                 path: 'inventory-count',
                 loadComponent: () => import('./features/inventory-count/inventory-count.component').then(m => m.InventoryCountComponent)
+            },
+            {
+                path: 'document-scanner',
+                loadComponent: () => import('./features/document-scanner/document-scanner.component').then(m => m.DocumentScannerComponent)
             },
             {
                 path: 'profile',

@@ -103,6 +103,57 @@
     gap: 10px;
 }
 
+.landing-profile-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 10px 4px 4px;
+    border-radius: 10px;
+    text-decoration: none;
+    border: 1px solid var(--border-light);
+    background: var(--bg-elevated);
+    transition: all var(--transition-fast);
+}
+
+.landing-profile-btn:hover {
+    border-color: var(--primary-500);
+    background: var(--bg-hover);
+}
+
+.landing-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, var(--primary-600), var(--primary-800));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.landing-avatar-text {
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.landing-profile-info {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+}
+
+.landing-profile-name {
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.landing-profile-role {
+    font-size: 0.67rem;
+    color: var(--text-muted);
+}
+
 /* ---- HERO ---- */
 .hero {
     min-height: 100vh;
@@ -1449,6 +1500,10 @@
     }
 
     .nav-actions .btn-ghost {
+        display: none;
+    }
+
+    .landing-profile-info {
         display: none;
     }
 

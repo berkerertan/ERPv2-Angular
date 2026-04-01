@@ -1,8 +1,9 @@
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { SocialAuthService } from '../../../core/services/social-auth.service';
 import { SubscriptionPlan } from '../../../core/models/user.model';
 
 interface RegisterForm {
@@ -34,6 +35,10 @@ export class RegisterComponent implements OnInit {
     errorMessage = signal('');
     showPassword = signal(false);
     showPasswordConfirm = signal(false);
+
+    private socialAuth = inject(SocialAuthService);
+    registerWithGoogle(): void { this.socialAuth.initiateGoogle(); }
+    registerWithGithub(): void { this.socialAuth.initiateGithub(); }
 
     form: RegisterForm = {
         fullName: '',

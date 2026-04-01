@@ -290,6 +290,26 @@
         <span class="print-label">Fiş Yazdır</span>
       </button>
 
+      <!-- Sepeti Kaydet -->
+      <button class="save-cart-btn" (click)="saveCurrentCart()"
+              [disabled]="cart().length === 0 || isSavingCart()" title="Mevcut sepeti kaydet">
+        @if (isSavingCart()) {
+          <div class="spinner spinner-xs"></div>
+        } @else {
+          <span class="material-icons-outlined">bookmark_add</span>
+        }
+        <span class="print-label">{{ activeCartId() ? 'Güncelle' : 'Kaydet' }}</span>
+      </button>
+
+      <!-- Açık Sepetler -->
+      <button class="open-carts-btn" (click)="openSavedCartsPanel()" title="Kayıtlı sepetleri görüntüle">
+        <span class="material-icons-outlined">shopping_bag</span>
+        <span class="print-label">Sepetler</span>
+        @if (savedCarts().length > 0) {
+          <span class="open-carts-badge">{{ savedCarts().length }}</span>
+        }
+      </button>
+
       <!-- Dokunmatik Mod geçişi -->
       <button class="touch-mode-entry-btn" (click)="touchMode.set(true)" title="Dokunmatik Kiosk Moduna Geç">
         <span class="material-icons-outlined">touch_app</span>
@@ -653,6 +673,112 @@
     <button class="btn btn-primary" (click)="printReceipt()">
       <span class="material-icons-outlined">print</span>
       Fiş Yazdır
+    </button>
+  </div>
+</div>
+}
+
+<!-- ═══ KAYITLI SEPETLER DRAWER ═══════════════════════════ -->
+@if (savedCartsPanelOpen()) {
+<div class="overlay" (click)="closeSavedCartsPanel()"></div>
+<div class="saved-carts-drawer">
+  <div class="drawer-header">
+    <div class="drawer-title">
+      <span class="material-icons-outlined">shopping_bag</span>
+      <h3>Açık Sepetler</h3>
+      @if (savedCarts().length > 0) {
+        <span class="drawer-count">{{ savedCarts().length }}/5</span>
+      }
+    </div>
+    <button class="drawer-close" (click)="closeSavedCartsPanel()">
+      <span class="material-icons-outlined">close</span>
+    </button>
+  </div>
+
+  <div class="drawer-body">
+    <!-- Yeni Sepet -->
+    <button class="new-cart-btn" (click)="newCart()">
+      <span class="material-icons-outlined">add_shopping_cart</span>
+      Yeni Boş Sepet Aç
+    </button>
+
+    <!-- Kayıtlı Sepet Listesi -->
+    @if (savedCarts().length === 0) {
+      <div class="drawer-empty">
+        <span class="material-icons-outlined">shopping_bag</span>
+        <p>Henüz kayıtlı sepet yok.</p>
+        <small>Mevcut sepeti kaydetmek için "Kaydet" butonunu kullanın.</small>
+      </div>
+    }
+
+    @for (sc of savedCarts(); track sc.id) {
+      <div class="saved-cart-card" [class.saved-cart-active]="activeCartId() === sc.id">
+        @if (activeCartId() === sc.id) {
+          <div class="active-badge">Aktif</div>
+        }
+        <div class="sc-header">
+          <span class="sc-label">{{ sc.label }}</span>
+          <span class="sc-time">{{ cartTimeAgo(sc.updatedAt) }}</span>
+        </div>
+        <div class="sc-meta">
+          @if (sc.buyerName) {
+            <span class="sc-buyer">
+              <span class="material-icons-outlined">person</span>
+              {{ sc.buyerName }}
+            </span>
+          }
+          <span class="sc-payment">{{ paymentLabel(sc.paymentMethod) }}</span>
+        </div>
+        <div class="sc-stats">
+          <span class="sc-items">{{ sc.itemCount }} ürün</span>
+          <span class="sc-total">₺{{ sc.grandTotal.toLocaleString('tr-TR', {minimumFractionDigits: 2}) }}</span>
+        </div>
+        <div class="sc-actions">
+          <button class="sc-btn sc-load" (click)="loadSavedCart(sc)" title="Bu sepeti yükle">
+            <span class="material-icons-outlined">upload</span>
+            Yükle
+          </button>
+          <button class="sc-btn sc-share" (click)="openShareModal(sc)" title="Bağlantı oluştur">
+            <span class="material-icons-outlined">share</span>
+            Link
+          </button>
+          <button class="sc-btn sc-delete" (click)="deleteSavedCart(sc)" title="Sepeti sil">
+            <span class="material-icons-outlined">delete</span>
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+}
+
+<!-- ═══ PAYLAŞ MODALI ═══════════════════════════════════ -->
+@if (showShareModal()) {
+<div class="overlay overlay-top" (click)="closeShareModal()"></div>
+<div class="modal share-modal">
+  <div class="modal-header">
+    <h2>
+      <span class="material-icons-outlined" style="color: var(--primary-400); vertical-align: middle;">share</span>
+      Sepeti Paylaş
+    </h2>
+    <button class="modal-close" (click)="closeShareModal()">
+      <span class="material-icons-outlined">close</span>
+    </button>
+  </div>
+  <div class="share-body">
+    <p class="share-desc">
+      <strong>{{ shareCartLabel() }}</strong> sepetini aşağıdaki bağlantı ile paylaşabilirsin.
+      Linki açan herkes bu sepeti POS ekranına yükleyebilir.
+    </p>
+    <div class="share-url-box">
+      <span class="share-url-text">{{ shareUrl() }}</span>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" (click)="closeShareModal()">Kapat</button>
+    <button class="btn btn-primary" (click)="copyShareLink()">
+      <span class="material-icons-outlined">content_copy</span>
+      Bağlantıyı Kopyala
     </button>
   </div>
 </div>

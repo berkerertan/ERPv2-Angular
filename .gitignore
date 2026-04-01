@@ -42,3 +42,11 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# ── Sensitive configuration — NEVER commit these ──────────────────────────
+# Real API keys and secrets — use environment.local.ts for local overrides
+.env
+.env.*
+!.env.example
+src/environments/environment.local.ts
+src/environments/environment.secrets.ts

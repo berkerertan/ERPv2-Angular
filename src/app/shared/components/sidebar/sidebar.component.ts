@@ -106,6 +106,7 @@ export class SidebarComponent {
             title: 'Raporlar',
             items: [
                 { icon: 'bar_chart', label: 'Raporlar', route: '/reports' },
+                { icon: 'document_scanner', label: 'Evrak Tarayıcı', route: '/document-scanner' },
                 { icon: 'upload_file', label: 'Excel Import', route: '/excel-import' },
                 { icon: 'manage_search', label: 'Aktivite Geçmişi', route: '/activity-log' },
             ]

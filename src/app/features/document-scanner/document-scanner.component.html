@@ -1,0 +1,351 @@
+<div class="page-container">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Evrak Tarayici</h1>
+            <p class="page-subtitle">Fatura, irsaliye veya fis gorselini yukleyin - yapay zeka otomatik okusun</p>
+        </div>
+
+        <div class="provider-toggle">
+            <button class="provider-btn"
+                    [class.provider-btn--active]="provider() === 'gemini'"
+                    (click)="setProvider('gemini')">
+                <span class="provider-icon">*</span>
+                <span>Gemini</span>
+            </button>
+            <button class="provider-btn"
+                    [class.provider-btn--active]="provider() === 'claude'"
+                    (click)="setProvider('claude')">
+                <span class="provider-icon">*</span>
+                <span>Claude AI</span>
+            </button>
+            <button class="provider-btn"
+                    [class.provider-btn--active]="provider() === 'azure'"
+                    (click)="setProvider('azure')">
+                <span class="provider-icon">*</span>
+                <span>Azure</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="scanner-layout">
+        <div class="scanner-left">
+            @if (pageState() === 'idle') {
+            <div class="upload-zone"
+                 [class.upload-zone--dragging]="isDragging()"
+                 (dragover)="onDragOver($event)"
+                 (dragleave)="onDragLeave()"
+                 (drop)="onDrop($event)"
+                 (click)="openFilePicker()">
+                <div class="upload-icon">
+                    <span class="material-icons-outlined">document_scanner</span>
+                </div>
+                <h3 class="upload-title">Belgeyi buraya surukleyin</h3>
+                <p class="upload-hint">veya tiklayarak dosya secin</p>
+                <p class="upload-formats">JPEG · PNG · WebP - Maks. 10 MB</p>
+            </div>
+            }
+
+            @if (pageState() === 'preview' || pageState() === 'analyzing' || pageState() === 'results') {
+            <div class="preview-card">
+                <div class="preview-header">
+                    <div class="preview-file-info">
+                        <span class="material-icons-outlined">image</span>
+                        <div>
+                            <span class="preview-filename">{{ fileName() }}</span>
+                            <span class="preview-filesize">{{ fileSize() }}</span>
+                        </div>
+                    </div>
+                    <button class="preview-reset-btn" (click)="reset()" title="Yeni belge yukle">
+                        <span class="material-icons-outlined">close</span>
+                    </button>
+                </div>
+                <div class="preview-img-wrap">
+                    <img [src]="previewUrl()" alt="Belge onizleme" class="preview-img" />
+                    @if (pageState() === 'analyzing') {
+                    <div class="preview-overlay">
+                        <div class="spinner spinner-lg"></div>
+                        <p class="analyzing-text">{{ providerLabel() }} analiz ediyor...</p>
+                    </div>
+                    }
+                </div>
+
+                @if (pageState() === 'preview') {
+                <button class="btn btn-primary analyze-btn" (click)="analyze()">
+                    <span class="material-icons-outlined">auto_awesome</span>
+                    <span>Analiz Et</span>
+                </button>
+                }
+            </div>
+            }
+        </div>
+
+        <div class="scanner-right">
+            @if (pageState() === 'idle' || pageState() === 'preview') {
+            <div class="results-placeholder">
+                <span class="material-icons-outlined">receipt_long</span>
+                <p>Belgeyi analiz ettikten sonra<br>sonuclar burada gorunecek</p>
+                <div class="capabilities">
+                    <div class="capability-item">
+                        <span class="material-icons-outlined">store</span>
+                        Tedarikci bilgisi
+                    </div>
+                    <div class="capability-item">
+                        <span class="material-icons-outlined">list_alt</span>
+                        Urun kalemleri
+                    </div>
+                    <div class="capability-item">
+                        <span class="material-icons-outlined">payments</span>
+                        Tutar ve KDV
+                    </div>
+                    <div class="capability-item">
+                        <span class="material-icons-outlined">calendar_today</span>
+                        Tarih ve belge no
+                    </div>
+                </div>
+            </div>
+            }
+
+            @if (pageState() === 'analyzing') {
+            <div class="results-placeholder">
+                <div class="spinner spinner-lg"></div>
+                <p class="analyzing-hint">Belge okunuyor, lutfen bekleyin...</p>
+            </div>
+            }
+
+            @if (pageState() === 'results' && result(); as res) {
+            <div class="results-panel">
+                <div class="results-header">
+                    <div class="results-badge-wrap">
+                        <span class="badge badge-success">{{ documentTypeLabel() }}</span>
+                        <span class="provider-badge">
+                            {{ res.provider === 'claude' ? 'Claude AI' : res.provider === 'gemini' ? 'Gemini' : 'Azure' }}
+                        </span>
+                    </div>
+                    <button class="btn-icon re-analyze-btn" (click)="analyze()" title="Yeniden analiz et">
+                        <span class="material-icons-outlined">refresh</span>
+                    </button>
+                </div>
+
+                <div class="result-section">
+                    <h3 class="result-section-title">Tedarikci Bilgisi</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Firma Adi</span>
+                            <span class="info-value">{{ res.vendorName || '-' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Vergi No</span>
+                            <span class="info-value">{{ res.vendorTaxId || '-' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Belge No</span>
+                            <span class="info-value mono">{{ res.documentNumber || '-' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Tarih</span>
+                            <span class="info-value">{{ res.documentDate || '-' }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="result-section">
+                    <div class="result-section-hdr">
+                        <h3 class="result-section-title">Kalemler</h3>
+                        <button class="btn-icon add-item-btn" (click)="addItem()" title="Kalem ekle">
+                            <span class="material-icons-outlined">add</span>
+                        </button>
+                    </div>
+
+                    <div class="items-table-wrap">
+                        <table class="items-table">
+                            <thead>
+                                <tr>
+                                    <th>Aciklama</th>
+                                    <th class="col-num">Miktar</th>
+                                    <th>Birim</th>
+                                    <th class="col-num">B.Fiyat</th>
+                                    <th class="col-num">Tutar</th>
+                                    <th class="col-act"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (item of editableItems(); track $index) {
+                                <tr>
+                                    <td>
+                                        <input class="item-input item-input--desc"
+                                               [value]="item.description"
+                                               (input)="updateItem($index, 'description', $any($event.target).value)" />
+                                    </td>
+                                    <td>
+                                        <input class="item-input item-input--num"
+                                               type="number"
+                                               [value]="item.quantity"
+                                               (input)="updateItem($index, 'quantity', +$any($event.target).value)" />
+                                    </td>
+                                    <td>
+                                        <input class="item-input item-input--unit"
+                                               [value]="item.unit"
+                                               (input)="updateItem($index, 'unit', $any($event.target).value)" />
+                                    </td>
+                                    <td>
+                                        <input class="item-input item-input--num"
+                                               type="number"
+                                               [value]="item.unitPrice"
+                                               (input)="updateItem($index, 'unitPrice', +$any($event.target).value)" />
+                                    </td>
+                                    <td>
+                                        <input class="item-input item-input--num"
+                                               type="number"
+                                               [value]="item.totalPrice"
+                                               (input)="updateItem($index, 'totalPrice', +$any($event.target).value)" />
+                                    </td>
+                                    <td>
+                                        <button class="btn-icon item-remove-btn" (click)="removeItem($index)">
+                                            <span class="material-icons-outlined">close</span>
+                                        </button>
+                                    </td>
+                                </tr>
+                                }
+                                @if (editableItems().length === 0) {
+                                <tr><td colspan="6" class="items-empty">Kalem bulunamadi</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="result-section">
+                    <h3 class="result-section-title">Toplamlar</h3>
+                    <div class="totals-grid">
+                        <div class="total-row">
+                            <span>Ara Toplam</span>
+                            <span>{{ formatCurrency(res.subtotal) }}</span>
+                        </div>
+                        <div class="total-row">
+                            <span>KDV</span>
+                            <span>{{ formatCurrency(res.taxAmount) }}</span>
+                        </div>
+                        <div class="total-row total-row--grand">
+                            <span>Genel Toplam</span>
+                            <span>{{ formatCurrency(res.total) }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="result-section operation-section">
+                    <h3 class="result-section-title">Islem Secimi</h3>
+
+                    <div class="operation-toggle">
+                        <button class="operation-btn"
+                                [class.operation-btn--active]="operation() === 'buyerDebt'"
+                                (click)="setOperation('buyerDebt')">
+                            Alici Borcuna Ekle
+                        </button>
+                        <button class="operation-btn"
+                                [class.operation-btn--active]="operation() === 'supplierPurchaseOrder'"
+                                (click)="setOperation('supplierPurchaseOrder')">
+                            Satin Alma Siparisi
+                        </button>
+                        <button class="operation-btn"
+                                [class.operation-btn--active]="operation() === 'stockIn'"
+                                (click)="setOperation('stockIn')">
+                            Stoga Giris
+                        </button>
+                    </div>
+
+                    @if (isLoadingTargets()) {
+                    <div class="target-loading">
+                        <div class="spinner"></div>
+                        <span>Hedef listeleri yukleniyor...</span>
+                    </div>
+                    }
+
+                    @if (!isLoadingTargets()) {
+                    <div class="target-grid">
+                        @if (operation() === 'buyerDebt') {
+                        <label class="target-field">
+                            <span>Alici</span>
+                            <select [ngModel]="selectedBuyerId()"
+                                    (ngModelChange)="selectedBuyerId.set($event); commitResult.set(null)">
+                                @for (buyer of buyers(); track buyer.id) {
+                                <option [value]="buyer.id">{{ buyer.name }} ({{ buyer.code || '-' }})</option>
+                                }
+                            </select>
+                        </label>
+                        }
+
+                        @if (operation() === 'supplierPurchaseOrder') {
+                        <label class="target-field">
+                            <span>Tedarikci</span>
+                            <select [ngModel]="selectedSupplierId()"
+                                    (ngModelChange)="selectedSupplierId.set($event); commitResult.set(null)">
+                                @for (supplier of suppliers(); track supplier.id) {
+                                <option [value]="supplier.id">{{ supplier.name }} ({{ supplier.code || '-' }})</option>
+                                }
+                            </select>
+                        </label>
+                        <label class="target-field">
+                            <span>Depo</span>
+                            <select [ngModel]="selectedWarehouseId()"
+                                    (ngModelChange)="selectedWarehouseId.set($event); commitResult.set(null)">
+                                @for (warehouse of warehouses(); track warehouse.id) {
+                                <option [value]="warehouse.id">{{ warehouse.name }} ({{ warehouse.code || '-' }})</option>
+                                }
+                            </select>
+                        </label>
+                        }
+
+                        @if (operation() === 'stockIn') {
+                        <label class="target-field">
+                            <span>Depo</span>
+                            <select [ngModel]="selectedWarehouseId()"
+                                    (ngModelChange)="selectedWarehouseId.set($event); commitResult.set(null)">
+                                @for (warehouse of warehouses(); track warehouse.id) {
+                                <option [value]="warehouse.id">{{ warehouse.name }} ({{ warehouse.code || '-' }})</option>
+                                }
+                            </select>
+                        </label>
+                        }
+
+                        @if (operation() !== 'buyerDebt') {
+                        <label class="target-checkbox">
+                            <input type="checkbox"
+                                   [ngModel]="createMissingProducts()"
+                                   (ngModelChange)="createMissingProducts.set(!!$event); commitResult.set(null)" />
+                            <span>Bulunamayan urunleri otomatik olustur</span>
+                        </label>
+                        }
+                    </div>
+                    }
+
+                    <button class="btn btn-primary action-commit-btn"
+                            [disabled]="!canCommit()"
+                            (click)="commitScannedData()">
+                        @if (isCommitting()) {
+                        <span class="spinner"></span>
+                        <span>Kaydediliyor...</span>
+                        } @else {
+                        <span class="material-icons-outlined">save</span>
+                        <span>Secime Gore Isle</span>
+                        }
+                    </button>
+
+                    @if (commitResult(); as commit) {
+                    <div class="commit-result">
+                        <div class="commit-title">{{ commit.message }}</div>
+                        <div class="commit-meta">
+                            <span>Islenen kalem: {{ commit.processedItemCount }}</span>
+                            <span>Yeni urun: {{ commit.createdProductCount }}</span>
+                            <span>Olusan kayit: {{ commit.createdRecordIds.length }}</span>
+                        </div>
+                    </div>
+                    }
+                </div>
+            </div>
+            }
+        </div>
+    </div>
+</div>
+
+<input #fileInput type="file" accept="image/jpeg,image/png,image/webp,image/gif"
+       style="display:none" (change)="onFileSelected($event)" />

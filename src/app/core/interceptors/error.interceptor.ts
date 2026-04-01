@@ -1,19 +1,22 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { AuthService } from '../services/auth.service';
 import { catchError, throwError } from 'rxjs';
 
 export const errorInterceptor: HttpInterceptorFn = (req, next) => {
-    const router = inject(Router);
+    const router     = inject(Router);
+    const authService = inject(AuthService);
 
     return next(req).pipe(
         catchError((error: HttpErrorResponse) => {
             if (error.status === 401) {
                 const isAuthEndpoint = req.url.includes('/api/Auth/');
                 if (!isAuthEndpoint) {
-                    localStorage.removeItem('erp_token');
-                    localStorage.removeItem('erp_refresh_token');
-                    localStorage.removeItem('erp_user');
+                    // Hem localStorage hem in-memory sinyalleri temizle
+                    // clearAuth() çağrılmazsa guestGuard kullanıcıyı hâlâ
+                    // "giriş yapmış" sanır ve /dashboard'a yönlendirir
+                    authService.clearAuth();
                     router.navigate(['/auth/login']);
                 }
             }

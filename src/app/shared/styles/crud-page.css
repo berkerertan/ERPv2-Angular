@@ -6,7 +6,7 @@ tbody tr.clickable-row {
 }
 
 tbody tr.clickable-row:hover {
-  background: rgba(76, 110, 245, 0.06) !important;
+  background: rgba(249, 115, 22, 0.05) !important;
 }
 
 /* ─── Sortable Column Headers ───────────────────────── */
@@ -65,6 +65,7 @@ th.sortable.sorted .sort-icon {
   z-index: var(--z-modal);
   background: var(--bg-card);
   border: 1px solid var(--border-color);
+  border-top: 2px solid var(--primary-600);
   border-radius: var(--radius-xl);
   padding: var(--space-7);
   box-shadow: var(--shadow-xl);
@@ -118,7 +119,7 @@ th.sortable.sorted .sort-icon {
 
 .toolbar-search input:focus {
   border-color: var(--primary-500);
-  box-shadow: 0 0 0 3px rgba(92, 124, 250, 0.1);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
 }
 
 .toolbar-search input::placeholder {
@@ -146,6 +147,7 @@ th.sortable.sorted .sort-icon {
 .table-container {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
+  border-top: 2px solid rgba(249, 115, 22, 0.25);
   border-radius: var(--radius-lg);
   overflow: hidden;
   margin-top: var(--space-5);
@@ -181,7 +183,7 @@ th.sortable.sorted .sort-icon {
 
 .action-btn.edit:hover {
   color: var(--primary-400);
-  background: rgba(76, 110, 245, 0.1);
+  background: rgba(249, 115, 22, 0.1);
 }
 
 .action-btn.delete:hover {
@@ -249,6 +251,7 @@ th.sortable.sorted .sort-icon {
 .stat-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
+  border-top: 2px solid var(--border-light);
   border-radius: var(--radius-lg);
   padding: var(--space-4) var(--space-5);
   display: flex;
@@ -276,10 +279,11 @@ th.sortable.sorted .sort-icon {
 }
 
 .stat-value {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Syne', sans-serif;
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--text-primary);
+  letter-spacing: -0.02em;
 }
 
 .stat-label {
@@ -350,8 +354,9 @@ th.sortable.sorted .sort-icon {
 
 /* Amount styling */
 .amount {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Space Grotesk', sans-serif;
   font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .amount.positive {
@@ -367,6 +372,7 @@ th.sortable.sorted .sort-icon {
   display: flex;
   gap: 2px;
   background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   padding: 3px;
   margin-bottom: var(--space-5);
@@ -381,16 +387,19 @@ th.sortable.sorted .sort-icon {
   color: var(--text-muted);
   cursor: pointer;
   transition: all var(--transition-fast);
+  letter-spacing: 0.01em;
 }
 
 .tab:hover {
   color: var(--text-secondary);
+  background: var(--bg-hover);
 }
 
 .tab.active {
   background: var(--bg-card);
-  color: var(--text-primary);
+  color: var(--primary-400);
   box-shadow: var(--shadow-sm);
+  font-weight: 600;
 }
 
 /* Page Header */
@@ -404,9 +413,10 @@ th.sortable.sorted .sort-icon {
 }
 
 .page-title {
-  font-family: 'Outfit', sans-serif;
+  font-family: 'Syne', sans-serif;
   font-size: 1.5rem;
   font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .page-subtitle {

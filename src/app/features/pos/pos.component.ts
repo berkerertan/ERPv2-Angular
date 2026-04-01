@@ -1,14 +1,17 @@
 import { Component, signal, OnDestroy, OnInit, AfterViewInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import { ProductService } from '../../core/services/product.service';
 import { WarehouseService } from '../../core/services/warehouse.service';
 import { CariAccountService } from '../../core/services/cari-account.service';
 import { SalesOrderService } from '../../core/services/sales-order.service';
+import { PosCartService } from '../../core/services/pos-cart.service';
 import { ToastService } from '../../core/services/toast.service';
 import { Product } from '../../core/models/product.model';
 import { Warehouse } from '../../core/models/warehouse.model';
 import { CariAccount } from '../../core/models/cari-account.model';
+import { PosCartSummary } from '../../core/models/pos-cart.model';
 
 interface CartItem {
     productId: string;
@@ -40,7 +43,20 @@ export class PosComponent implements OnInit, OnDestroy, AfterViewInit {
     private warehouseService = inject(WarehouseService);
     private cariAccountService = inject(CariAccountService);
     private salesOrderService = inject(SalesOrderService);
+    private posCartService = inject(PosCartService);
     private toastService = inject(ToastService);
+    private route = inject(ActivatedRoute);
+
+    // ─── Saved Carts ──────────────────────────────────────
+    savedCarts = signal<PosCartSummary[]>([]);
+    savedCartsPanelOpen = signal(false);
+    activeCartId = signal<string | null>(null);
+    isSavingCart = signal(false);
+    showShareModal = signal(false);
+    shareUrl = signal('');
+    shareCartLabel = signal('');
+    cartLabel = '';
+
     // Search
     searchTerm = '';
     private _searchTimer: any = null;
@@ -83,6 +99,11 @@ export class PosComponent implements OnInit, OnDestroy, AfterViewInit {
         this.loadWarehouses();
         this.loadBuyers();
         this.loadProducts();
+        this.loadSavedCarts();
+
+        // Auto-load cart from share link: /pos?cart=TOKEN
+        const token = this.route.snapshot.queryParamMap.get('cart');
+        if (token) this.loadCartByToken(token);
     }
 
     private loadWarehouses(): void {
@@ -609,6 +630,167 @@ export class PosComponent implements OnInit, OnDestroy, AfterViewInit {
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
+    }
+
+    // ─── Saved Carts ──────────────────────────────────────
+    loadSavedCarts(): void {
+        this.posCartService.list().subscribe({
+            next: data => this.savedCarts.set(data),
+            error: () => {}
+        });
+    }
+
+    openSavedCartsPanel(): void {
+        this.loadSavedCarts();
+        this.savedCartsPanelOpen.set(true);
+    }
+
+    closeSavedCartsPanel(): void {
+        this.savedCartsPanelOpen.set(false);
+    }
+
+    saveCurrentCart(): void {
+        if (this.cart().length === 0) {
+            this.toastService.warning('Uyarı', 'Sepet boş, kaydedilecek ürün yok.');
+            return;
+        }
+
+        const label = this.cartLabel.trim() ||
+            `Sepet ${new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })}`;
+
+        this.isSavingCart.set(true);
+        this.posCartService.save({
+            id: this.activeCartId() ?? undefined,
+            label,
+            buyerId: this.selectedBuyerId || null,
+            buyerName: this.selectedBuyer()?.name || null,
+            paymentMethod: this.paymentMethod(),
+            warehouseId: this.selectedWarehouseId,
+            items: this.cart().map(i => ({
+                productId: i.productId,
+                name: i.name,
+                barcode: i.barcode,
+                quantity: i.quantity,
+                unitPrice: i.unitPrice,
+                total: i.total
+            }))
+        }).subscribe({
+            next: res => {
+                this.isSavingCart.set(false);
+                this.activeCartId.set(res.id);
+                this.cartLabel = res.label;
+                this.loadSavedCarts();
+                this.toastService.success('Kaydedildi', `"${res.label}" sepeti kaydedildi.`);
+            },
+            error: err => {
+                this.isSavingCart.set(false);
+                const msg = err.error?.errorMessages?.[0] || 'Sepet kaydedilemedi.';
+                this.toastService.error('Hata', msg);
+            }
+        });
+    }
+
+    loadSavedCart(cart: PosCartSummary): void {
+        this.posCartService.byToken(cart.shareToken).subscribe({
+            next: detail => {
+                this.cart.set(detail.items.map(i => ({
+                    productId: i.productId,
+                    name: i.name,
+                    barcode: i.barcode,
+                    quantity: i.quantity,
+                    unitPrice: i.unitPrice,
+                    total: i.total
+                })));
+                this.activeCartId.set(detail.id);
+                this.cartLabel = detail.label;
+                this.selectedWarehouseId = detail.warehouseId || this.selectedWarehouseId;
+                if (detail.buyerId) {
+                    this.selectedBuyerId = detail.buyerId;
+                    const buyer = this.buyers.find(b => b.id === detail.buyerId);
+                    if (buyer) this.selectedBuyer.set(buyer);
+                    this.paymentMethod.set('credit');
+                } else {
+                    this.paymentMethod.set(detail.paymentMethod as any);
+                }
+                this.closeSavedCartsPanel();
+                this.toastService.info('Yüklendi', `"${detail.label}" sepeti aktif edildi.`);
+            },
+            error: () => this.toastService.error('Hata', 'Sepet yüklenemedi.')
+        });
+    }
+
+    deleteSavedCart(cart: PosCartSummary): void {
+        this.posCartService.delete(cart.id).subscribe({
+            next: () => {
+                if (this.activeCartId() === cart.id) {
+                    this.activeCartId.set(null);
+                    this.cartLabel = '';
+                }
+                this.savedCarts.update(list => list.filter(c => c.id !== cart.id));
+                this.toastService.info('Silindi', `"${cart.label}" sepeti silindi.`);
+            },
+            error: () => this.toastService.error('Hata', 'Sepet silinemedi.')
+        });
+    }
+
+    openShareModal(cart: PosCartSummary): void {
+        const base = window.location.origin;
+        this.shareUrl.set(`${base}/pos?cart=${cart.shareToken}`);
+        this.shareCartLabel.set(cart.label);
+        this.showShareModal.set(true);
+    }
+
+    closeShareModal(): void {
+        this.showShareModal.set(false);
+    }
+
+    copyShareLink(): void {
+        navigator.clipboard.writeText(this.shareUrl()).then(() => {
+            this.toastService.success('Kopyalandı', 'Bağlantı panoya kopyalandı.');
+            this.closeShareModal();
+        });
+    }
+
+    private loadCartByToken(token: string): void {
+        this.posCartService.byToken(token).subscribe({
+            next: detail => {
+                this.cart.set(detail.items.map(i => ({
+                    productId: i.productId,
+                    name: i.name,
+                    barcode: i.barcode,
+                    quantity: i.quantity,
+                    unitPrice: i.unitPrice,
+                    total: i.total
+                })));
+                this.activeCartId.set(detail.id);
+                this.cartLabel = detail.label;
+                this.toastService.success('Sepet Yüklendi', `"${detail.label}" bağlantıdan yüklendi.`);
+            },
+            error: () => this.toastService.warning('Uyarı', 'Paylaşılan sepet bulunamadı.')
+        });
+    }
+
+    cartTimeAgo(dateStr: string): string {
+        const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
+        if (diff < 60) return 'az önce';
+        if (diff < 3600) return `${Math.floor(diff / 60)} dk önce`;
+        if (diff < 86400) return `${Math.floor(diff / 3600)} sa önce`;
+        return `${Math.floor(diff / 86400)} gün önce`;
+    }
+
+    paymentLabel(method: string): string {
+        const labels: Record<string, string> = { cash: 'Nakit', card: 'Kart', credit: 'Veresiye' };
+        return labels[method] ?? method;
+    }
+
+    newCart(): void {
+        this.cart.set([]);
+        this.activeCartId.set(null);
+        this.cartLabel = '';
+        this.clearBuyerSelection();
+        this.paymentMethod.set('cash');
+        this.closeSavedCartsPanel();
+        this.toastService.info('Yeni Sepet', 'Boş sepet açıldı.');
     }
 
     ngOnDestroy(): void {

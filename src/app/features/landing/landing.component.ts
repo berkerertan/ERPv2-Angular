@@ -2,6 +2,7 @@ import { Component, signal, HostListener, OnInit, OnDestroy, inject } from '@ang
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
     selector: 'app-landing',
@@ -11,8 +12,9 @@ import { AuthService } from '../../core/services/auth.service';
     styleUrl: './landing.component.css'
 })
 export class LandingComponent implements OnInit, OnDestroy {
-    private authService = inject(AuthService);
+    public authService = inject(AuthService);
     private _featureInterval: any = null;
+    readonly offlineDownloadUrl = `${environment.apiUrl}/downloads/ERPv2-Offline-Package.zip`;
 
     isScrolled = signal(false);
     billingAnnual = signal(false);
@@ -194,6 +196,14 @@ export class LandingComponent implements OnInit, OnDestroy {
 
     scrollTo(section: string) {
         document.getElementById(section)?.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    getPanelRoute(): string {
+        return this.authService.getDefaultPanelRoute();
+    }
+
+    logout(): void {
+        this.authService.logout();
     }
 
     ngOnDestroy(): void {

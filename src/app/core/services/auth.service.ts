@@ -23,19 +23,26 @@ import {
     ActiveSession,
     User
 } from '../models/user.model';
+import { SocialProvider } from './social-auth.service';
 
 @Injectable({
     providedIn: 'root'
 })
 export class AuthService {
     private readonly apiUrl = `${environment.apiUrl}/api/Auth`;
+    private readonly sessionCheckIntervalMs = 15000;
+    private readonly tokenExpirySkewMs = 30000;
 
     private currentUserSignal = signal<User | null>(null);
     private tokenSignal = signal<string | null>(null);
+    private sessionTickSignal = signal(Date.now());
 
     readonly currentUser = this.currentUserSignal.asReadonly();
     readonly token = this.tokenSignal.asReadonly();
-    readonly isAuthenticated = computed(() => !!this.tokenSignal());
+    readonly isAuthenticated = computed(() => {
+        this.sessionTickSignal();
+        return this.isSessionValid(this.tokenSignal(), this.currentUserSignal());
+    });
     readonly isPlatformAdmin = computed(() => {
         const user = this.currentUserSignal();
         return user?.role === 'SuperAdmin' || user?.role === 'Admin';
@@ -47,6 +54,7 @@ export class AuthService {
 
     constructor(private http: HttpClient, private router: Router) {
         this.loadFromStorage();
+        setInterval(() => this.ensureSessionValidity(), this.sessionCheckIntervalMs);
     }
 
     login(request: LoginRequest): Observable<AuthResponse> {
@@ -98,7 +106,7 @@ export class AuthService {
         return this.http.post<AuthResponse>(`${this.apiUrl}/refresh`, { refreshToken } as RefreshTokenRequest).pipe(
             tap(response => this.handleAuthResponse(response)),
             catchError(error => {
-                this.clearStorage();
+                this.clearAuth();
                 return throwError(() => error);
             })
         );
@@ -112,6 +120,27 @@ export class AuthService {
     /** Şifre değiştir */
     changePassword(request: ChangePasswordRequest): Observable<void> {
         return this.http.put<void>(`${this.apiUrl}/me/password`, request);
+    }
+
+    /** Sosyal OAuth girişi — callback'ten gelen code'u backend'e iletir */
+    loginSocial(payload: {
+        provider: SocialProvider;
+        code: string;
+        redirectUri: string;
+        codeVerifier?: string;
+    }): Observable<AuthResponse> {
+        return this.http.post<AuthResponse>(`${this.apiUrl}/SocialLogin`, payload).pipe(
+            tap(response => this.handleAuthResponse(response)),
+            catchError(error => {
+                console.error('Social login failed:', error);
+                return throwError(() => error);
+            })
+        );
+    }
+
+    /** handleAuthResponse'u dışarıdan çağırabilmek için public wrapper */
+    applyAuthResponse(response: AuthResponse): void {
+        this.handleAuthResponse(response);
     }
 
     /** Abonelik planı seçenekleri */
@@ -176,7 +205,7 @@ export class AuthService {
             this.http.post(`${this.apiUrl}/logout`, { refreshToken } as LogoutRequest)
                 .subscribe({ error: () => {} });
         }
-        this.clearStorage();
+        this.clearAuth();
         this.router.navigate(['/auth/login']);
     }
 
@@ -196,7 +225,8 @@ export class AuthService {
         const mockUser: User = {
             userName: roleLabels[role] || role,
             role: role,
-            isPlatformAdmin: role === 'SuperAdmin' || role === 'Admin'
+            isPlatformAdmin: role === 'SuperAdmin' || role === 'Admin',
+            accessTokenExpiresAtUtc: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString()
         };
         const mockToken = 'dev-mock-jwt-token';
         this.tokenSignal.set(mockToken);
@@ -211,7 +241,22 @@ export class AuthService {
     }
 
     getToken(): string | null {
-        return this.tokenSignal();
+        const token = this.tokenSignal();
+        const user = this.currentUserSignal();
+        if (this.isSessionValid(token, user)) {
+            return token;
+        }
+
+        if (token || user) {
+            this.clearAuth();
+        }
+
+        return null;
+    }
+
+    getDefaultPanelRoute(): string {
+        const role = this.currentUserSignal()?.role;
+        return role === 'SuperAdmin' || role === 'Admin' ? '/admin/dashboard' : '/dashboard';
     }
 
     private handleAuthResponse(response: AuthResponse): void {
@@ -233,7 +278,7 @@ export class AuthService {
         localStorage.setItem('erp_user', JSON.stringify(user));
     }
 
-    private clearStorage(): void {
+    clearAuth(): void {
         this.tokenSignal.set(null);
         this.currentUserSignal.set(null);
         localStorage.removeItem('erp_token');
@@ -246,11 +291,80 @@ export class AuthService {
         const userStr = localStorage.getItem('erp_user');
         if (token && userStr) {
             try {
+                const parsedUser = JSON.parse(userStr) as User;
+                if (!this.isSessionValid(token, parsedUser)) {
+                    this.clearAuth();
+                    return;
+                }
+
                 this.tokenSignal.set(token);
-                this.currentUserSignal.set(JSON.parse(userStr));
+                this.currentUserSignal.set(parsedUser);
             } catch {
-                this.clearStorage();
+                this.clearAuth();
             }
+        }
+    }
+
+    private ensureSessionValidity(): void {
+        const token = this.tokenSignal();
+        const user = this.currentUserSignal();
+        if ((token || user) && !this.isSessionValid(token, user)) {
+            this.clearAuth();
+        }
+
+        this.sessionTickSignal.set(Date.now());
+    }
+
+    private isSessionValid(token: string | null, user: User | null): boolean {
+        if (!token || !user) {
+            return false;
+        }
+
+        const expiresAt = this.resolveExpiryDate(token, user);
+        if (!expiresAt) {
+            return false;
+        }
+
+        return expiresAt.getTime() > Date.now() + this.tokenExpirySkewMs;
+    }
+
+    private resolveExpiryDate(token: string, user: User): Date | null {
+        const fromUser = this.parseDate(user.accessTokenExpiresAtUtc);
+        if (fromUser) {
+            return fromUser;
+        }
+
+        const exp = this.readJwtExpClaim(token);
+        if (!exp) {
+            return null;
+        }
+
+        return new Date(exp * 1000);
+    }
+
+    private parseDate(value?: string): Date | null {
+        if (!value) {
+            return null;
+        }
+
+        const parsed = new Date(value);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+
+    private readJwtExpClaim(token: string): number | null {
+        const parts = token.split('.');
+        if (parts.length !== 3) {
+            return null;
+        }
+
+        try {
+            const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+            const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+            const payloadJson = atob(padded);
+            const payload = JSON.parse(payloadJson) as { exp?: number };
+            return typeof payload.exp === 'number' ? payload.exp : null;
+        } catch {
+            return null;
         }
     }
 }

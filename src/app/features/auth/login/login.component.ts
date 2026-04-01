@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { SocialAuthService } from '../../../core/services/social-auth.service';
 
 @Component({
     selector: 'app-login',
@@ -18,8 +19,12 @@ export class LoginComponent {
     errorMessage = signal('');
     showPassword = signal(false);
 
-    private authService = inject(AuthService);
-    private router = inject(Router);
+    private authService  = inject(AuthService);
+    private socialAuth   = inject(SocialAuthService);
+    private router       = inject(Router);
+
+    loginWithGoogle(): void { this.socialAuth.initiateGoogle(); }
+    loginWithGithub(): void { this.socialAuth.initiateGithub(); }
 
     togglePassword(): void {
         this.showPassword.update(v => !v);

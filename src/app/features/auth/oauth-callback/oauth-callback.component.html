@@ -1,0 +1,28 @@
+<div class="callback-page">
+
+    @if (error()) {
+    <!-- Hata durumu -->
+    <div class="callback-card card-glass">
+        <div class="callback-icon callback-icon--error">
+            <span class="material-icons-outlined">error_outline</span>
+        </div>
+        <h2 class="callback-title">Giriş Başarısız</h2>
+        <p class="callback-desc">{{ error() }}</p>
+        <button class="btn btn-primary callback-btn" (click)="retry()">
+            <span class="material-icons-outlined">arrow_back</span>
+            Giriş Sayfasına Dön
+        </button>
+    </div>
+
+    } @else {
+    <!-- Yükleniyor durumu -->
+    <div class="callback-card card-glass">
+        <div class="callback-icon callback-icon--loading">
+            <div class="spinner spinner-lg"></div>
+        </div>
+        <h2 class="callback-title">Lütfen Bekleyin</h2>
+        <p class="callback-desc">{{ status() }}</p>
+    </div>
+    }
+
+</div>

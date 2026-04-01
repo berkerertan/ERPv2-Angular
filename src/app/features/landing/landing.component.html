@@ -17,11 +17,26 @@
         </div>
 
         <div class="nav-actions">
+            @if (authService.isAuthenticated()) {
+            <a [routerLink]="getPanelRoute()" class="landing-profile-btn" title="Panele Git">
+                <div class="landing-avatar">
+                    <span class="landing-avatar-text">
+                        {{ authService.currentUser()?.userName?.charAt(0)?.toUpperCase() }}
+                    </span>
+                </div>
+                <div class="landing-profile-info">
+                    <span class="landing-profile-name">{{ authService.currentUser()?.userName }}</span>
+                    <span class="landing-profile-role">{{ authService.currentUser()?.role }}</span>
+                </div>
+            </a>
+            <button class="btn btn-ghost btn-sm" (click)="logout()">Çıkış</button>
+            } @else {
             <a routerLink="/auth/login" class="btn btn-ghost btn-sm">Giriş Yap</a>
             <a routerLink="/auth/register" class="btn btn-primary btn-sm">
                 <span class="material-icons-outlined">rocket_launch</span>
                 Ücretsiz Başla
             </a>
+            }
         </div>
     </div>
 </nav>
@@ -442,6 +457,10 @@
                     <span class="footer-col-title">Hesap</span>
                     <a routerLink="/auth/login" class="footer-link">Giriş Yap</a>
                     <a routerLink="/auth/register" class="footer-link">Kayıt Ol</a>
+                    <a [href]="offlineDownloadUrl" class="footer-link footer-link-highlight" download>
+                        <span class="material-icons-outlined">download</span>
+                        Offline Mod için İndirin
+                    </a>
                     <a href="#" class="footer-link">Gizlilik Politikası</a>
                     <a href="#" class="footer-link">Kullanım Koşulları</a>
                     <a href="#" class="footer-link">Çerez Politikası</a>
