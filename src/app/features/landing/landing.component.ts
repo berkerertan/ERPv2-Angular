@@ -14,7 +14,7 @@ import { environment } from '../../../environments/environment';
 export class LandingComponent implements OnInit, OnDestroy {
     public authService = inject(AuthService);
     private _featureInterval: any = null;
-    readonly offlineDownloadUrl = `${environment.apiUrl}/downloads/ERPv2-Offline-Package.zip`;
+    readonly offlineDownloadUrl = `${environment.apiUrl}/downloads/StokNet-Offline-Package.zip`;
 
     isScrolled = signal(false);
     billingAnnual = signal(false);
@@ -143,7 +143,7 @@ export class LandingComponent implements OnInit, OnDestroy {
             name: 'Ahmet Yılmaz',
             role: 'Market Sahibi, İstanbul',
             avatar: 'AY',
-            text: 'ERPv2 sayesinde kasadan stoğa kadar her şeyi tek sistemden yönetiyorum. Aylık 15 saat iş gücü tasarrufu sağladım.',
+            text: 'StokNet sayesinde kasadan stoğa kadar her şeyi tek sistemden yönetiyorum. Aylık 15 saat iş gücü tasarrufu sağladım.',
             rating: 5
         },
         {

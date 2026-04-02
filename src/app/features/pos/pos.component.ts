@@ -510,8 +510,8 @@ export class PosComponent implements OnInit, OnDestroy, AfterViewInit {
 </head>
 <body>
     <div class="header">
-        <h2>ERPv2</h2>
-        <p>Kurumsal Yönetim Sistemi</p>
+        <h2>StokNet</h2>
+        <p>Stok ve Satış Yönetim Sistemi</p>
         <p>Tel: 0212 555 00 00</p>
     </div>
     <div class="divider"></div>

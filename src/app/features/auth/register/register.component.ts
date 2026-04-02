@@ -180,7 +180,12 @@ export class RegisterComponent implements OnInit {
                 this.isLoading.set(false);
                 this.form.password = '';
                 this.form.passwordConfirm = '';
-                this.router.navigate(['/dashboard']);
+                this.router.navigate(['/auth/login'], {
+                    queryParams: {
+                        verifyEmailPending: '1',
+                        email: this.form.email
+                    }
+                });
             },
             error: (err) => {
                 this.isLoading.set(false);

@@ -50,3 +50,20 @@ Thumbs.db
 !.env.example
 src/environments/environment.local.ts
 src/environments/environment.secrets.ts
+
+# ── StokNet: Proje özel ignore ───────────────────────────────────────────────
+
+# Build ve log çıktıları
+build.log
+build.txt
+*.log
+
+# Oluşturulan API dokümantasyonu
+API_OPENAPI*.json
+
+# Claude Code geliştirme dosyaları
+.claude/
+
+# Örnek ve test veri dosyaları
+*.pdf
+*.xlsx

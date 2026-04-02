@@ -20,6 +20,10 @@ export const routes: Routes = [
         path: 'auth/callback',
         loadComponent: () => import('./features/auth/oauth-callback/oauth-callback.component').then(m => m.OAuthCallbackComponent)
     },
+    {
+        path: 'auth/verify-email',
+        loadComponent: () => import('./features/auth/verify-email/verify-email.component').then(m => m.VerifyEmailComponent)
+    },
     // Auth layout (login vb.)
     {
         path: 'auth',

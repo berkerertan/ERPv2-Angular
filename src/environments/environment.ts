@@ -1,7 +1,7 @@
 export const environment = {
     production: false,
     apiUrl: '',  // proxy.conf.json ile /api istekleri localhost:5058'e yönlendiriliyor
-    appName: 'ERPv2',
+    appName: 'StokNet',
 
     // ── Social OAuth ─────────────────────────────────────────────────────
     // Google: https://console.cloud.google.com → Credentials → OAuth 2.0 Client IDs

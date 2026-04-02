@@ -7,6 +7,10 @@ import {
     LoginRequest,
     RegisterRequest,
     RegisterSaasRequest,
+    ConfirmEmailRequest,
+    ConfirmEmailResponse,
+    ResendVerificationEmailRequest,
+    ResendVerificationEmailResponse,
     BootstrapAdminRequest,
     RefreshTokenRequest,
     LogoutRequest,
@@ -77,14 +81,21 @@ export class AuthService {
     }
 
     /** SaaS kayıt — tenant oluşturur ve giriş yapar */
-    registerSaas(request: RegisterSaasRequest): Observable<AuthResponse> {
-        return this.http.post<AuthResponse>(`${this.apiUrl}/register-saas`, request).pipe(
-            tap(response => this.handleAuthResponse(response)),
+    registerSaas(request: RegisterSaasRequest): Observable<UserRegistrationResponse> {
+        return this.http.post<UserRegistrationResponse>(`${this.apiUrl}/register-saas`, request).pipe(
             catchError(error => {
                 console.error('SaaS registration failed:', error);
                 return throwError(() => error);
             })
         );
+    }
+
+    confirmEmail(request: ConfirmEmailRequest): Observable<ConfirmEmailResponse> {
+        return this.http.post<ConfirmEmailResponse>(`${this.apiUrl}/confirm-email`, request);
+    }
+
+    resendVerificationEmail(request: ResendVerificationEmailRequest): Observable<ResendVerificationEmailResponse> {
+        return this.http.post<ResendVerificationEmailResponse>(`${this.apiUrl}/resend-verification-email`, request);
     }
 
     bootstrapAdmin(request: BootstrapAdminRequest): Observable<AuthResponse> {
@@ -99,7 +110,7 @@ export class AuthService {
 
     /** Access token yenile */
     refreshToken(): Observable<AuthResponse> {
-        const refreshToken = localStorage.getItem('erp_refresh_token');
+        const refreshToken = localStorage.getItem('stoknet_refresh_token');
         if (!refreshToken) {
             return throwError(() => new Error('No refresh token'));
         }
@@ -200,7 +211,7 @@ export class AuthService {
     }
 
     logout(): void {
-        const refreshToken = localStorage.getItem('erp_refresh_token');
+        const refreshToken = localStorage.getItem('stoknet_refresh_token');
         if (refreshToken) {
             this.http.post(`${this.apiUrl}/logout`, { refreshToken } as LogoutRequest)
                 .subscribe({ error: () => {} });
@@ -231,8 +242,8 @@ export class AuthService {
         const mockToken = 'dev-mock-jwt-token';
         this.tokenSignal.set(mockToken);
         this.currentUserSignal.set(mockUser);
-        localStorage.setItem('erp_token', mockToken);
-        localStorage.setItem('erp_user', JSON.stringify(mockUser));
+        localStorage.setItem('stoknet_token', mockToken);
+        localStorage.setItem('stoknet_user', JSON.stringify(mockUser));
         if (role === 'SuperAdmin' || role === 'Admin') {
             this.router.navigate(['/admin/dashboard']);
         } else {
@@ -273,22 +284,22 @@ export class AuthService {
             accessTokenExpiresAtUtc: response.accessTokenExpiresAtUtc
         };
         this.currentUserSignal.set(user);
-        localStorage.setItem('erp_token', response.accessToken);
-        localStorage.setItem('erp_refresh_token', response.refreshToken);
-        localStorage.setItem('erp_user', JSON.stringify(user));
+        localStorage.setItem('stoknet_token', response.accessToken);
+        localStorage.setItem('stoknet_refresh_token', response.refreshToken);
+        localStorage.setItem('stoknet_user', JSON.stringify(user));
     }
 
     clearAuth(): void {
         this.tokenSignal.set(null);
         this.currentUserSignal.set(null);
-        localStorage.removeItem('erp_token');
-        localStorage.removeItem('erp_refresh_token');
-        localStorage.removeItem('erp_user');
+        localStorage.removeItem('stoknet_token');
+        localStorage.removeItem('stoknet_refresh_token');
+        localStorage.removeItem('stoknet_user');
     }
 
     private loadFromStorage(): void {
-        const token = localStorage.getItem('erp_token');
-        const userStr = localStorage.getItem('erp_user');
+        const token = localStorage.getItem('stoknet_token');
+        const userStr = localStorage.getItem('stoknet_user');
         if (token && userStr) {
             try {
                 const parsedUser = JSON.parse(userStr) as User;

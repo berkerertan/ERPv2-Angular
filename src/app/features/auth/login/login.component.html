@@ -5,7 +5,7 @@
         <div class="login-logo">
             <span class="material-icons-outlined">hub</span>
         </div>
-        <h1 class="login-title">ERPv2</h1>
+        <h1 class="login-title">StokNet</h1>
         <p class="login-subtitle">Kurumsal Yönetim Sistemine Giriş Yapın</p>
     </div>
 
@@ -35,10 +35,35 @@
     </div>
 
     <!-- Error Message -->
+    @if (infoMessage()) {
+    <div class="alert alert-info">
+        <span class="material-icons-outlined">mail</span>
+        <span>{{ infoMessage() }}</span>
+    </div>
+    }
+
+    <!-- Error Message -->
     @if (errorMessage()) {
     <div class="alert alert-danger">
         <span class="material-icons-outlined">error_outline</span>
         <span>{{ errorMessage() }}</span>
+    </div>
+    }
+
+    @if (showResendButton()) {
+    <div class="verify-resend-box">
+        <button type="button" class="btn btn-outline resend-btn" (click)="resendVerificationEmail()" [disabled]="isResendLoading()">
+            @if (isResendLoading()) {
+            <div class="spinner spinner-sm"></div>
+            <span>Gonderiliyor...</span>
+            } @else {
+            <span class="material-icons-outlined">mark_email_unread</span>
+            <span>Dogrulama E-postasini Tekrar Gonder</span>
+            }
+        </button>
+        @if (resendMessage()) {
+        <p class="resend-message">{{ resendMessage() }}</p>
+        }
     </div>
     }
 

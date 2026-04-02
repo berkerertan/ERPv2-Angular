@@ -1,7 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { SocialAuthService } from '../../../core/services/social-auth.service';
 
@@ -12,16 +12,40 @@ import { SocialAuthService } from '../../../core/services/social-auth.service';
     templateUrl: './login.component.html',
     styleUrl: './login.component.css'
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
     userName = '';
     password = '';
     isLoading = signal(false);
     errorMessage = signal('');
+    infoMessage = signal('');
+    resendMessage = signal('');
+    showResendButton = signal(false);
+    isResendLoading = signal(false);
     showPassword = signal(false);
 
-    private authService  = inject(AuthService);
-    private socialAuth   = inject(SocialAuthService);
-    private router       = inject(Router);
+    private authService = inject(AuthService);
+    private socialAuth = inject(SocialAuthService);
+    private router = inject(Router);
+    private route = inject(ActivatedRoute);
+
+    ngOnInit(): void {
+        this.route.queryParamMap.subscribe(params => {
+            const verifyPending = params.get('verifyEmailPending');
+            const email = params.get('email');
+            if (verifyPending === '1') {
+                if (email && !this.userName) {
+                    this.userName = email;
+                }
+
+                this.infoMessage.set(
+                    email
+                        ? `${email} adresine dogrulama e-postasi gonderildi. Giris yapmadan once e-postanizi onaylayin.`
+                        : 'Dogrulama e-postasi gonderildi. Giris yapmadan once e-postanizi onaylayin.'
+                );
+                this.showResendButton.set(!!email);
+            }
+        });
+    }
 
     loginWithGoogle(): void { this.socialAuth.initiateGoogle(); }
     loginWithGithub(): void { this.socialAuth.initiateGithub(); }
@@ -32,12 +56,14 @@ export class LoginComponent {
 
     onSubmit(): void {
         if (!this.userName || !this.password) {
-            this.errorMessage.set('Kullanıcı adı ve şifre gereklidir.');
+            this.errorMessage.set('Kullanici adi ve sifre gereklidir.');
             return;
         }
 
         this.isLoading.set(true);
         this.errorMessage.set('');
+        this.resendMessage.set('');
+        this.showResendButton.set(false);
 
         this.authService.login({ userName: this.userName, password: this.password }).subscribe({
             next: () => {
@@ -53,9 +79,33 @@ export class LoginComponent {
             },
             error: (err: any) => {
                 this.isLoading.set(false);
-                this.errorMessage.set(
-                    err.error?.detail || err.error?.message || 'Giriş başarısız. Lütfen bilgilerinizi kontrol edin.'
+                const detail = err?.error?.detail || err?.error?.message || 'Giris basarisiz. Lutfen bilgilerinizi kontrol edin.';
+                this.errorMessage.set(detail);
+                this.showResendButton.set(
+                    this.isVerificationPendingError(detail) && this.isEmailFormat(this.userName)
                 );
+            }
+        });
+    }
+
+    resendVerificationEmail(): void {
+        const email = this.userName.trim();
+        if (!this.isEmailFormat(email)) {
+            this.resendMessage.set('Lutfen e-posta adresinizi girin.');
+            return;
+        }
+
+        this.isResendLoading.set(true);
+        this.resendMessage.set('');
+
+        this.authService.resendVerificationEmail({ email }).subscribe({
+            next: (response) => {
+                this.isResendLoading.set(false);
+                this.resendMessage.set(response.message || 'Dogrulama e-postasi tekrar gonderildi.');
+            },
+            error: (err: any) => {
+                this.isResendLoading.set(false);
+                this.resendMessage.set(err?.error?.detail || err?.error?.message || 'Dogrulama e-postasi gonderilemedi.');
             }
         });
     }
@@ -64,5 +114,16 @@ export class LoginComponent {
         this.userName = 'demo';
         this.password = 'Test123!';
         this.onSubmit();
+    }
+
+    private isEmailFormat(value: string): boolean {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((value ?? '').trim());
+    }
+
+    private isVerificationPendingError(detail: string): boolean {
+        const normalized = (detail ?? '').toLowerCase();
+        return normalized.includes('not verified')
+            || normalized.includes('dogrulanmadi')
+            || normalized.includes('dogrulama');
     }
 }

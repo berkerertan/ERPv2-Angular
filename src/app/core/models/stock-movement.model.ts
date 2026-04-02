@@ -6,11 +6,28 @@ export enum StockMovementType {
     Out = 2
 }
 
+/** StockMovementReason enum (backend ile birebir) */
+export enum StockMovementReason {
+    ManualAdjustment = 1,
+    PurchaseApproval = 2,
+    SalesApproval = 3,
+    TransferOut = 4,
+    TransferIn = 5,
+    PosSale = 6,
+    InventoryAdjustment = 7,
+    WasteScrap = 8,
+    ReturnIn = 9,
+    ReturnOut = 10
+}
+
 export interface StockMovement {
     id: string;
     warehouseId: string;
     productId: string;
     type: StockMovementType;
+    reason: StockMovementReason;
+    reasonNote?: string;
+    proofImageUrl?: string;
     quantity: number;
     unitPrice: number;
     movementDateUtc: string;
@@ -24,6 +41,10 @@ export interface CreateStockMovementRequest {
     quantity: number;
     unitPrice: number;
     referenceNo?: string;
+    reason?: StockMovementReason;
+    reasonNote?: string;
+    proofImageUrl?: string;
+    proofImagePublicId?: string;
 }
 
 export interface UpdateStockMovementRequest {
@@ -33,6 +54,17 @@ export interface UpdateStockMovementRequest {
     quantity?: number;
     unitPrice?: number;
     referenceNo?: string;
+    reason?: StockMovementReason;
+    reasonNote?: string;
+    proofImageUrl?: string;
+    proofImagePublicId?: string;
+}
+
+export interface StockMovementProofUploadResponse {
+    url: string;
+    publicId: string;
+    format?: string;
+    bytes?: number;
 }
 
 export interface StockBalance {

@@ -10,7 +10,9 @@ import {
     CriticalStockAlertDto,
     TransferStockRequest,
     TransferStockResult,
-    StockMovementType
+    StockMovementType,
+    StockMovementReason,
+    StockMovementProofUploadResponse
 } from '../models/stock-movement.model';
 
 @Injectable({ providedIn: 'root' })
@@ -25,6 +27,7 @@ export class StockMovementService {
         warehouseId?: string;
         productId?: string;
         type?: StockMovementType;
+        reason?: StockMovementReason;
         fromUtc?: string;
         toUtc?: string;
         page?: number;
@@ -71,6 +74,13 @@ export class StockMovementService {
     /** Depolar arası stok transferi */
     transfer(request: TransferStockRequest): Observable<TransferStockResult> {
         return this.http.post<TransferStockResult>(`${this.apiUrl}/transfer`, request);
+    }
+
+    /** Fire/Zayi kanıt görseli/evrak yükleme */
+    uploadProof(file: File): Observable<StockMovementProofUploadResponse> {
+        const formData = new FormData();
+        formData.append('file', file);
+        return this.http.post<StockMovementProofUploadResponse>(`${this.apiUrl}/proof-upload`, formData);
     }
 
     private buildParams(params?: Record<string, any>): HttpParams {

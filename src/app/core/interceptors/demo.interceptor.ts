@@ -33,7 +33,7 @@ import { InvoiceType } from '../models/invoice.model';
 // ── Demo kullanıcı kontrolü ───────────────────────────────────────────────────
 function isDemoUser(): boolean {
     try {
-        const u = localStorage.getItem('erp_user');
+        const u = localStorage.getItem('stoknet_user');
         return !!u && JSON.parse(u)?.userName === 'demo';
     } catch { return false; }
 }

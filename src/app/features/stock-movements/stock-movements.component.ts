@@ -1,9 +1,9 @@
 import { Component, signal, computed, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subject, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged, switchMap, of, finalize } from 'rxjs';
 import { StockMovementService } from '../../core/services/stock-movement.service';
-import { StockMovementType, CriticalStockAlertDto, StockBalance } from '../../core/models/stock-movement.model';
+import { StockMovementType, StockMovementReason, CriticalStockAlertDto, StockBalance } from '../../core/models/stock-movement.model';
 import { WarehouseService } from '../../core/services/warehouse.service';
 import { ProductService } from '../../core/services/product.service';
 import { ConfirmService } from '../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -20,6 +20,9 @@ interface MovementRow {
     warehouseId: string;
     warehouseName: string;
     movementType: 'In' | 'Out';
+    reason: StockMovementReason;
+    reasonNote: string;
+    proofImageUrl: string;
     quantity: number;
     unitPrice: number;
     description: string;
@@ -28,12 +31,16 @@ interface MovementRow {
 
 interface MovementFormData {
     movementType: 'In' | 'Out';
+    reason: StockMovementReason;
     warehouseId: string;
     productId: string;
     productName: string;
     quantity: number;
     unitPrice: number;
     referenceNo: string;
+    reasonNote: string;
+    proofImageUrl: string;
+    proofImagePublicId: string;
 }
 
 interface TransferFormData {
@@ -75,10 +82,14 @@ export class StockMovementsComponent implements OnInit, OnDestroy {
     isLoadingAlerts    = signal(false);
     isSaving           = signal(false);
     isTransferring     = signal(false);
+    isProofUploading   = signal(false);
+    proofUploadError   = signal('');
+    selectedProofFileName = signal('');
 
     // ── Filters ───────────────────────────────────────────────────────────────
     searchTerm  = '';
     typeFilter  = signal<'all' | 'In' | 'Out'>('all');
+    reasonFilter = signal<'all' | 'waste'>('all');
     sortColumn  = '';
     sortDir: 'asc' | 'desc' = 'asc';
 
@@ -108,6 +119,7 @@ export class StockMovementsComponent implements OnInit, OnDestroy {
     readonly alertCount = computed(() => this.alerts().length);
     readonly inCount    = computed(() => this.movements().filter(m => m.movementType === 'In').length);
     readonly outCount   = computed(() => this.movements().filter(m => m.movementType === 'Out').length);
+    readonly wasteCount = computed(() => this.movements().filter(m => m.reason === StockMovementReason.WasteScrap).length);
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
     ngOnInit(): void {
@@ -149,6 +161,9 @@ export class StockMovementsComponent implements OnInit, OnDestroy {
                     warehouseId:  m.warehouseId,
                     warehouseName: this.warehouseMap[m.warehouseId] || m.warehouseId.substring(0, 8) + '…',
                     movementType: m.type === StockMovementType.In ? 'In' : 'Out',
+                    reason: m.reason ?? StockMovementReason.ManualAdjustment,
+                    reasonNote: m.reasonNote || '',
+                    proofImageUrl: m.proofImageUrl || '',
                     quantity:     m.quantity,
                     unitPrice:    m.unitPrice || 0,
                     description:  m.referenceNo || '',
@@ -258,6 +273,7 @@ export class StockMovementsComponent implements OnInit, OnDestroy {
             m.description.toLowerCase().includes(term)
         );
         if (this.typeFilter() !== 'all') list = list.filter(m => m.movementType === this.typeFilter());
+        if (this.reasonFilter() === 'waste') list = list.filter(m => m.reason === StockMovementReason.WasteScrap);
         if (this.sortColumn) {
             const dir = this.sortDir === 'asc' ? 1 : -1;
             const col = this.sortColumn as keyof MovementRow;
@@ -278,26 +294,132 @@ export class StockMovementsComponent implements OnInit, OnDestroy {
     // ── Movement CRUD ─────────────────────────────────────────────────────────
     openAddModal(): void {
         this.formData = this.emptyForm();
+        this.resetProofState();
         if (this.warehouses().length) this.formData.warehouseId = this.warehouses()[0].id;
         this.showProductSuggestions.set(false);
         this.showModal.set(true);
     }
 
-    closeModal(): void { this.showModal.set(false); }
+    openWasteModal(): void {
+        this.formData = {
+            ...this.emptyForm(),
+            movementType: 'Out',
+            reason: StockMovementReason.WasteScrap,
+            referenceNo: this.buildWasteReferenceNo()
+        };
+        this.resetProofState();
+        if (this.warehouses().length) this.formData.warehouseId = this.warehouses()[0].id;
+        this.showProductSuggestions.set(false);
+        this.showModal.set(true);
+    }
+
+    closeModal(): void {
+        this.showModal.set(false);
+        this.resetProofState();
+    }
+
+    setMovementType(type: 'In' | 'Out'): void {
+        const wasWaste = this.formData.reason === StockMovementReason.WasteScrap;
+        this.formData.movementType = type;
+        if (type === 'In' && this.isOutOnlyReason(this.formData.reason)) {
+            this.formData.reason = StockMovementReason.ManualAdjustment;
+        }
+        if (wasWaste && this.formData.reason !== StockMovementReason.WasteScrap) {
+            this.clearWasteOnlyFields();
+        }
+    }
+
+    onReasonChanged(reason: StockMovementReason): void {
+        this.formData.reason = reason;
+        if (reason !== StockMovementReason.WasteScrap) {
+            this.clearWasteOnlyFields();
+        }
+    }
+
+    onProofFileSelected(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        const file = input.files?.[0] ?? null;
+        input.value = '';
+        this.proofUploadError.set('');
+
+        if (!file) {
+            return;
+        }
+
+        const maxBytes = 15 * 1024 * 1024;
+        if (file.size > maxBytes) {
+            this.proofUploadError.set('Dosya boyutu 15 MB uzerinde olamaz.');
+            return;
+        }
+
+        const type = (file.type || '').toLowerCase();
+        const isImage = type.startsWith('image/');
+        const isPdf = type === 'application/pdf';
+        if (!isImage && !isPdf) {
+            this.proofUploadError.set('Sadece gorsel veya PDF yukleyebilirsiniz.');
+            return;
+        }
+
+        this.isProofUploading.set(true);
+        this.selectedProofFileName.set(file.name);
+
+        this.stockService.uploadProof(file)
+            .pipe(finalize(() => this.isProofUploading.set(false)))
+            .subscribe({
+                next: (res) => {
+                    this.formData.proofImageUrl = res.url;
+                    this.formData.proofImagePublicId = res.publicId;
+                    this.toastService.success('Kanit yuklendi', 'Fire/Zayi kaydi icin dosya hazir.');
+                },
+                error: (err) => {
+                    this.formData.proofImageUrl = '';
+                    this.formData.proofImagePublicId = '';
+                    this.proofUploadError.set(err?.error?.detail || err?.error || 'Dosya yukleme basarisiz.');
+                }
+            });
+    }
+
+    removeProof(): void {
+        this.formData.proofImageUrl = '';
+        this.formData.proofImagePublicId = '';
+        this.selectedProofFileName.set('');
+        this.proofUploadError.set('');
+    }
+
+    isWasteSelected(): boolean {
+        return this.formData.reason === StockMovementReason.WasteScrap;
+    }
 
     saveMovement(): void {
         if (!this.formData.productId || !this.formData.warehouseId || this.formData.quantity <= 0) {
             this.toastService.error('Eksik Alan', 'Ürün, depo ve miktar zorunludur.');
             return;
         }
+
+        if (this.formData.reason === StockMovementReason.WasteScrap && !this.formData.referenceNo.trim()) {
+            this.formData.referenceNo = this.buildWasteReferenceNo();
+        }
+        if (this.formData.reason === StockMovementReason.WasteScrap && !this.formData.reasonNote.trim()) {
+            this.toastService.error('Eksik Alan', 'Fire/Zayi kaydinda aciklama zorunludur.');
+            return;
+        }
+        if (this.formData.reason === StockMovementReason.WasteScrap && !this.formData.proofImageUrl) {
+            this.toastService.error('Eksik Alan', 'Fire/Zayi kaydinda kanit dosyasi zorunludur.');
+            return;
+        }
+
         this.isSaving.set(true);
         this.stockService.create({
             productId:   this.formData.productId,
             warehouseId: this.formData.warehouseId,
             type:        this.formData.movementType === 'In' ? StockMovementType.In : StockMovementType.Out,
+            reason:      this.formData.reason,
             quantity:    this.formData.quantity,
             unitPrice:   this.formData.unitPrice || 0,
-            referenceNo: this.formData.referenceNo || undefined
+            referenceNo: this.formData.referenceNo || undefined,
+            reasonNote: this.formData.reasonNote.trim() || undefined,
+            proofImageUrl: this.formData.proofImageUrl || undefined,
+            proofImagePublicId: this.formData.proofImagePublicId || undefined
         }).subscribe({
             next: () => {
                 this.reload();
@@ -373,7 +495,19 @@ export class StockMovementsComponent implements OnInit, OnDestroy {
     }
 
     private emptyForm(): MovementFormData {
-        return { movementType: 'In', warehouseId: '', productId: '', productName: '', quantity: 1, unitPrice: 0, referenceNo: '' };
+        return {
+            movementType: 'In',
+            reason: StockMovementReason.ManualAdjustment,
+            warehouseId: '',
+            productId: '',
+            productName: '',
+            quantity: 1,
+            unitPrice: 0,
+            referenceNo: '',
+            reasonNote: '',
+            proofImageUrl: '',
+            proofImagePublicId: ''
+        };
     }
 
     private emptyTransfer(): TransferFormData {
@@ -386,5 +520,82 @@ export class StockMovementsComponent implements OnInit, OnDestroy {
 
     alertSeverity(a: CriticalStockAlertDto): 'critical' | 'low' {
         return a.currentQuantity <= 0 ? 'critical' : 'low';
+    }
+
+    openAlertRestockModal(a: CriticalStockAlertDto): void {
+        this.formData = {
+            ...this.emptyForm(),
+            movementType: 'In',
+            reason: StockMovementReason.InventoryAdjustment,
+            warehouseId: a.warehouseId,
+            productId: a.productId,
+            productName: a.productName || '',
+            quantity: a.missingQuantity > 0 ? a.missingQuantity : 1
+        };
+        this.resetProofState();
+        this.showModal.set(true);
+    }
+
+    reasonLabel(reason: StockMovementReason): string {
+        switch (reason) {
+            case StockMovementReason.PurchaseApproval: return 'Satın Alma';
+            case StockMovementReason.SalesApproval: return 'Satış';
+            case StockMovementReason.TransferOut: return 'Transfer Çıkış';
+            case StockMovementReason.TransferIn: return 'Transfer Giriş';
+            case StockMovementReason.PosSale: return 'Hızlı Satış';
+            case StockMovementReason.InventoryAdjustment: return 'Sayım Düzeltme';
+            case StockMovementReason.WasteScrap: return 'Fire/Zayi';
+            case StockMovementReason.ReturnIn: return 'İade Giriş';
+            case StockMovementReason.ReturnOut: return 'İade Çıkış';
+            default: return 'Manuel';
+        }
+    }
+
+    get movementReasonOptions(): Array<{ value: StockMovementReason; label: string }> {
+        if (this.formData.movementType === 'In') {
+            return [
+                { value: StockMovementReason.ManualAdjustment, label: 'Manuel Düzeltme' },
+                { value: StockMovementReason.InventoryAdjustment, label: 'Sayım Düzeltme' }
+            ];
+        }
+
+        return [
+            { value: StockMovementReason.ManualAdjustment, label: 'Manuel Düşüm' },
+            { value: StockMovementReason.InventoryAdjustment, label: 'Sayım Düzeltme' },
+            { value: StockMovementReason.WasteScrap, label: 'Fire / Zayi' }
+        ];
+    }
+
+    isWasteReason(reason: StockMovementReason): boolean {
+        return reason === StockMovementReason.WasteScrap;
+    }
+
+    private isOutOnlyReason(reason: StockMovementReason): boolean {
+        return reason === StockMovementReason.WasteScrap
+            || reason === StockMovementReason.SalesApproval
+            || reason === StockMovementReason.TransferOut
+            || reason === StockMovementReason.PosSale
+            || reason === StockMovementReason.ReturnOut;
+    }
+
+    private buildWasteReferenceNo(): string {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        return `FIRE-ZAYI-${y}${m}${d}-${hh}${mm}`;
+    }
+
+    private clearWasteOnlyFields(): void {
+        this.formData.reasonNote = '';
+        this.removeProof();
+    }
+
+    private resetProofState(): void {
+        this.selectedProofFileName.set('');
+        this.proofUploadError.set('');
+        this.isProofUploading.set(false);
     }
 }

@@ -35,6 +35,25 @@ export interface RegisterSaasRequest {
     plan: SubscriptionPlan;
 }
 
+export interface ConfirmEmailRequest {
+    email: string;
+    token: string;
+}
+
+export interface ConfirmEmailResponse {
+    isVerified: boolean;
+    message: string;
+}
+
+export interface ResendVerificationEmailRequest {
+    email: string;
+}
+
+export interface ResendVerificationEmailResponse {
+    isSent: boolean;
+    message: string;
+}
+
 export interface BootstrapAdminRequest {
     userName: string;
     email: string;

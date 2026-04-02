@@ -17,7 +17,7 @@ import {
 // ─── Initial mock content ─────────────────────────────────────────────────────
 
 const INITIAL_HERO: HeroContent = {
-  badge: "Türkiye'nin En Hızlı Büyüyen ERP Platformu",
+  badge: "Türkiye'nin En Hızlı Büyüyen Stok Yönetim Platformu",
   title: 'Perakende İşletmenizi',
   titleAccent: 'Dijitalleştirin.',
   description:
@@ -108,7 +108,7 @@ const INITIAL_TESTIMONIALS: TestimonialItem[] = [
     name: 'Mehmet Yılmaz',
     role: 'Kurucu Ortak, Yılmaz Market Zinciri (12 Şube)',
     avatar: 'MY',
-    text: '3 yıldır farklı yazılımlarla boğuşuyorduk. ERPv2 ile tüm şubelerimizi tek panelden yönetiyoruz. Stok kayıplarımız %40 azaldı, kasiyerlerimiz ise sistemi iki günde öğrendi.',
+    text: '3 yıldır farklı yazılımlarla boğuşuyorduk. StokNet ile tüm şubelerimizi tek panelden yönetiyoruz. Stok kayıplarımız %40 azaldı, kasiyerlerimiz ise sistemi iki günde öğrendi.',
     rating: 5,
     isActive: true,
   },
@@ -147,7 +147,7 @@ const INITIAL_CONTENT: LandingContent = {
   testimonials: INITIAL_TESTIMONIALS,
   cta: INITIAL_CTA,
   lastUpdatedAt: '2026-03-11T08:00:00Z',
-  updatedBy: 'admin@erpv2.com',
+  updatedBy: 'admin@stoknet.com',
 };
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
@@ -185,7 +185,7 @@ export class LandingContentService {
       ...current,
       hero: { ...current.hero, ...req },
       lastUpdatedAt: nowIso(),
-      updatedBy: 'admin@erpv2.com',
+      updatedBy: 'admin@stoknet.com',
     };
     this._content$.next(updated);
     return this.content$;
@@ -199,7 +199,7 @@ export class LandingContentService {
       ...current,
       stats: [...stats],
       lastUpdatedAt: nowIso(),
-      updatedBy: 'admin@erpv2.com',
+      updatedBy: 'admin@stoknet.com',
     };
     this._content$.next(updated);
     return this.content$;
@@ -216,7 +216,7 @@ export class LandingContentService {
       ...current,
       features,
       lastUpdatedAt: nowIso(),
-      updatedBy: 'admin@erpv2.com',
+      updatedBy: 'admin@stoknet.com',
     };
     this._content$.next(updated);
     return this.content$;
@@ -237,7 +237,7 @@ export class LandingContentService {
       ...current,
       features: [...current.features, newFeature],
       lastUpdatedAt: nowIso(),
-      updatedBy: 'admin@erpv2.com',
+      updatedBy: 'admin@stoknet.com',
     };
     this._content$.next(updated);
     return this.content$;
@@ -249,7 +249,7 @@ export class LandingContentService {
       ...current,
       features: current.features.filter((f) => f.id !== id),
       lastUpdatedAt: nowIso(),
-      updatedBy: 'admin@erpv2.com',
+      updatedBy: 'admin@stoknet.com',
     };
     this._content$.next(updated);
     return this.content$;
@@ -272,7 +272,7 @@ export class LandingContentService {
       ...current,
       features: [...reordered, ...remainder],
       lastUpdatedAt: nowIso(),
-      updatedBy: 'admin@erpv2.com',
+      updatedBy: 'admin@stoknet.com',
     };
     this._content$.next(updated);
     return this.content$;
@@ -289,7 +289,7 @@ export class LandingContentService {
       ...current,
       testimonials,
       lastUpdatedAt: nowIso(),
-      updatedBy: 'admin@erpv2.com',
+      updatedBy: 'admin@stoknet.com',
     };
     this._content$.next(updated);
     return this.content$;
@@ -305,7 +305,7 @@ export class LandingContentService {
       ...current,
       testimonials: [...current.testimonials, newTestimonial],
       lastUpdatedAt: nowIso(),
-      updatedBy: 'admin@erpv2.com',
+      updatedBy: 'admin@stoknet.com',
     };
     this._content$.next(updated);
     return this.content$;
@@ -317,7 +317,7 @@ export class LandingContentService {
       ...current,
       testimonials: current.testimonials.filter((t) => t.id !== id),
       lastUpdatedAt: nowIso(),
-      updatedBy: 'admin@erpv2.com',
+      updatedBy: 'admin@stoknet.com',
     };
     this._content$.next(updated);
     return this.content$;
@@ -331,7 +331,7 @@ export class LandingContentService {
       ...current,
       cta: { ...current.cta, ...req },
       lastUpdatedAt: nowIso(),
-      updatedBy: 'admin@erpv2.com',
+      updatedBy: 'admin@stoknet.com',
     };
     this._content$.next(updated);
     return this.content$;

@@ -35,22 +35,22 @@ const COMMON_VARS = ['{{TenantName}}', '{{TenantCode}}', '{{RecipientEmail}}'];
 const SAMPLE_VALUES: Record<string, string> = {
     '{{TenantName}}':          'Örnek Şirket A.Ş.',
     '{{TenantCode}}':          'ornek-sirket',
-    '{{RecipientEmail}}':      'demo@erp.local',
-    '{{LoginUrl}}':            'https://app.erp.local/login',
+    '{{RecipientEmail}}':      'demo@stoknet.local',
+    '{{LoginUrl}}':            'https://app.stoknet.local/login',
     '{{Plan}}':                'Profesyonel',
     '{{SubscriptionStatus}}':  'Aktif',
     '{{SubscriptionEndDate}}': '31.03.2026',
     '{{InvoiceNo}}':           'INV-2026-0042',
     '{{InvoiceDate}}':         '25.03.2026',
     '{{Amount}}':              '₺1.499,00',
-    '{{InvoiceUrl}}':          'https://app.erp.local/invoices/42',
+    '{{InvoiceUrl}}':          'https://app.stoknet.local/invoices/42',
     '{{DueDate}}':             '01.04.2026',
     '{{DaysLeft}}':            '7',
-    '{{PaymentUrl}}':          'https://app.erp.local/payment',
+    '{{PaymentUrl}}':          'https://app.stoknet.local/payment',
     '{{PlanName}}':            'Profesyonel',
     '{{ExpiryDate}}':          '31.03.2026',
-    '{{RenewalUrl}}':          'https://app.erp.local/renew',
-    '{{ResetLink}}':           'https://app.erp.local/reset?token=abc123xyz',
+    '{{RenewalUrl}}':          'https://app.stoknet.local/renew',
+    '{{ResetLink}}':           'https://app.stoknet.local/reset?token=abc123xyz',
     '{{ExpiryHours}}':         '24',
 };
 
@@ -331,7 +331,7 @@ export class EmailTemplatesComponent implements OnInit, OnDestroy {
                    padding:36px 48px;text-align:center">
           <div style="font-size:28px;font-weight:800;color:#ffffff;
                       letter-spacing:-1px;font-family:Arial,sans-serif">
-            ERP<span style="opacity:0.55">v2</span>
+            Stok<span style="opacity:0.55">Net</span>
           </div>
           <div style="color:rgba(255,255,255,0.72);font-size:13px;
                       margin-top:6px;letter-spacing:0.3px">
@@ -371,17 +371,17 @@ export class EmailTemplatesComponent implements OnInit, OnDestroy {
         <td style="background:#f8f9ff;padding:24px 48px 32px;
                    text-align:center">
           <p style="margin:0 0 6px;font-size:12px;color:#9ca3af">
-            Bu e-posta ERPv2 Platformu tarafından otomatik olarak gönderilmiştir.
+            Bu e-posta StokNet Platformu tarafından otomatik olarak gönderilmiştir.
           </p>
           <p style="margin:0 0 16px;font-size:12px;color:#9ca3af">
             Yardım için
-            <a href="mailto:destek@erp.local"
+            <a href="mailto:destek@stoknet.local"
                style="color:#f97316;text-decoration:none">
-              destek@erp.local
+              destek@stoknet.local
             </a>
           </p>
           <p style="margin:0;font-size:11px;color:#d1d5db">
-            &copy; 2026 ERPv2 &mdash; Tüm hakları saklıdır.
+            &copy; 2026 StokNet &mdash; Tüm hakları saklıdır.
           </p>
         </td>
       </tr>

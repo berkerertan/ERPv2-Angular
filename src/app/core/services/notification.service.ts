@@ -33,7 +33,7 @@ export class NotificationService {
       {
         id: '1',
         title: 'Sisteme Hoş Geldiniz!',
-        message: 'ERPv2 sistemine giriş yaptınız. Tüm işlemlerinizi güvenle gerçekleştirebilirsiniz.',
+        message: 'StokNet sistemine giriş yaptınız. Tüm işlemlerinizi güvenle gerçekleştirebilirsiniz.',
         type: 'success',
         timestamp: new Date().toISOString(),
         isRead: false

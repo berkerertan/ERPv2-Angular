@@ -14,6 +14,10 @@
         <span class="material-icons-outlined">swap_calls</span>
         Depo Transferi
       </button>
+      <button class="btn btn-danger" (click)="openWasteModal()">
+        <span class="material-icons-outlined">delete_sweep</span>
+        Fire / Zayi Düş
+      </button>
       <button class="btn btn-primary" (click)="openAddModal()">
         <span class="material-icons-outlined">add</span>
         Yeni Hareket
@@ -48,6 +52,15 @@
       <div class="stat-info">
         <span class="stat-value">{{ outCount() }}</span>
         <span class="stat-label">Çıkış</span>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(220,38,38,0.14);color:#dc2626">
+        <span class="material-icons-outlined">delete_sweep</span>
+      </div>
+      <div class="stat-info">
+        <span class="stat-value">{{ wasteCount() }}</span>
+        <span class="stat-label">Fire / Zayi</span>
       </div>
     </div>
     <div class="stat-card stat-card--alert" [class.has-alerts]="alertCount() > 0" (click)="activeTab.set('alerts')">
@@ -95,6 +108,9 @@
         <button class="filter-btn filter-out" [class.filter-active]="typeFilter()==='Out'"  (click)="typeFilter.set('Out')">
           <span class="material-icons-outlined" style="font-size:14px">arrow_upward</span> Çıkış
         </button>
+        <button class="filter-btn filter-waste" [class.filter-active]="reasonFilter()==='waste'" (click)="reasonFilter.set(reasonFilter()==='waste' ? 'all' : 'waste')">
+          <span class="material-icons-outlined" style="font-size:14px">delete_sweep</span> Fire/Zayi
+        </button>
       </div>
     </div>
 
@@ -112,6 +128,7 @@
                 Depo <span class="sort-icon material-icons-outlined">{{ sortColumn==='warehouseName' ? (sortDir==='asc'?'arrow_upward':'arrow_downward') : 'unfold_more' }}</span>
               </th>
               <th>Tür</th>
+              <th>Neden</th>
               <th class="sortable" [class.sorted]="sortColumn==='quantity'" (click)="sort('quantity')">
                 Miktar <span class="sort-icon material-icons-outlined">{{ sortColumn==='quantity' ? (sortDir==='asc'?'arrow_upward':'arrow_downward') : 'unfold_more' }}</span>
               </th>
@@ -136,9 +153,26 @@
                     {{ m.movementType==='In' ? 'Giriş' : 'Çıkış' }}
                   </span>
                 </td>
+                <td>
+                  <span class="badge badge-reason" [class.badge-waste]="isWasteReason(m.reason)">
+                    {{ reasonLabel(m.reason) }}
+                  </span>
+                </td>
                 <td class="font-semibold">{{ m.quantity | number }}</td>
                 <td class="amount">{{ m.unitPrice | number:'1.2-2' }} ₺</td>
-                <td class="text-muted">{{ m.description || '—' }}</td>
+                <td class="text-muted">
+                  <div class="movement-note-cell">
+                    <span>{{ m.description || '—' }}</span>
+                    @if (m.reasonNote) {
+                      <small class="reason-note-text">{{ m.reasonNote }}</small>
+                    }
+                    @if (m.proofImageUrl) {
+                      <a class="proof-link-inline" [href]="m.proofImageUrl" target="_blank" rel="noopener">
+                        Kanit Dosyasi
+                      </a>
+                    }
+                  </div>
+                </td>
                 <td class="text-muted">{{ m.createdAt }}</td>
                 <td>
                   <div class="actions-cell">
@@ -150,7 +184,7 @@
               </tr>
             }
             @if (!filteredMovements.length) {
-              <tr><td colspan="8">
+              <tr><td colspan="9">
                 <div class="empty-state" style="padding:32px 0">
                   <span class="material-icons-outlined">inbox</span>
                   <p>Hareket bulunamadı</p>
@@ -250,7 +284,7 @@
               </div>
             </div>
             <button class="btn btn-sm btn-primary alert-action-btn"
-                    (click)="formData.productId=a.productId; formData.productName=a.productName||''; formData.movementType='In'; formData.warehouseId=a.warehouseId; formData.quantity=a.missingQuantity; showModal.set(true)">
+                    (click)="openAlertRestockModal(a)">
               <span class="material-icons-outlined">add</span>
               Stok Girişi Yap
             </button>
@@ -276,13 +310,23 @@
       <div class="form-group">
         <label class="form-label">Hareket Türü</label>
         <div class="movement-type-toggle">
-          <button class="movement-type-btn" [class.active-in]="formData.movementType==='In'" (click)="formData.movementType='In'">
+          <button class="movement-type-btn" [class.active-in]="formData.movementType==='In'" (click)="setMovementType('In')">
             <span class="material-icons-outlined">arrow_downward</span> Giriş
           </button>
-          <button class="movement-type-btn" [class.active-out]="formData.movementType==='Out'" (click)="formData.movementType='Out'">
+          <button class="movement-type-btn" [class.active-out]="formData.movementType==='Out'" (click)="setMovementType('Out')">
             <span class="material-icons-outlined">arrow_upward</span> Çıkış
           </button>
         </div>
+      </div>
+
+      <!-- Hareket Nedeni -->
+      <div class="form-group">
+        <label class="form-label">Hareket Nedeni</label>
+        <select class="form-input" [ngModel]="formData.reason" (ngModelChange)="onReasonChanged($event)">
+          @for (opt of movementReasonOptions; track opt.value) {
+            <option [ngValue]="opt.value">{{ opt.label }}</option>
+          }
+        </select>
       </div>
 
       <!-- Ürün Seçici -->
@@ -345,10 +389,51 @@
         <label class="form-label">Referans / Açıklama</label>
         <input class="form-input" [(ngModel)]="formData.referenceNo" placeholder="Örn: Sipariş #1234, Sayım düzeltmesi…" />
       </div>
+
+      @if (isWasteSelected()) {
+        <div class="waste-panel">
+          <div class="form-group">
+            <label class="form-label">Fire/Zayi Açıklaması <span style="color:var(--danger)">*</span></label>
+            <textarea class="form-input" rows="3" maxlength="500"
+                      [(ngModel)]="formData.reasonNote"
+                      placeholder="Neden fire/zayi düşüldüğünü yazın"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Kanıt Dosyası (Görsel/PDF) <span style="color:var(--danger)">*</span></label>
+            <div class="proof-upload-row">
+              <input #proofFileInput type="file" accept="image/*,application/pdf" hidden (change)="onProofFileSelected($event)" />
+              <button class="btn btn-secondary btn-sm" type="button" (click)="proofFileInput.click()" [disabled]="isProofUploading()">
+                @if (isProofUploading()) { <div class="spinner spinner-sm"></div> Yukleniyor… }
+                @else {
+                  <span class="material-icons-outlined">upload_file</span>
+                  Dosya Yukle
+                }
+              </button>
+              @if (formData.proofImageUrl) {
+                <a class="btn btn-sm btn-primary" [href]="formData.proofImageUrl" target="_blank" rel="noopener">
+                  <span class="material-icons-outlined">open_in_new</span>
+                  Goruntule
+                </a>
+                <button class="btn btn-sm btn-danger" type="button" (click)="removeProof()">
+                  <span class="material-icons-outlined">delete</span>
+                  Kaldir
+                </button>
+              }
+            </div>
+            @if (selectedProofFileName()) {
+              <div class="proof-file-meta">{{ selectedProofFileName() }}</div>
+            }
+            @if (proofUploadError()) {
+              <div class="proof-upload-error">{{ proofUploadError() }}</div>
+            }
+          </div>
+        </div>
+      }
     </div>
     <div class="modal-footer">
       <button class="btn btn-secondary" (click)="closeModal()">İptal</button>
-      <button class="btn btn-primary" (click)="saveMovement()" [disabled]="isSaving()">
+      <button class="btn btn-primary" (click)="saveMovement()" [disabled]="isSaving() || isProofUploading()">
         @if (isSaving()) { <div class="spinner spinner-sm"></div> Kaydediliyor… }
         @else {
           <span class="material-icons-outlined">save</span>

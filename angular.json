@@ -7,7 +7,7 @@
   },
   "newProjectRoot": "projects",
   "projects": {
-    "ERPv2": {
+    "StokNet": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:class": {
@@ -84,10 +84,10 @@
           },
           "configurations": {
             "production": {
-              "buildTarget": "ERPv2:build:production"
+              "buildTarget": "StokNet:build:production"
             },
             "development": {
-              "buildTarget": "ERPv2:build:development"
+              "buildTarget": "StokNet:build:development"
             }
           },
           "defaultConfiguration": "development"

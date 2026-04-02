@@ -28,6 +28,7 @@
 .filter-active { border-color: var(--primary-500) !important; background: rgba(249,115,22,0.1) !important; color: var(--primary-400) !important; font-weight: 700; }
 .filter-in.filter-active  { border-color: var(--success) !important; background: var(--success-bg) !important; color: var(--success) !important; }
 .filter-out.filter-active { border-color: var(--danger)  !important; background: rgba(239,68,68,0.08) !important; color: var(--danger) !important; }
+.filter-waste.filter-active { border-color: #dc2626 !important; background: rgba(220,38,38,0.12) !important; color: #dc2626 !important; }
 
 /* ── Tabs ───────────────────────────────────────────────────────────────── */
 .tabs {
@@ -229,6 +230,70 @@
     flex-shrink: 0;
 }
 .badge-warning { background: rgba(234,179,8,0.12); color: #eab308; }
+
+.badge-reason {
+    background: rgba(148,163,184,0.15);
+    color: var(--text-secondary);
+    border: 1px solid rgba(148,163,184,0.25);
+}
+.badge-waste {
+    background: rgba(220,38,38,0.12);
+    color: #dc2626;
+    border-color: rgba(220,38,38,0.35);
+}
+
+.movement-note-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.reason-note-text {
+    font-size: 0.75rem;
+    color: var(--text-tertiary);
+    line-height: 1.35;
+}
+
+.proof-link-inline {
+    width: fit-content;
+    font-size: 0.75rem;
+    color: var(--primary-400);
+    text-decoration: none;
+}
+
+.proof-link-inline:hover {
+    text-decoration: underline;
+}
+
+.waste-panel {
+    border: 1px dashed rgba(220,38,38,0.35);
+    background: rgba(220,38,38,0.05);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.proof-upload-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.proof-file-meta {
+    margin-top: 6px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.proof-upload-error {
+    margin-top: 6px;
+    font-size: 0.78rem;
+    color: var(--danger);
+    font-weight: 600;
+}
 
 .alert-card-body {
     display: flex;
