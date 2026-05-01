@@ -45,7 +45,7 @@
                     } @else {
                     <div class="notifications-list">
                         @for (notif of notificationService.notifications(); track notif.id) {
-                        <div class="notification-item" [class.unread]="!notif.isRead" (click)="markAsRead(notif.id)">
+                        <div class="notification-item" [class.unread]="!notif.isRead" (click)="markAsRead(notif)">
                             <div class="notif-icon-wrap" [ngClass]="'type-' + notif.type">
                                 <span class="material-icons-outlined">
                                     {{ notif.type === 'success' ? 'check_circle' : notif.type === 'error' ? 'error' : notif.type === 'warning' ? 'warning' : 'info' }}

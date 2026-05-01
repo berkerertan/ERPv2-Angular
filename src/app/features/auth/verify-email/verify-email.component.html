@@ -1,0 +1,34 @@
+<div class="verify-wrap">
+  <div class="verify-card card-glass">
+    <div class="verify-icon" [class.success]="isSuccess()" [class.error]="!isSuccess() && !isLoading()">
+      @if (isLoading()) {
+        <span class="material-icons-outlined">hourglass_top</span>
+      } @else if (isSuccess()) {
+        <span class="material-icons-outlined">verified</span>
+      } @else {
+        <span class="material-icons-outlined">error</span>
+      }
+    </div>
+
+    <h1 class="verify-title">
+      @if (isLoading()) {
+        E-posta Dogrulaniyor
+      } @else if (isSuccess()) {
+        Dogrulama Basarili
+      } @else {
+        Dogrulama Basarisiz
+      }
+    </h1>
+
+    <p class="verify-message">{{ message() }}</p>
+
+    @if (resolvedEmail()) {
+      <p class="verify-email">{{ resolvedEmail() }}</p>
+    }
+
+    <div class="verify-actions">
+      <a routerLink="/auth/login" class="btn btn-primary">Giris Sayfasina Git</a>
+      <a routerLink="/auth/register" class="btn btn-secondary">Yeni Kayit</a>
+    </div>
+  </div>
+</div>

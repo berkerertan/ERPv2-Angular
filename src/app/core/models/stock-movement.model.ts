@@ -103,3 +103,94 @@ export interface TransferStockResult {
     referenceNo?: string;
     movementDateUtc: string;
 }
+
+export interface ApplyInventoryCountItemRequest {
+    productId: string;
+    countedQuantity: number;
+}
+
+export interface ApplyInventoryCountRequest {
+    sessionId?: string;
+    warehouseId: string;
+    referenceNo?: string;
+    notes?: string;
+    locationCode?: string;
+    items: ApplyInventoryCountItemRequest[];
+}
+
+export interface ApplyInventoryCountResponse {
+    sessionId: string;
+    referenceNo: string;
+    submittedItems: number;
+    appliedItems: number;
+    skippedItems: number;
+    totalIncreaseQuantity: number;
+    totalDecreaseQuantity: number;
+}
+
+export enum InventoryCountSessionStatus {
+    Open = 1,
+    Applied = 2,
+    Cancelled = 3
+}
+
+export interface StartInventoryCountSessionRequest {
+    warehouseId: string;
+    referenceNo?: string;
+    notes?: string;
+    locationCode?: string;
+}
+
+export interface InventoryCountSessionListItem {
+    id: string;
+    warehouseId: string;
+    warehouseName: string;
+    status: InventoryCountSessionStatus;
+    referenceNo: string;
+    notes?: string;
+    locationCode?: string;
+    startedByUserName?: string;
+    startedAtUtc: string;
+    completedAtUtc?: string;
+    submittedItems: number;
+    appliedItems: number;
+    skippedItems: number;
+    totalIncreaseQuantity: number;
+    totalDecreaseQuantity: number;
+}
+
+export interface InventoryCountSessionItem {
+    id: string;
+    productId: string;
+    productCode: string;
+    productName: string;
+    barcode?: string;
+    unit: string;
+    locationCode?: string;
+    countedByUserId?: string;
+    countedByUserName?: string;
+    systemQuantity: number;
+    countedQuantity: number;
+    differenceQuantity: number;
+    countedAtUtc: string;
+}
+
+export interface InventoryCountSessionDetail {
+    id: string;
+    warehouseId: string;
+    warehouseName: string;
+    status: InventoryCountSessionStatus;
+    referenceNo: string;
+    notes?: string;
+    locationCode?: string;
+    startedByUserId?: string;
+    startedByUserName?: string;
+    startedAtUtc: string;
+    completedAtUtc?: string;
+    submittedItems: number;
+    appliedItems: number;
+    skippedItems: number;
+    totalIncreaseQuantity: number;
+    totalDecreaseQuantity: number;
+    items: InventoryCountSessionItem[];
+}

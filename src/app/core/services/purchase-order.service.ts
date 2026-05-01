@@ -1,11 +1,12 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import {
     PurchaseOrder,
     CreatePurchaseOrderRequest,
-    UpdatePurchaseOrderRequest
+    UpdatePurchaseOrderRequest,
+    PurchaseRecommendationResponse
 } from '../models/purchase-order.model';
 
 @Injectable({ providedIn: 'root' })
@@ -22,6 +23,23 @@ export class PurchaseOrderService {
     /** Sipariş detayı */
     getById(id: string): Observable<PurchaseOrder> {
         return this.http.get<PurchaseOrder>(`${this.apiUrl}/${id}`);
+    }
+
+    getRecommendations(params: {
+        warehouseId: string;
+        supplierCariAccountId?: string;
+        analysisDays?: number;
+        coverageDays?: number;
+        maxItems?: number;
+        criticalOnly?: boolean;
+    }): Observable<PurchaseRecommendationResponse> {
+        let query = new HttpParams().set('warehouseId', params.warehouseId);
+        if (params.supplierCariAccountId) query = query.set('supplierCariAccountId', params.supplierCariAccountId);
+        if (params.analysisDays) query = query.set('analysisDays', params.analysisDays.toString());
+        if (params.coverageDays) query = query.set('coverageDays', params.coverageDays.toString());
+        if (params.maxItems) query = query.set('maxItems', params.maxItems.toString());
+        if (params.criticalOnly !== undefined) query = query.set('criticalOnly', params.criticalOnly.toString());
+        return this.http.get<PurchaseRecommendationResponse>(`${this.apiUrl}/recommendations`, { params: query });
     }
 
     /** Yeni satın alma siparişi — 201 Created: uuid döner */

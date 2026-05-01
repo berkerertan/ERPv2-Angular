@@ -1,22 +1,35 @@
-import { Component, signal, computed, OnInit, inject } from '@angular/core';
+import { Component, signal, computed, OnInit, OnDestroy, inject, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { StockMovementService } from '../../core/services/stock-movement.service';
 import { WarehouseService } from '../../core/services/warehouse.service';
-import { StockMovementType, StockBalance } from '../../core/models/stock-movement.model';
+import { InventoryCountSessionDetail, InventoryCountSessionListItem, InventoryCountSessionStatus, StockBalance } from '../../core/models/stock-movement.model';
 import { Warehouse } from '../../core/models/warehouse.model';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfirmService } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 
-export interface CountRow {
-    productId:   string;
-    productName: string;
-    barcode:     string;
-    unit:        string;
-    warehouseName: string;
-    systemQty:   number;
-    countedQty:  number | null;   // null = henüz girilmedi
+declare global {
+    interface Window {
+        BarcodeDetector?: any;
+    }
 }
+
+export interface CountRow {
+    productId: string;
+    productName: string;
+    barcode: string;
+    unit: string;
+    warehouseName: string;
+    systemQty: number;
+    countedQty: number | null;
+}
+
+type RecentScan = {
+    productId: string;
+    productName: string;
+    barcode: string;
+    quantity: number;
+};
 
 @Component({
     selector: 'app-inventory-count',
@@ -25,40 +38,90 @@ export interface CountRow {
     templateUrl: './inventory-count.component.html',
     styleUrls: ['./inventory-count.component.css', '../../shared/styles/crud-page.css']
 })
-export class InventoryCountComponent implements OnInit {
-    private stockService    = inject(StockMovementService);
-    private warehouseService = inject(WarehouseService);
-    private toastService    = inject(ToastService);
-    private confirmService  = inject(ConfirmService);
+export class InventoryCountComponent implements OnInit, OnDestroy {
+    @ViewChild('scannerVideo') scannerVideo?: ElementRef<HTMLVideoElement>;
 
-    // ── State ─────────────────────────────────────────────────────────────────
-    warehouses       = signal<Warehouse[]>([]);
-    allBalances      = signal<StockBalance[]>([]);
-    rows             = signal<CountRow[]>([]);
+    private stockService = inject(StockMovementService);
+    private warehouseService = inject(WarehouseService);
+    private toastService = inject(ToastService);
+    private confirmService = inject(ConfirmService);
+
+    warehouses = signal<Warehouse[]>([]);
+    rows = signal<CountRow[]>([]);
+    recentScans = signal<RecentScan[]>([]);
+    sessions = signal<InventoryCountSessionListItem[]>([]);
+    sessionHistory = signal<InventoryCountSessionListItem[]>([]);
+    activeSession = signal<InventoryCountSessionDetail | null>(null);
+    selectedHistorySession = signal<InventoryCountSessionDetail | null>(null);
 
     selectedWarehouseId = signal<string>('');
-    searchTerm          = signal<string>('');
-    showOnlyDiffs       = signal(false);
+    searchTerm = signal<string>('');
+    showOnlyDiffs = signal(false);
+    referenceNo = signal('');
+    notes = signal('');
+    locationCode = signal('');
+    manualBarcode = signal('');
+    scannerError = signal('');
+    barcodeModalOpen = signal(false);
+    historyModalOpen = signal(false);
+    pendingBarcode = signal('');
+    pendingRow = signal<CountRow | null>(null);
+    pendingQuantity = signal(1);
 
     isLoadingWarehouses = signal(false);
-    isLoadingBalances   = signal(false);
-    isSaving            = signal(false);
-    countSaved          = signal(false);
+    isLoadingBalances = signal(false);
+    isLoadingSessions = signal(false);
+    isLoadingHistory = signal(false);
+    isStartingSession = signal(false);
+    isSaving = signal(false);
+    countSaved = signal(false);
+    scannerActive = signal(false);
 
-    // ── Computed ──────────────────────────────────────────────────────────────
+    private mediaStream: MediaStream | null = null;
+    private scannerTimer: ReturnType<typeof setInterval> | null = null;
+    private detector: any = null;
+    private lastDetectedCode = '';
+    private lastDetectedAt = 0;
+
     readonly selectedWarehouseName = computed(() => {
         const wh = this.warehouses().find(w => w.id === this.selectedWarehouseId());
         return wh?.name || '';
     });
 
+    readonly openSessions = computed(() =>
+        this.sessions().filter(x => !this.selectedWarehouseId() || x.warehouseId === this.selectedWarehouseId())
+    );
+
+    readonly completedSessions = computed(() =>
+        this.sessionHistory().filter(x =>
+            (!this.selectedWarehouseId() || x.warehouseId === this.selectedWarehouseId()) &&
+            x.status !== InventoryCountSessionStatus.Open)
+    );
+
+    readonly hasActiveSession = computed(() => !!this.activeSession());
+
+    readonly historySummary = computed(() => {
+        const items = this.completedSessions();
+        return {
+            totalSessions: items.length,
+            totalAppliedItems: items.reduce((sum, item) => sum + item.appliedItems, 0),
+            totalIncreaseQuantity: items.reduce((sum, item) => sum + item.totalIncreaseQuantity, 0),
+            totalDecreaseQuantity: items.reduce((sum, item) => sum + item.totalDecreaseQuantity, 0)
+        };
+    });
+
     readonly filteredRows = computed(() => {
         let list = this.rows();
         const term = this.searchTerm().toLowerCase();
-        if (term) list = list.filter(r =>
-            r.productName.toLowerCase().includes(term) ||
-            r.barcode.toLowerCase().includes(term)
-        );
-        if (this.showOnlyDiffs()) list = list.filter(r => r.countedQty !== null && r.countedQty !== r.systemQty);
+        if (term) {
+            list = list.filter(r =>
+                r.productName.toLowerCase().includes(term) ||
+                r.barcode.toLowerCase().includes(term)
+            );
+        }
+        if (this.showOnlyDiffs()) {
+            list = list.filter(r => r.countedQty !== null && r.countedQty !== r.systemQty);
+        }
         return list;
     });
 
@@ -72,26 +135,30 @@ export class InventoryCountComponent implements OnInit {
 
     readonly totalRows = computed(() => this.rows().length);
 
-    // ── Lifecycle ─────────────────────────────────────────────────────────────
     ngOnInit(): void {
         this.loadWarehouses();
+        this.referenceNo.set(`SAYIM-${new Date().toISOString().slice(0, 10)}`);
     }
 
-    // ── Data Loading ──────────────────────────────────────────────────────────
+    ngOnDestroy(): void {
+        this.stopScanner();
+    }
+
     loadWarehouses(): void {
         this.isLoadingWarehouses.set(true);
         this.warehouseService.getAll().subscribe({
-            next: (whs) => {
+            next: whs => {
                 this.warehouses.set(whs);
-                // Auto-select first warehouse
                 if (whs.length) {
                     this.selectedWarehouseId.set(whs[0].id);
                     this.loadBalances();
+                    this.loadSessions();
+                    this.loadSessionHistory();
                 }
                 this.isLoadingWarehouses.set(false);
             },
             error: () => {
-                this.toastService.error('Hata', 'Depolar yüklenemedi.');
+                this.toastService.error('Hata', 'Depolar yuklenemedi.');
                 this.isLoadingWarehouses.set(false);
             }
         });
@@ -100,42 +167,148 @@ export class InventoryCountComponent implements OnInit {
     onWarehouseChange(id: string): void {
         this.selectedWarehouseId.set(id);
         this.countSaved.set(false);
+        this.recentScans.set([]);
+        this.activeSession.set(null);
+        this.locationCode.set('');
         this.loadBalances();
+        this.loadSessions();
+        this.loadSessionHistory();
     }
 
     loadBalances(): void {
         const whId = this.selectedWarehouseId();
         if (!whId) return;
+
         this.isLoadingBalances.set(true);
         this.stockService.getBalances().subscribe({
-            next: (balances) => {
-                this.allBalances.set(balances);
+            next: balances => {
                 const whName = this.selectedWarehouseName();
-                // Filter by selected warehouse (match by warehouseName since balances don't expose warehouseId)
-                const filtered = balances.filter(b =>
-                    !b.warehouseName || b.warehouseName === whName || whName === ''
-                );
-                this.rows.set(
-                    filtered.map(b => ({
-                        productId:    b.productId,
-                        productName:  b.productName || b.productId,
-                        barcode:      b.barcode || '—',
-                        unit:         b.unit || '—',
-                        warehouseName: b.warehouseName || '—',
-                        systemQty:    b.balance,
-                        countedQty:   null
-                    }))
-                );
+                const filtered = balances.filter(b => !b.warehouseName || b.warehouseName === whName || whName === '');
+                this.rows.set(filtered.map(b => this.mapBalanceToRow(b)));
                 this.isLoadingBalances.set(false);
             },
             error: () => {
-                this.toastService.error('Hata', 'Stok bakiyeleri yüklenemedi.');
+                this.toastService.error('Hata', 'Stok bakiyeleri yuklenemedi.');
                 this.isLoadingBalances.set(false);
             }
         });
     }
 
-    // ── Counting ──────────────────────────────────────────────────────────────
+    loadSessions(): void {
+        const whId = this.selectedWarehouseId();
+        if (!whId) return;
+
+        this.isLoadingSessions.set(true);
+        this.stockService.getInventoryCountSessions({
+            warehouseId: whId,
+            includeCompleted: false,
+            page: 1,
+            pageSize: 20
+        }).subscribe({
+            next: sessions => {
+                this.sessions.set(sessions);
+                this.isLoadingSessions.set(false);
+            },
+            error: () => {
+                this.isLoadingSessions.set(false);
+                this.toastService.error('Hata', 'Acik sayim oturumlari yuklenemedi.');
+            }
+        });
+    }
+
+    loadSessionHistory(): void {
+        const whId = this.selectedWarehouseId();
+        if (!whId) return;
+
+        this.isLoadingHistory.set(true);
+        this.stockService.getInventoryCountSessions({
+            warehouseId: whId,
+            includeCompleted: true,
+            page: 1,
+            pageSize: 50
+        }).subscribe({
+            next: sessions => {
+                this.sessionHistory.set(sessions);
+                this.isLoadingHistory.set(false);
+            },
+            error: () => {
+                this.isLoadingHistory.set(false);
+                this.toastService.error('Hata', 'Sayim gecmisi yuklenemedi.');
+            }
+        });
+    }
+
+    startSession(): void {
+        const warehouseId = this.selectedWarehouseId();
+        if (!warehouseId) {
+            this.toastService.error('Hata', 'Once depo secin.');
+            return;
+        }
+
+        this.isStartingSession.set(true);
+        this.stockService.startInventoryCountSession({
+            warehouseId,
+            referenceNo: this.referenceNo(),
+            notes: this.notes(),
+            locationCode: this.locationCode()
+        }).subscribe({
+            next: sessionId => {
+                this.isStartingSession.set(false);
+                this.toastService.success('Hazir', 'Sayim oturumu baslatildi.');
+                this.resumeSession(sessionId);
+                this.loadSessions();
+                this.loadSessionHistory();
+            },
+            error: err => {
+                this.isStartingSession.set(false);
+                this.toastService.error('Hata', err?.error?.detail || 'Sayim oturumu baslatilamadi.');
+            }
+        });
+    }
+
+    resumeSession(sessionId: string): void {
+        this.stockService.getInventoryCountSessionById(sessionId).subscribe({
+            next: session => {
+                this.activeSession.set(session);
+                this.referenceNo.set(session.referenceNo || '');
+                this.notes.set(session.notes || '');
+                this.locationCode.set(session.locationCode || '');
+                this.selectedWarehouseId.set(session.warehouseId);
+                this.loadBalancesForSession(session);
+                this.toastService.info('Devam', 'Acik sayim oturumu yuklendi.');
+            },
+            error: () => {
+                this.toastService.error('Hata', 'Sayim oturumu acilamadi.');
+            }
+        });
+    }
+
+    openHistorySession(sessionId: string): void {
+        this.stockService.getInventoryCountSessionById(sessionId).subscribe({
+            next: session => {
+                this.selectedHistorySession.set(session);
+                this.historyModalOpen.set(true);
+            },
+            error: () => {
+                this.toastService.error('Hata', 'Sayim detaylari acilamadi.');
+            }
+        });
+    }
+
+    closeHistoryModal(): void {
+        this.historyModalOpen.set(false);
+        this.selectedHistorySession.set(null);
+    }
+
+    leaveSession(): void {
+        this.activeSession.set(null);
+        this.referenceNo.set(`SAYIM-${new Date().toISOString().slice(0, 10)}`);
+        this.notes.set('');
+        this.locationCode.set('');
+        this.recentScans.set([]);
+        this.loadBalances();
+    }
+
     setCountedQty(row: CountRow, value: string): void {
         const parsed = value === '' ? null : parseFloat(value);
         this.rows.update(list =>
@@ -156,72 +329,266 @@ export class InventoryCountComponent implements OnInit {
     }
 
     fillAllFromSystem(): void {
-        this.rows.update(list =>
-            list.map(r => ({ ...r, countedQty: r.systemQty }))
-        );
+        this.rows.update(list => list.map(r => ({ ...r, countedQty: r.systemQty })));
     }
 
     clearAllCounts(): void {
         this.rows.update(list => list.map(r => ({ ...r, countedQty: null })));
+        this.recentScans.set([]);
     }
 
-    // ── Save Count ────────────────────────────────────────────────────────────
     async saveCount(): Promise<void> {
         const whId = this.selectedWarehouseId();
-        if (!whId) { this.toastService.error('Hata', 'Depo seçilmedi.'); return; }
+        if (!whId) {
+            this.toastService.error('Hata', 'Depo secilmedi.');
+            return;
+        }
 
-        const diffs = this.rows().filter(r =>
-            r.countedQty !== null && r.countedQty !== r.systemQty
-        );
+        const countedItems = this.rows()
+            .filter(r => r.countedQty !== null)
+            .map(r => ({ productId: r.productId, countedQuantity: r.countedQty as number }));
 
-        if (!diffs.length) {
-            this.toastService.success('Bilgi', 'Fark bulunan ürün yok. Sayım kaydedilmedi.');
+        if (!countedItems.length) {
+            this.toastService.error('Hata', 'Kaydedilecek sayim girdisi bulunamadi.');
             return;
         }
 
         const ok = await this.confirmService.confirm({
-            title: 'Sayımı Onayla',
-            message: `${diffs.length} üründe stok farkı var. Bu farklar otomatik giriş/çıkış hareketi olarak kaydedilecek. Devam edilsin mi?`,
+            title: 'Sayimi Onayla',
+            message: `${countedItems.length} urun icin sayim sonucu stoga uygulanacak. Devam edilsin mi?`,
             confirmText: 'Kaydet',
             type: 'warning'
         });
         if (!ok) return;
 
         this.isSaving.set(true);
-        let saved = 0;
-        let failed = 0;
-
-        // Create movements sequentially
-        const processNext = (index: number) => {
-            if (index >= diffs.length) {
+        this.stockService.applyInventoryCount({
+            sessionId: this.activeSession()?.id,
+            warehouseId: whId,
+            referenceNo: this.referenceNo(),
+            notes: this.notes(),
+            locationCode: this.locationCode(),
+            items: countedItems
+        }).subscribe({
+            next: response => {
                 this.isSaving.set(false);
                 this.countSaved.set(true);
-                if (failed === 0) {
-                    this.toastService.success('Sayım Tamamlandı', `${saved} ürün için stok düzeltmesi oluşturuldu.`);
-                } else {
-                    this.toastService.error('Kısmi Hata', `${saved} başarılı, ${failed} başarısız.`);
-                }
+                this.toastService.success('Sayim Tamamlandi', `${response.appliedItems} kalem uygulandi.`);
+                this.notes.set('');
+                this.locationCode.set('');
+                this.referenceNo.set(`SAYIM-${new Date().toISOString().slice(0, 10)}`);
+                this.recentScans.set([]);
+                this.activeSession.set(null);
                 this.loadBalances();
+                this.loadSessions();
+                this.loadSessionHistory();
+            },
+            error: err => {
+                this.isSaving.set(false);
+                this.toastService.error('Hata', err?.error?.detail || 'Sayim kaydedilemedi.');
+            }
+        });
+    }
+
+    async startScanner(): Promise<void> {
+        if (this.scannerActive()) return;
+        this.scannerError.set('');
+
+        if (!navigator.mediaDevices?.getUserMedia) {
+            this.scannerError.set('Bu cihaz kamerayi desteklemiyor. Manuel barkod girisi kullanin.');
+            return;
+        }
+
+        try {
+            this.mediaStream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: { ideal: 'environment' } },
+                audio: false
+            });
+
+            const video = this.scannerVideo?.nativeElement;
+            if (!video) {
+                this.scannerError.set('Kamera alani hazir degil.');
                 return;
             }
 
-            const row = diffs[index];
-            const diff = this.getDiff(row);
-            const type = diff > 0 ? StockMovementType.In : StockMovementType.Out;
+            video.srcObject = this.mediaStream;
+            await video.play();
+            this.detector = window.BarcodeDetector ? new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'code_128', 'qr_code', 'upc_a', 'upc_e'] }) : null;
+            this.scannerActive.set(true);
 
-            this.stockService.create({
-                productId:   row.productId,
-                warehouseId: whId,
-                type,
-                quantity:    Math.abs(diff),
-                unitPrice:   0,
-                referenceNo: `Sayım düzeltmesi — ${new Date().toLocaleDateString('tr-TR')}`
-            }).subscribe({
-                next:  () => { saved++; processNext(index + 1); },
-                error: () => { failed++; processNext(index + 1); }
-            });
+            if (!this.detector) {
+                this.scannerError.set('Tarayici barkod algilama API sunmuyor. Manuel barkod girisini kullanin.');
+                return;
+            }
+
+            this.scannerTimer = setInterval(async () => {
+                if (!this.scannerActive() || this.barcodeModalOpen()) return;
+                try {
+                    const codes = await this.detector.detect(video);
+                    const rawValue = codes?.[0]?.rawValue?.trim();
+                    if (rawValue) {
+                        this.handleDetectedBarcode(rawValue);
+                    }
+                } catch {
+                    this.scannerError.set('Kamera acik fakat barkod okunamadi. Manuel giris kullanabilirsiniz.');
+                }
+            }, 900);
+        } catch {
+            this.scannerError.set('Kamera izni alinmadi veya cihaza erisilemedi.');
+        }
+    }
+
+    stopScanner(): void {
+        this.scannerActive.set(false);
+        if (this.scannerTimer) {
+            clearInterval(this.scannerTimer);
+            this.scannerTimer = null;
+        }
+        if (this.mediaStream) {
+            this.mediaStream.getTracks().forEach(track => track.stop());
+            this.mediaStream = null;
+        }
+        const video = this.scannerVideo?.nativeElement;
+        if (video) {
+            video.pause();
+            video.srcObject = null;
+        }
+    }
+
+    submitManualBarcode(): void {
+        const barcode = this.manualBarcode().trim();
+        if (!barcode) {
+            this.toastService.error('Hata', 'Barkod girin.');
+            return;
+        }
+        this.handleDetectedBarcode(barcode);
+        this.manualBarcode.set('');
+    }
+
+    confirmPendingBarcode(): void {
+        const row = this.pendingRow();
+        const qty = this.pendingQuantity();
+        if (!row || qty <= 0) return;
+
+        const existing = row.countedQty ?? 0;
+        this.rows.update(list =>
+            list.map(item =>
+                item.productId === row.productId
+                    ? { ...item, countedQty: existing + qty }
+                    : item
+            )
+        );
+
+        this.recentScans.update(list => [
+            {
+                productId: row.productId,
+                productName: row.productName,
+                barcode: row.barcode,
+                quantity: qty
+            },
+            ...list.filter(item => item.productId !== row.productId).slice(0, 4)
+        ]);
+
+        this.barcodeModalOpen.set(false);
+        this.pendingRow.set(null);
+        this.pendingBarcode.set('');
+        this.pendingQuantity.set(1);
+    }
+
+    cancelPendingBarcode(): void {
+        this.barcodeModalOpen.set(false);
+        this.pendingRow.set(null);
+        this.pendingBarcode.set('');
+        this.pendingQuantity.set(1);
+    }
+
+    quickAddRecent(scan: RecentScan): void {
+        const row = this.rows().find(x => x.productId === scan.productId);
+        if (!row) return;
+        this.pendingRow.set(row);
+        this.pendingBarcode.set(scan.barcode);
+        this.pendingQuantity.set(1);
+        this.barcodeModalOpen.set(true);
+    }
+
+    private handleDetectedBarcode(barcode: string): void {
+        const now = Date.now();
+        if (this.lastDetectedCode === barcode && now - this.lastDetectedAt < 1500) {
+            return;
+        }
+        this.lastDetectedCode = barcode;
+        this.lastDetectedAt = now;
+
+        const normalized = barcode.trim().toLowerCase();
+        let row = this.rows().find(item => item.barcode.trim().toLowerCase() === normalized);
+
+        if (!row) {
+            row = {
+                productId: `barcode-${barcode}`,
+                productName: `Yeni barkod: ${barcode}`,
+                barcode,
+                unit: 'Adet',
+                warehouseName: this.selectedWarehouseName(),
+                systemQty: 0,
+                countedQty: 0
+            };
+            this.rows.update(list => [row as CountRow, ...list]);
+        }
+
+        this.pendingRow.set(row);
+        this.pendingBarcode.set(barcode);
+        this.pendingQuantity.set(1);
+        this.barcodeModalOpen.set(true);
+    }
+
+    private loadBalancesForSession(session: InventoryCountSessionDetail): void {
+        this.isLoadingBalances.set(true);
+        this.stockService.getBalances().subscribe({
+            next: balances => {
+                const whName = session.warehouseName || this.selectedWarehouseName();
+                const filtered = balances.filter(b => !b.warehouseName || b.warehouseName === whName || whName === '');
+                const mapped = filtered.map(b => this.mapBalanceToRow(b));
+                const byProductId = new Map(mapped.map(row => [row.productId, row] as const));
+
+                session.items.forEach(item => {
+                    const existing = byProductId.get(item.productId);
+                    if (existing) {
+                        existing.countedQty = item.countedQuantity;
+                        existing.systemQty = item.systemQuantity;
+                        existing.barcode = item.barcode || existing.barcode;
+                        existing.unit = item.unit || existing.unit;
+                    } else {
+                        mapped.unshift({
+                            productId: item.productId,
+                            productName: item.productName,
+                            barcode: item.barcode || '-',
+                            unit: item.unit,
+                            warehouseName: session.warehouseName,
+                            systemQty: item.systemQuantity,
+                            countedQty: item.countedQuantity
+                        });
+                    }
+                });
+
+                this.rows.set(mapped);
+                this.isLoadingBalances.set(false);
+            },
+            error: () => {
+                this.toastService.error('Hata', 'Sayim oturumu bakiyeleri yuklenemedi.');
+                this.isLoadingBalances.set(false);
+            }
+        });
+    }
+
+    private mapBalanceToRow(balance: StockBalance): CountRow {
+        return {
+            productId: balance.productId,
+            productName: balance.productName || balance.productId,
+            barcode: balance.barcode || '-',
+            unit: balance.unit || '-',
+            warehouseName: balance.warehouseName || '-',
+            systemQty: balance.balance,
+            countedQty: null
         };
-
-        processNext(0);
     }
 }

@@ -122,3 +122,25 @@ export interface BuyerBatchImportOptions {
     paymentColumn?: string;
     remainingBalanceColumn?: string;
 }
+
+export interface BuyerRiskSummaryItem {
+    cariAccountId: string;
+    cariAccountCode: string;
+    cariAccountName: string;
+    currentBalance: number;
+    riskLimit: number;
+    maturityDays: number;
+    overdueAmount: number;
+    maxOverdueDays: number;
+    riskUsageRate: number;
+    severity: 'stable' | 'warning' | 'critical';
+}
+
+export interface BuyerRiskSummaryResponse {
+    totalBuyerCount: number;
+    riskyBuyerCount: number;
+    criticalBuyerCount: number;
+    totalCurrentBalance: number;
+    totalOverdueAmount: number;
+    items: BuyerRiskSummaryItem[];
+}

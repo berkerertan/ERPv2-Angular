@@ -13,7 +13,8 @@ import {
     CariAccountDetailsResponse,
     CariDebtItemImportResult,
     BuyerDebtItemsBatchImportResult,
-    BuyerBatchImportOptions
+    BuyerBatchImportOptions,
+    BuyerRiskSummaryResponse
 } from '../models/cari-account.model';
 
 @Injectable({ providedIn: 'root' })
@@ -40,6 +41,12 @@ export class CariAccountService {
     getBuyers(params?: { q?: string; page?: number; pageSize?: number; sortBy?: string; sortDir?: string }): Observable<CariAccount[]> {
         return this.http.get<CariAccount[]>(`${this.apiUrl}/buyers`, {
             params: this.buildParams(params)
+        });
+    }
+
+    getBuyerRiskSummary(limit: number = 20): Observable<BuyerRiskSummaryResponse> {
+        return this.http.get<BuyerRiskSummaryResponse>(`${this.apiUrl}/buyers/risk-summary`, {
+            params: { limit: limit.toString() }
         });
     }
 

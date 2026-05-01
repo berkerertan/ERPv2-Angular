@@ -1,8 +1,8 @@
 import { Component, signal, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
-import { NotificationService } from '../../../core/services/notification.service';
+import { AppNotification, NotificationService } from '../../../core/services/notification.service';
 import { ThemeService } from '../../../core/services/theme.service';
 
 @Component({
@@ -21,6 +21,7 @@ export class HeaderComponent {
     public authService = inject(AuthService);
     public notificationService = inject(NotificationService);
     public themeService = inject(ThemeService);
+    private router = inject(Router);
 
     toggleProfileMenu(): void {
         this.showProfileMenu.update(v => !v);
@@ -30,6 +31,9 @@ export class HeaderComponent {
     toggleNotifications(): void {
         this.showNotifications.update(v => !v);
         this.showProfileMenu.set(false);
+        if (this.showNotifications()) {
+            this.notificationService.refresh();
+        }
     }
 
     closeMenus(): void {
@@ -41,8 +45,17 @@ export class HeaderComponent {
         this.toggleSidebar.emit();
     }
 
-    markAsRead(id: string): void {
-        this.notificationService.markAsRead(id);
+    markAsRead(notification: AppNotification | string): void {
+        if (typeof notification === 'string') {
+            this.notificationService.markAsRead(notification);
+            return;
+        }
+
+        this.notificationService.markAsRead(notification);
+        this.closeMenus();
+        if (notification.link) {
+            this.router.navigateByUrl(notification.link);
+        }
     }
 
     markAllAsRead(): void {

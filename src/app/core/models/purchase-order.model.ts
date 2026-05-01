@@ -44,3 +44,43 @@ export interface UpdatePurchaseOrderItemRequest {
     quantity: number;
     unitPrice: number;
 }
+
+export interface PurchaseRecommendationSummary {
+    totalItems: number;
+    criticalItems: number;
+    totalRecommendedQuantity: number;
+    totalEstimatedCost: number;
+}
+
+export interface PurchaseRecommendationItem {
+    productId: string;
+    productCode: string;
+    productName: string;
+    barcode: string;
+    unit: string;
+    suggestedSupplierCariAccountId?: string | null;
+    suggestedSupplierName?: string | null;
+    onHandQuantity: number;
+    incomingDraftQuantity: number;
+    availableQuantity: number;
+    averageDailySales: number;
+    daysOfCover: number;
+    criticalStockLevel: number;
+    minimumStockLevel: number;
+    maximumStockLevel?: number | null;
+    targetStockLevel: number;
+    recommendedOrderQuantity: number;
+    suggestedUnitPrice: number;
+    estimatedCost: number;
+    isCritical: boolean;
+    recommendationReason: string;
+}
+
+export interface PurchaseRecommendationResponse {
+    warehouseId: string;
+    supplierCariAccountId?: string | null;
+    analysisDays: number;
+    coverageDays: number;
+    summary: PurchaseRecommendationSummary;
+    items: PurchaseRecommendationItem[];
+}

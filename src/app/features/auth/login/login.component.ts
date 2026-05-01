@@ -27,11 +27,13 @@ export class LoginComponent implements OnInit {
     private socialAuth = inject(SocialAuthService);
     private router = inject(Router);
     private route = inject(ActivatedRoute);
+    private demoTriggered = false;
 
     ngOnInit(): void {
         this.route.queryParamMap.subscribe(params => {
             const verifyPending = params.get('verifyEmailPending');
             const email = params.get('email');
+            const demo = params.get('demo');
             if (verifyPending === '1') {
                 if (email && !this.userName) {
                     this.userName = email;
@@ -44,6 +46,11 @@ export class LoginComponent implements OnInit {
                 );
                 this.showResendButton.set(!!email);
             }
+
+            if (demo === '1' && !this.demoTriggered) {
+                this.demoTriggered = true;
+                this.demoLogin();
+            }
         });
     }
 
@@ -55,37 +62,15 @@ export class LoginComponent implements OnInit {
     }
 
     onSubmit(): void {
-        if (!this.userName || !this.password) {
+        const userName = this.userName.trim();
+        const password = this.password;
+
+        if (!userName || !password) {
             this.errorMessage.set('Kullanici adi ve sifre gereklidir.');
             return;
         }
 
-        this.isLoading.set(true);
-        this.errorMessage.set('');
-        this.resendMessage.set('');
-        this.showResendButton.set(false);
-
-        this.authService.login({ userName: this.userName, password: this.password }).subscribe({
-            next: () => {
-                this.isLoading.set(false);
-                const user = this.authService.currentUser();
-                const role = user?.role;
-
-                if (role === 'SuperAdmin' || role === 'Admin') {
-                    this.router.navigate(['/admin/dashboard']);
-                } else {
-                    this.router.navigate(['/dashboard']);
-                }
-            },
-            error: (err: any) => {
-                this.isLoading.set(false);
-                const detail = err?.error?.detail || err?.error?.message || 'Giris basarisiz. Lutfen bilgilerinizi kontrol edin.';
-                this.errorMessage.set(detail);
-                this.showResendButton.set(
-                    this.isVerificationPendingError(detail) && this.isEmailFormat(this.userName)
-                );
-            }
-        });
+        this.submitLogin(userName, password);
     }
 
     resendVerificationEmail(): void {
@@ -111,9 +96,38 @@ export class LoginComponent implements OnInit {
     }
 
     demoLogin(): void {
-        this.userName = 'demo';
-        this.password = 'Test123!';
-        this.onSubmit();
+        this.infoMessage.set('Demo ortami aciliyor...');
+        this.submitLogin('demo', 'Test123!');
+    }
+
+    private submitLogin(userName: string, password: string): void {
+        this.isLoading.set(true);
+        this.errorMessage.set('');
+        this.resendMessage.set('');
+        this.showResendButton.set(false);
+
+        this.authService.login({ userName, password }).subscribe({
+            next: () => {
+                this.isLoading.set(false);
+                const user = this.authService.currentUser();
+                const role = user?.role;
+
+                if (role === 'SuperAdmin' || role === 'Admin') {
+                    this.router.navigate(['/admin/dashboard']);
+                } else {
+                    this.router.navigate(['/dashboard']);
+                }
+            },
+            error: (err: any) => {
+                this.isLoading.set(false);
+                const detail = err?.error?.detail || err?.error?.message || 'Giris basarisiz. Lutfen bilgilerinizi kontrol edin.';
+                this.errorMessage.set(detail);
+                this.infoMessage.set('');
+                this.showResendButton.set(
+                    this.isVerificationPendingError(detail) && this.isEmailFormat(this.userName)
+                );
+            }
+        });
     }
 
     private isEmailFormat(value: string): boolean {

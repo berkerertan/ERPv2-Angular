@@ -12,7 +12,12 @@ import {
     TransferStockResult,
     StockMovementType,
     StockMovementReason,
-    StockMovementProofUploadResponse
+    StockMovementProofUploadResponse,
+    ApplyInventoryCountRequest,
+    ApplyInventoryCountResponse,
+    StartInventoryCountSessionRequest,
+    InventoryCountSessionListItem,
+    InventoryCountSessionDetail
 } from '../models/stock-movement.model';
 
 @Injectable({ providedIn: 'root' })
@@ -59,6 +64,29 @@ export class StockMovementService {
     /** Yeni stok hareketi — 201 Created: uuid döner */
     create(movement: CreateStockMovementRequest): Observable<string> {
         return this.http.post<string>(this.apiUrl, movement);
+    }
+
+    applyInventoryCount(request: ApplyInventoryCountRequest): Observable<ApplyInventoryCountResponse> {
+        return this.http.post<ApplyInventoryCountResponse>(`${this.apiUrl}/inventory-count`, request);
+    }
+
+    startInventoryCountSession(request: StartInventoryCountSessionRequest): Observable<string> {
+        return this.http.post<string>(`${this.apiUrl}/inventory-count-sessions`, request);
+    }
+
+    getInventoryCountSessions(params?: {
+        warehouseId?: string;
+        includeCompleted?: boolean;
+        page?: number;
+        pageSize?: number;
+    }): Observable<InventoryCountSessionListItem[]> {
+        return this.http.get<InventoryCountSessionListItem[]>(`${this.apiUrl}/inventory-count-sessions`, {
+            params: this.buildParams(params)
+        });
+    }
+
+    getInventoryCountSessionById(id: string): Observable<InventoryCountSessionDetail> {
+        return this.http.get<InventoryCountSessionDetail>(`${this.apiUrl}/inventory-count-sessions/${id}`);
     }
 
     /** Stok hareketi güncelle — 204 No Content */

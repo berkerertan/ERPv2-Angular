@@ -1,208 +1,439 @@
 <div class="page-container">
-
-  <!-- HEADER -->
   <div class="page-header">
     <div>
       <h1 class="page-title">
         <span class="material-icons-outlined page-title-icon" style="color:var(--primary-400)">fact_check</span>
-        Stok Sayımı
+        Stok Sayimi
       </h1>
-      <p class="page-subtitle">Fiziksel sayım yapın ve sisteme yansıtın — farklar otomatik hareket olarak kaydedilir</p>
+      <p class="page-subtitle">Fiziksel sayimi barkodla hizlandirin, oturum acin ve gecmis farklari takip edin</p>
     </div>
     @if (rows().length > 0 && !countSaved()) {
-      <div class="page-header-actions">
-        <button class="btn btn-secondary" (click)="fillAllFromSystem()">
-          <span class="material-icons-outlined">content_copy</span>
-          Sistem Miktarını Doldur
-        </button>
-        <button class="btn btn-primary" (click)="saveCount()" [disabled]="isSaving()">
-          @if (isSaving()) {
-            <div class="spinner spinner-sm"></div> Kaydediliyor…
-          } @else {
-            <span class="material-icons-outlined">save</span>
-            Sayımı Kaydet
-          }
-        </button>
-      </div>
+    <div class="page-header-actions">
+      <button class="btn btn-secondary" (click)="fillAllFromSystem()">
+        <span class="material-icons-outlined">content_copy</span>
+        Sistem Miktarini Doldur
+      </button>
+      <button class="btn btn-primary" (click)="saveCount()" [disabled]="isSaving()">
+        @if (isSaving()) {
+        <div class="spinner spinner-sm"></div> Kaydediliyor...
+        } @else {
+        <span class="material-icons-outlined">save</span>
+        Sayimi Kaydet
+        }
+      </button>
+    </div>
     }
   </div>
 
-  <!-- DEPO SEÇİMİ -->
   <div class="warehouse-select-card">
     <div class="warehouse-select-label">
       <span class="material-icons-outlined">warehouse</span>
-      Sayım Yapılacak Depo
+      Sayim Yapilacak Depo
     </div>
     @if (isLoadingWarehouses()) {
-      <div class="spinner spinner-sm"></div>
+    <div class="spinner spinner-sm"></div>
     } @else {
-      <select class="warehouse-select" [ngModel]="selectedWarehouseId()" (ngModelChange)="onWarehouseChange($event)">
-        @for (w of warehouses(); track w.id) {
-          <option [value]="w.id">{{ w.name }}</option>
-        }
-      </select>
+    <select class="warehouse-select" [ngModel]="selectedWarehouseId()" (ngModelChange)="onWarehouseChange($event)">
+      @for (w of warehouses(); track w.id) {
+      <option [value]="w.id">{{ w.name }}</option>
+      }
+    </select>
     }
   </div>
 
-  <!-- İSTATİSTİKLER -->
-  @if (rows().length > 0) {
-    <div class="stats-row">
-      <div class="stat-card">
-        <div class="stat-icon" style="background:rgba(249,115,22,0.12);color:var(--primary-400)">
-          <span class="material-icons-outlined">inventory_2</span>
-        </div>
-        <div class="stat-info">
-          <span class="stat-value">{{ totalRows() }}</span>
-          <span class="stat-label">Toplam Ürün</span>
-        </div>
+  <div class="session-panel">
+    <div class="session-panel__head">
+      <div>
+        <strong>Sayim Oturumu</strong>
+        <p>Yeni oturum baslatin veya acik oturumlardan devam edin.</p>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="background:rgba(59,130,246,0.12);color:#3b82f6">
-          <span class="material-icons-outlined">edit</span>
-        </div>
-        <div class="stat-info">
-          <span class="stat-value">{{ enteredCount() }}</span>
-          <span class="stat-label">Sayım Girilen</span>
-        </div>
-      </div>
-      <div class="stat-card" [class.stat-card--warning]="diffCount() > 0">
-        <div class="stat-icon" style="background:rgba(234,179,8,0.12);color:#eab308">
-          <span class="material-icons-outlined">warning_amber</span>
-        </div>
-        <div class="stat-info">
-          <span class="stat-value" [style.color]="diffCount() > 0 ? '#eab308' : ''">{{ diffCount() }}</span>
-          <span class="stat-label">Fark Var</span>
-        </div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-icon" style="background:var(--success-bg);color:var(--success)">
-          <span class="material-icons-outlined">check_circle</span>
-        </div>
-        <div class="stat-info">
-          <span class="stat-value">{{ enteredCount() - diffCount() }}</span>
-          <span class="stat-label">Eşleşen</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- SAYIM TAMAMLANDI BANNER -->
-    @if (countSaved()) {
-      <div class="count-saved-banner">
-        <span class="material-icons-outlined">check_circle</span>
-        <div>
-          <strong>Sayım kaydedildi!</strong>
-          <span>Stok farkları otomatik hareket olarak sisteme işlendi.</span>
-        </div>
-        <button class="btn btn-secondary btn-sm" (click)="countSaved.set(false); clearAllCounts()">
-          Yeni Sayım Başlat
-        </button>
-      </div>
-    }
-
-    <!-- ARAMA VE FİLTRE -->
-    <div class="count-toolbar">
-      <div class="toolbar-search">
-        <span class="material-icons-outlined search-icon">search</span>
-        <input type="text" placeholder="Ürün adı veya barkod ara…"
-               [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" />
-      </div>
-      <label class="diff-toggle">
-        <input type="checkbox" [ngModel]="showOnlyDiffs()" (ngModelChange)="showOnlyDiffs.set($event)" />
-        <span>Sadece farklı olanları göster</span>
-      </label>
-      <button class="btn btn-secondary btn-sm" (click)="clearAllCounts()">
-        <span class="material-icons-outlined">clear_all</span>
-        Temizle
+      <button class="btn btn-primary" (click)="startSession()" [disabled]="isStartingSession() || hasActiveSession()">
+        @if (isStartingSession()) {
+        <div class="spinner spinner-sm"></div> Baslatiliyor...
+        } @else {
+        <span class="material-icons-outlined">play_circle</span>
+        Oturum Baslat
+        }
       </button>
     </div>
 
-    <!-- SAYIM TABLOSU -->
-    <div class="table-container">
-      @if (isLoadingBalances()) {
-        <div class="loading-panel"><div class="spinner"></div><span>Stok bakiyeleri yükleniyor…</span></div>
+    <div class="session-form-grid">
+      <div class="form-group">
+        <label class="form-label">Sayim Referansi</label>
+        <input class="form-input" [ngModel]="referenceNo()" (ngModelChange)="referenceNo.set($event)" placeholder="SAYIM-2026-05-01" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Raf / Lokasyon</label>
+        <input class="form-input" [ngModel]="locationCode()" (ngModelChange)="locationCode.set($event)" placeholder="A-01 / Raf-3" />
+      </div>
+      <div class="form-group session-form-grid__full">
+        <label class="form-label">Kisa Not</label>
+        <textarea class="form-input notes-area" [ngModel]="notes()" (ngModelChange)="notes.set($event)" placeholder="Vardiya, ekip veya sayim notu"></textarea>
+      </div>
+    </div>
+
+    @if (activeSession()) {
+    <div class="active-session-banner">
+      <div>
+        <strong>Aktif Oturum: {{ activeSession()?.referenceNo }}</strong>
+        <span>{{ activeSession()?.warehouseName }} @if (activeSession()?.locationCode) { - {{ activeSession()?.locationCode }} }</span>
+      </div>
+      <button class="btn btn-secondary btn-sm" (click)="leaveSession()">Oturumdan Cik</button>
+    </div>
+    }
+
+    <div class="session-grid">
+      <div class="open-sessions-card">
+        <div class="open-sessions-card__title">Acik Sayimlar</div>
+        @if (isLoadingSessions()) {
+        <div class="loading-inline"><div class="spinner spinner-sm"></div><span>Oturumlar yukleniyor...</span></div>
+        } @else if (!openSessions().length) {
+        <div class="empty-inline">Bu depo icin acik sayim yok.</div>
+        } @else {
+        <div class="session-list">
+          @for (session of openSessions(); track session.id) {
+          <button class="session-list-item" (click)="resumeSession(session.id)">
+            <strong>{{ session.referenceNo }}</strong>
+            <span>{{ session.warehouseName }}</span>
+            @if (session.locationCode) {
+            <em>Lokasyon: {{ session.locationCode }}</em>
+            }
+            @if (session.startedByUserName) {
+            <small>Acan: {{ session.startedByUserName }}</small>
+            }
+            <small>{{ session.startedAtUtc | date:'short' }}</small>
+          </button>
+          }
+        </div>
+        }
+      </div>
+
+      <div class="history-card">
+        <div class="open-sessions-card__title">Fark Ozeti</div>
+        <div class="history-summary-row">
+          <div class="history-summary-tile">
+            <strong>{{ historySummary().totalSessions }}</strong>
+            <span>Kayitli Sayim</span>
+          </div>
+          <div class="history-summary-tile">
+            <strong>{{ historySummary().totalAppliedItems }}</strong>
+            <span>Uygulanan Kalem</span>
+          </div>
+          <div class="history-summary-tile history-summary-tile--up">
+            <strong>+{{ historySummary().totalIncreaseQuantity | number:'1.0-3' }}</strong>
+            <span>Toplam Fazla</span>
+          </div>
+          <div class="history-summary-tile history-summary-tile--down">
+            <strong>-{{ historySummary().totalDecreaseQuantity | number:'1.0-3' }}</strong>
+            <span>Toplam Eksik</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="history-card history-card--full">
+      <div class="open-sessions-card__title">Sayim Gecmisi</div>
+      @if (isLoadingHistory()) {
+      <div class="loading-inline"><div class="spinner spinner-sm"></div><span>Gecmis yukleniyor...</span></div>
+      } @else if (!completedSessions().length) {
+      <div class="empty-inline">Henuz tamamlanmis sayim yok.</div>
       } @else {
-        <table class="data-table count-table">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Ürün Adı</th>
-              <th>Barkod</th>
-              <th>Birim</th>
-              <th class="col-num">Sistem<br>Miktarı</th>
-              <th class="col-num col-count">Sayılan<br>Miktar</th>
-              <th class="col-num">Fark</th>
-              <th>Durum</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (row of filteredRows(); track row.productId; let i = $index) {
-              <tr [class.row-diff]="row.countedQty !== null && row.countedQty !== row.systemQty"
-                  [class.row-match]="row.countedQty !== null && row.countedQty === row.systemQty">
-                <td class="col-idx">{{ i + 1 }}</td>
-                <td class="col-name">{{ row.productName }}</td>
-                <td><code class="barcode-badge">{{ row.barcode }}</code></td>
-                <td class="text-muted">{{ row.unit }}</td>
-                <td class="col-num">
-                  <span class="system-qty">{{ row.systemQty | number }}</span>
-                </td>
-                <td class="col-num col-count">
-                  <input class="count-input"
-                         type="number"
-                         min="0"
-                         [ngModel]="row.countedQty"
-                         (ngModelChange)="setCountedQty(row, $event?.toString() ?? '')"
-                         placeholder="—"
-                         [disabled]="countSaved()" />
-                </td>
-                <td class="col-num">
-                  @if (row.countedQty !== null) {
-                    <span class="diff-badge" [ngClass]="getDiffClass(row)">
-                      {{ getDiff(row) > 0 ? '+' : '' }}{{ getDiff(row) | number }}
-                    </span>
-                  } @else {
-                    <span class="text-muted">—</span>
-                  }
-                </td>
-                <td>
-                  @if (row.countedQty === null) {
-                    <span class="status-badge status-pending">Bekleniyor</span>
-                  } @else if (getDiff(row) === 0) {
-                    <span class="status-badge status-ok">
-                      <span class="material-icons-outlined" style="font-size:12px">check</span> Eşleşti
-                    </span>
-                  } @else if (getDiff(row) > 0) {
-                    <span class="status-badge status-over">
-                      <span class="material-icons-outlined" style="font-size:12px">arrow_upward</span> Fazla
-                    </span>
-                  } @else {
-                    <span class="status-badge status-short">
-                      <span class="material-icons-outlined" style="font-size:12px">arrow_downward</span> Eksik
-                    </span>
-                  }
-                </td>
-              </tr>
+      <div class="history-list">
+        @for (session of completedSessions(); track session.id) {
+        <button class="history-list-item" (click)="openHistorySession(session.id)">
+          <div>
+            <strong>{{ session.referenceNo }}</strong>
+            <span>{{ session.warehouseName }} @if (session.locationCode) { - {{ session.locationCode }} }</span>
+            @if (session.startedByUserName) {
+            <small>Sayimi acan: {{ session.startedByUserName }}</small>
             }
-            @if (!filteredRows().length) {
-              <tr><td colspan="8">
-                <div class="empty-state" style="padding:32px 0">
-                  <span class="material-icons-outlined">search_off</span>
-                  <p>Sonuç bulunamadı</p>
-                </div>
-              </td></tr>
-            }
-          </tbody>
-        </table>
+            <small>{{ session.completedAtUtc || session.startedAtUtc | date:'short' }}</small>
+          </div>
+          <div class="history-metrics">
+            <span class="history-chip">{{ session.appliedItems }} kalem</span>
+            <span class="history-chip history-chip--up">+{{ session.totalIncreaseQuantity | number:'1.0-3' }}</span>
+            <span class="history-chip history-chip--down">-{{ session.totalDecreaseQuantity | number:'1.0-3' }}</span>
+          </div>
+        </button>
+        }
+      </div>
       }
     </div>
-  }
+  </div>
 
-  <!-- BOŞ DURUM — Depo yok veya yükleniyor -->
-  @if (!isLoadingWarehouses() && warehouses().length === 0) {
-    <div class="empty-state" style="padding:80px 0">
-      <span class="material-icons-outlined">warehouse</span>
-      <h3>Depo Bulunamadı</h3>
-      <p>Stok sayımı yapabilmek için önce bir depo tanımlayın.</p>
+  <div class="scanner-card">
+    <div class="scanner-card__head">
+      <div>
+        <strong>Barkodlu Sayim</strong>
+        <p>Kamera ile okutun veya barkodu manuel girin. Okutunca adet secip listeye ekleyin.</p>
+      </div>
+      <div class="scanner-actions">
+        @if (!scannerActive()) {
+        <button class="btn btn-primary" (click)="startScanner()">
+          <span class="material-icons-outlined">qr_code_scanner</span>
+          Kamerayi Ac
+        </button>
+        } @else {
+        <button class="btn btn-secondary" (click)="stopScanner()">
+          <span class="material-icons-outlined">stop_circle</span>
+          Kamerayi Kapat
+        </button>
+        }
+      </div>
     </div>
+
+    <div class="scanner-grid">
+      <div class="scanner-preview">
+        <video #scannerVideo playsinline muted></video>
+        @if (!scannerActive()) {
+        <div class="scanner-placeholder">
+          <span class="material-icons-outlined">videocam</span>
+          <span>Kamera acildiginda burada canli tarama gorunur</span>
+        </div>
+        }
+      </div>
+
+      <div class="scanner-side">
+        <div class="manual-barcode">
+          <label class="form-label">Manuel Barkod Girisi</label>
+          <div class="manual-barcode__row">
+            <input class="form-input" [ngModel]="manualBarcode()" (ngModelChange)="manualBarcode.set($event)" placeholder="Barkod yazin" />
+            <button class="btn btn-secondary" (click)="submitManualBarcode()">Ekle</button>
+          </div>
+        </div>
+
+        @if (scannerError()) {
+        <div class="scanner-error">{{ scannerError() }}</div>
+        }
+
+        <div class="recent-scans">
+          <div class="recent-scans__title">Son Okutulanlar</div>
+          @if (!recentScans().length) {
+          <div class="empty-inline">Henuz okutma yok.</div>
+          } @else {
+          <div class="recent-scan-list">
+            @for (scan of recentScans(); track scan.productId) {
+            <button class="recent-scan-item" (click)="quickAddRecent(scan)">
+              <strong>{{ scan.productName }}</strong>
+              <span>{{ scan.barcode }}</span>
+              <em>Son eklenen: +{{ scan.quantity }}</em>
+            </button>
+            }
+          </div>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+
+  @if (rows().length > 0) {
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(249,115,22,0.12);color:var(--primary-400)"><span class="material-icons-outlined">inventory_2</span></div>
+      <div class="stat-info"><span class="stat-value">{{ totalRows() }}</span><span class="stat-label">Toplam Urun</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(59,130,246,0.12);color:#3b82f6"><span class="material-icons-outlined">edit</span></div>
+      <div class="stat-info"><span class="stat-value">{{ enteredCount() }}</span><span class="stat-label">Sayim Girilen</span></div>
+    </div>
+    <div class="stat-card" [class.stat-card--warning]="diffCount() > 0">
+      <div class="stat-icon" style="background:rgba(234,179,8,0.12);color:#eab308"><span class="material-icons-outlined">warning_amber</span></div>
+      <div class="stat-info"><span class="stat-value" [style.color]="diffCount() > 0 ? '#eab308' : ''">{{ diffCount() }}</span><span class="stat-label">Fark Var</span></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:var(--success-bg);color:var(--success)"><span class="material-icons-outlined">check_circle</span></div>
+      <div class="stat-info"><span class="stat-value">{{ enteredCount() - diffCount() }}</span><span class="stat-label">Eslesen</span></div>
+    </div>
+  </div>
+
+  @if (countSaved()) {
+  <div class="count-saved-banner">
+    <span class="material-icons-outlined">check_circle</span>
+    <div>
+      <strong>Sayim kaydedildi!</strong>
+      <span>Stok farklari toplu sayim akisiyla sisteme islendi.</span>
+    </div>
+    <button class="btn btn-secondary btn-sm" (click)="countSaved.set(false); clearAllCounts()">Yeni Sayim Baslat</button>
+  </div>
   }
 
+  <div class="count-toolbar">
+    <div class="toolbar-search">
+      <span class="material-icons-outlined search-icon">search</span>
+      <input type="text" placeholder="Urun adi veya barkod ara..." [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)" />
+    </div>
+    <label class="diff-toggle">
+      <input type="checkbox" [ngModel]="showOnlyDiffs()" (ngModelChange)="showOnlyDiffs.set($event)" />
+      <span>Sadece farkli olanlari goster</span>
+    </label>
+    <button class="btn btn-secondary btn-sm" (click)="clearAllCounts()">
+      <span class="material-icons-outlined">clear_all</span>
+      Temizle
+    </button>
+  </div>
+
+  <div class="table-container">
+    @if (isLoadingBalances()) {
+    <div class="loading-panel"><div class="spinner"></div><span>Stok bakiyeleri yukleniyor...</span></div>
+    } @else {
+    <table class="data-table count-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Urun Adi</th>
+          <th>Barkod</th>
+          <th>Birim</th>
+          <th class="col-num">Sistem<br>Miktari</th>
+          <th class="col-num col-count">Sayilan<br>Miktar</th>
+          <th class="col-num">Fark</th>
+          <th>Durum</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of filteredRows(); track row.productId; let i = $index) {
+        <tr [class.row-diff]="row.countedQty !== null && row.countedQty !== row.systemQty" [class.row-match]="row.countedQty !== null && row.countedQty === row.systemQty">
+          <td class="col-idx">{{ i + 1 }}</td>
+          <td class="col-name">{{ row.productName }}</td>
+          <td><code class="barcode-badge">{{ row.barcode }}</code></td>
+          <td class="text-muted">{{ row.unit }}</td>
+          <td class="col-num"><span class="system-qty">{{ row.systemQty | number }}</span></td>
+          <td class="col-num col-count">
+            <input class="count-input" type="number" min="0" [ngModel]="row.countedQty" (ngModelChange)="setCountedQty(row, $event?.toString() ?? '')" placeholder="-" [disabled]="countSaved()" />
+          </td>
+          <td class="col-num">
+            @if (row.countedQty !== null) {
+            <span class="diff-badge" [ngClass]="getDiffClass(row)">{{ getDiff(row) > 0 ? '+' : '' }}{{ getDiff(row) | number }}</span>
+            } @else {
+            <span class="text-muted">-</span>
+            }
+          </td>
+          <td>
+            @if (row.countedQty === null) {
+            <span class="status-badge status-pending">Bekleniyor</span>
+            } @else if (getDiff(row) === 0) {
+            <span class="status-badge status-ok"><span class="material-icons-outlined" style="font-size:12px">check</span> Eslesti</span>
+            } @else if (getDiff(row) > 0) {
+            <span class="status-badge status-over"><span class="material-icons-outlined" style="font-size:12px">arrow_upward</span> Fazla</span>
+            } @else {
+            <span class="status-badge status-short"><span class="material-icons-outlined" style="font-size:12px">arrow_downward</span> Eksik</span>
+            }
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+    }
+  </div>
+  }
+
+  @if (!isLoadingWarehouses() && warehouses().length === 0) {
+  <div class="empty-state" style="padding:80px 0">
+    <span class="material-icons-outlined">warehouse</span>
+    <h3>Depo Bulunamadi</h3>
+    <p>Stok sayimi yapabilmek icin once bir depo tanimlayin.</p>
+  </div>
+  }
 </div>
+
+@if (barcodeModalOpen()) {
+<div class="overlay" (click)="cancelPendingBarcode()"></div>
+<div class="modal barcode-modal">
+  <div class="modal-header">
+    <h2><span class="material-icons-outlined">qr_code_2</span> Barkod Ekle</h2>
+    <button class="modal-close" (click)="cancelPendingBarcode()"><span class="material-icons-outlined">close</span></button>
+  </div>
+  <div class="modal-form">
+    <div class="barcode-modal__meta">
+      <strong>{{ pendingRow()?.productName }}</strong>
+      <span>{{ pendingBarcode() }}</span>
+    </div>
+    <div class="barcode-modal__choices">
+      @for (qty of [1, 2, 5, 10]; track qty) {
+      <button class="qty-chip" [class.qty-chip--active]="pendingQuantity() === qty" (click)="pendingQuantity.set(qty)">{{ qty }}</button>
+      }
+      <input class="form-input qty-input" type="number" min="1" [ngModel]="pendingQuantity()" (ngModelChange)="pendingQuantity.set(+$event || 1)" />
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" (click)="cancelPendingBarcode()">Vazgec</button>
+    <button class="btn btn-primary" (click)="confirmPendingBarcode()">
+      <span class="material-icons-outlined">add_task</span>
+      Sayima Ekle
+    </button>
+  </div>
+</div>
+}
+
+@if (historyModalOpen()) {
+<div class="overlay" (click)="closeHistoryModal()"></div>
+<div class="modal history-modal">
+  <div class="modal-header">
+    <h2><span class="material-icons-outlined">history</span> Sayim Detayi</h2>
+    <button class="modal-close" (click)="closeHistoryModal()"><span class="material-icons-outlined">close</span></button>
+  </div>
+  <div class="modal-form">
+    <div class="history-detail-summary">
+      <div class="history-detail-meta">
+        <strong>{{ selectedHistorySession()?.referenceNo }}</strong>
+        <span>{{ selectedHistorySession()?.warehouseName }} @if (selectedHistorySession()?.locationCode) { - {{ selectedHistorySession()?.locationCode }} }</span>
+        @if (selectedHistorySession()?.startedByUserName) {
+        <small>Sayimi acan: {{ selectedHistorySession()?.startedByUserName }}</small>
+        }
+        <small>{{ selectedHistorySession()?.completedAtUtc || selectedHistorySession()?.startedAtUtc | date:'full' }}</small>
+      </div>
+      <div class="history-detail-stats">
+        <span class="history-chip">{{ selectedHistorySession()?.appliedItems }} kalem</span>
+        <span class="history-chip history-chip--up">+{{ selectedHistorySession()?.totalIncreaseQuantity | number:'1.0-3' }}</span>
+        <span class="history-chip history-chip--down">-{{ selectedHistorySession()?.totalDecreaseQuantity | number:'1.0-3' }}</span>
+      </div>
+    </div>
+
+    <div class="history-detail-table-wrap">
+      <table class="data-table history-detail-table">
+        <thead>
+          <tr>
+            <th>Urun</th>
+            <th>Barkod</th>
+            <th>Lokasyon</th>
+            <th>Sayan</th>
+            <th>Zaman</th>
+            <th class="col-num">Sistem</th>
+            <th class="col-num">Sayilan</th>
+            <th class="col-num">Fark</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of selectedHistorySession()?.items || []; track item.id) {
+          <tr>
+            <td>
+              <strong>{{ item.productName }}</strong>
+              <div class="text-muted">{{ item.productCode }}</div>
+            </td>
+            <td><code class="barcode-badge">{{ item.barcode || '-' }}</code></td>
+            <td>
+              <span class="trace-chip">{{ item.locationCode || selectedHistorySession()?.locationCode || '-' }}</span>
+            </td>
+            <td>
+              <span class="trace-chip">{{ item.countedByUserName || selectedHistorySession()?.startedByUserName || '-' }}</span>
+            </td>
+            <td>
+              <small class="trace-time">{{ item.countedAtUtc | date:'short' }}</small>
+            </td>
+            <td class="col-num">{{ item.systemQuantity | number:'1.0-3' }}</td>
+            <td class="col-num">{{ item.countedQuantity | number:'1.0-3' }}</td>
+            <td class="col-num">
+              <span class="diff-badge" [ngClass]="item.differenceQuantity > 0 ? 'diff-positive' : item.differenceQuantity < 0 ? 'diff-negative' : 'diff-zero'">
+                {{ item.differenceQuantity > 0 ? '+' : '' }}{{ item.differenceQuantity | number:'1.0-3' }}
+              </span>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn btn-secondary" (click)="closeHistoryModal()">Kapat</button>
+  </div>
+</div>
+}

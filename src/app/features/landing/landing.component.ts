@@ -14,7 +14,7 @@ import { environment } from '../../../environments/environment';
 export class LandingComponent implements OnInit, OnDestroy {
     public authService = inject(AuthService);
     private _featureInterval: any = null;
-    readonly offlineDownloadUrl = `${environment.apiUrl}/downloads/StokNet-Offline-Package.zip`;
+    readonly offlineDownloadUrl = `${environment.apiUrl}/downloads/ERPv2-Offline-Package.zip`;
 
     isScrolled = signal(false);
     billingAnnual = signal(false);

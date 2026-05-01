@@ -32,9 +32,9 @@
             <button class="btn btn-ghost btn-sm" (click)="logout()">Çıkış</button>
             } @else {
             <a routerLink="/auth/login" class="btn btn-ghost btn-sm">Giriş Yap</a>
-            <a routerLink="/auth/register" class="btn btn-primary btn-sm">
-                <span class="material-icons-outlined">rocket_launch</span>
-                Ücretsiz Başla
+            <a routerLink="/auth/login" [queryParams]="{ demo: 1 }" class="btn btn-primary btn-sm">
+                <span class="material-icons-outlined">play_circle</span>
+                Demo'yu Dene
             </a>
             }
         </div>
@@ -70,9 +70,9 @@
         </p>
 
         <div class="hero-actions">
-            <a routerLink="/auth/register" class="btn btn-primary btn-xl">
-                <span class="material-icons-outlined">rocket_launch</span>
-                14 Gün Ücretsiz Deneyin
+            <a routerLink="/auth/login" [queryParams]="{ demo: 1 }" class="btn btn-primary btn-xl">
+                <span class="material-icons-outlined">play_circle</span>
+                Demo'yu Deneyin
             </a>
             <button class="btn btn-outline btn-xl" (click)="scrollTo('features')">
                 <span class="material-icons-outlined">play_circle</span>
@@ -225,7 +225,7 @@
                 Fiyatlandırma
             </div>
             <h2 class="section-title">İşletmenize Uygun Plan</h2>
-            <p class="section-desc">Tüm planlarda 14 gün ücretsiz deneme. Kredi kartı bilgisi gerekmez.</p>
+            <p class="section-desc">Canli urun deneyimi icin once demoyu acin, sonra ihtiyaciniza gore plana gecin.</p>
 
             <!-- Billing toggle -->
             <div class="billing-toggle">
@@ -271,9 +271,9 @@
                 </div>
                 }
 
-                <a [routerLink]="['/auth/register']" [queryParams]="{plan: plan.id}"
+                <a routerLink="/auth/login" [queryParams]="{ demo: 1 }"
                     class="btn plan-btn" [class.btn-primary]="plan.popular" [class.btn-secondary]="!plan.popular">
-                    {{ plan.popular ? 'Hemen Başla' : '14 Gün Ücretsiz Dene' }}
+                    Demo'yu Dene
                     <span class="material-icons-outlined">arrow_forward</span>
                 </a>
 
@@ -335,11 +335,11 @@
     <div class="cta-container">
         <div class="cta-orb"></div>
         <h2 class="cta-title">Bugün Başlayın, Farkı Hissedin</h2>
-        <p class="cta-desc">14 gün boyunca tüm özellikleri ücretsiz kullanın. Kurulum gerektirmez, dakikalar içinde hazır.</p>
+        <p class="cta-desc">Canli demoyu acin, akisi deneyin, sonra abonelik kararini verin.</p>
         <div class="cta-actions">
-            <a routerLink="/auth/register" class="btn btn-primary btn-xl cta-btn">
-                <span class="material-icons-outlined">rocket_launch</span>
-                Ücretsiz Hesap Oluştur
+            <a routerLink="/auth/login" [queryParams]="{ demo: 1 }" class="btn btn-primary btn-xl cta-btn">
+                <span class="material-icons-outlined">play_circle</span>
+                Demo'yu Dene
             </a>
             <a routerLink="/auth/login" class="btn btn-outline btn-xl">
                 Zaten hesabın var mı? Giriş Yap
@@ -429,9 +429,9 @@
                     <button class="footer-link" (click)="scrollTo('features')">Özellikler</button>
                     <button class="footer-link" (click)="scrollTo('pricing')">Fiyatlandırma</button>
                     <button class="footer-link" (click)="scrollTo('testimonials')">Referanslar</button>
-                    <a routerLink="/auth/register" class="footer-link footer-link-highlight">
-                        <span class="material-icons-outlined">rocket_launch</span>
-                        Ücretsiz Dene
+                    <a routerLink="/auth/login" [queryParams]="{ demo: 1 }" class="footer-link footer-link-highlight">
+                        <span class="material-icons-outlined">play_circle</span>
+                        Demo'yu Dene
                     </a>
                 </div>
 

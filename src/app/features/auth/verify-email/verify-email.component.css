@@ -1,0 +1,77 @@
+.verify-wrap {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 14px;
+    background:
+        radial-gradient(1100px 620px at 12% 8%, rgba(15, 23, 42, 0.7), transparent 70%),
+        radial-gradient(900px 520px at 88% 18%, rgba(249, 115, 22, 0.2), transparent 70%),
+        linear-gradient(160deg, #020617 0%, #0b1120 55%, #111827 100%);
+}
+
+.verify-card {
+    width: 100%;
+    max-width: 520px;
+    border-radius: 20px;
+    padding: 38px 30px;
+    background: rgba(15, 17, 23, 0.78) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    text-align: center;
+    box-shadow: 0 24px 54px rgba(0, 0, 0, 0.5);
+}
+
+.verify-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 999px;
+    margin: 0 auto 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(59, 130, 246, 0.16);
+    color: #93c5fd;
+}
+
+.verify-icon.success {
+    background: rgba(16, 185, 129, 0.18);
+    color: #34d399;
+}
+
+.verify-icon.error {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+}
+
+.verify-icon .material-icons-outlined {
+    font-size: 34px;
+}
+
+.verify-title {
+    margin: 0 0 10px 0;
+    color: #f8fafc;
+    font-size: 1.55rem;
+    font-weight: 800;
+}
+
+.verify-message {
+    margin: 0;
+    color: #cbd5e1;
+    font-size: 0.95rem;
+    line-height: 1.7;
+}
+
+.verify-email {
+    margin: 14px 0 0 0;
+    color: #f97316;
+    font-size: 0.92rem;
+    font-weight: 700;
+}
+
+.verify-actions {
+    margin-top: 26px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}

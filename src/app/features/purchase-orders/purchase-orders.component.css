@@ -1,1 +1,98 @@
-/* Purchase orders specific styles */
+.page-actions {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.order-no {
+    color: var(--primary-400);
+    font-weight: 600;
+}
+
+.recommendation-modal {
+    max-width: 1080px;
+}
+
+.recommendation-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+}
+
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    padding-top: 30px;
+}
+
+.recommendation-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.recommendation-summary {
+    display: flex;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.recommendation-list {
+    display: grid;
+    gap: var(--space-3);
+    max-height: 54vh;
+    overflow: auto;
+}
+
+.recommendation-card {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    background: var(--bg-card);
+}
+
+.recommendation-card--critical {
+    border-color: rgba(239, 68, 68, 0.35);
+    box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.08) inset;
+}
+
+.recommendation-head,
+.recommendation-foot,
+.recommendation-metrics {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.recommendation-meta,
+.recommendation-foot,
+.recommendation-reason,
+.form-error {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.recommendation-metrics {
+    margin: 10px 0;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.recommendation-reason {
+    margin: 10px 0 0 0;
+    line-height: 1.5;
+}
+
+.form-error--pad {
+    padding: 0 1.5rem;
+}
