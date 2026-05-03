@@ -261,6 +261,142 @@
     align-items: center;
 }
 
+.stats-row--buyers {
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+}
+
+.risk-alert-banner {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-5);
+    margin-bottom: var(--space-4);
+    border-radius: var(--radius-xl);
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.22);
+}
+
+.risk-alert-banner .material-icons-outlined {
+    color: var(--danger);
+    font-size: 24px;
+}
+
+.risk-alert-banner strong,
+.risk-alert-banner span {
+    display: block;
+}
+
+.risk-alert-banner strong {
+    color: var(--text-primary);
+}
+
+.risk-alert-banner span {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+}
+
+.risk-alert-amount {
+    margin-left: auto;
+    font-weight: 700;
+    color: var(--danger);
+    white-space: nowrap;
+}
+
+.risk-row-warning {
+    background: rgba(245, 158, 11, 0.04);
+}
+
+.risk-row-critical {
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.risk-cell,
+.risk-metric {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.risk-cell small,
+.risk-metric small {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
+
+.risk-metric strong {
+    font-size: 0.875rem;
+    color: var(--text-primary);
+}
+
+.risk-metric strong.negative {
+    color: var(--danger);
+}
+
+.risk-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    width: fit-content;
+}
+
+.risk-badge--stable {
+    background: rgba(34, 197, 94, 0.12);
+    color: var(--success);
+}
+
+.risk-badge--warning {
+    background: rgba(245, 158, 11, 0.14);
+    color: #d97706;
+}
+
+.risk-badge--critical {
+    background: rgba(239, 68, 68, 0.14);
+    color: var(--danger);
+}
+
+.form-error-box {
+    padding: 10px 14px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+    color: #ef4444;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.excel-file-result-item {
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.03);
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+.excel-file-result-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.excel-file-result-name {
+    font-weight: 500;
+}
+
+.excel-file-result-errors {
+    margin: 6px 0 0 0;
+    padding-left: 20px;
+    color: var(--danger);
+    font-size: 12px;
+}
+
 
 /* ─── Excel Upload Modal ────────────────────── */
 .excel-modal { width: 600px; }
@@ -335,4 +471,11 @@
     .page-header-actions { width: 100%; flex-direction: column; }
     .page-header-actions .btn { width: 100%; justify-content: center; }
     .excel-modal { width: 95vw; }
+    .risk-alert-banner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .risk-alert-amount {
+        margin-left: 0;
+    }
 }

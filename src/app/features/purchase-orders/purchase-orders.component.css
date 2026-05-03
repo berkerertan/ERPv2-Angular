@@ -53,6 +53,28 @@
     overflow: auto;
 }
 
+.recommendation-groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.group-card {
+    display: grid;
+    gap: 4px;
+    padding: var(--space-3);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.group-card strong {
+    color: var(--text-primary);
+}
+
 .recommendation-card {
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
@@ -95,4 +117,177 @@
 
 .form-error--pad {
     padding: 0 1.5rem;
+}
+
+.row-link {
+    color: var(--primary-400);
+    font-weight: 600;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+}
+
+.detail-modal,
+.reject-modal {
+    max-width: 760px;
+}
+
+.detail-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.detail-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--space-3);
+    margin-bottom: var(--space-4);
+}
+
+.summary-card {
+    display: grid;
+    gap: 6px;
+    padding: var(--space-3);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+}
+
+.summary-label {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.timeline-list {
+    display: grid;
+    gap: var(--space-3);
+    margin-bottom: var(--space-5);
+}
+
+.timeline-item {
+    display: flex;
+    gap: var(--space-3);
+    align-items: flex-start;
+    padding: var(--space-3) var(--space-4);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    background: var(--bg-secondary);
+}
+
+.timeline-item--success {
+    border-color: rgba(34, 197, 94, 0.24);
+}
+
+.timeline-item--danger {
+    border-color: rgba(239, 68, 68, 0.24);
+}
+
+.timeline-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--primary-400);
+    margin-top: 6px;
+    flex-shrink: 0;
+}
+
+.timeline-item--success .timeline-dot {
+    background: var(--success);
+}
+
+.timeline-item--danger .timeline-dot {
+    background: var(--danger);
+}
+
+.timeline-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.timeline-headline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.timeline-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(59, 130, 246, 0.12);
+    color: var(--primary-400);
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.timeline-chip .material-icons-outlined {
+    font-size: 16px;
+}
+
+.timeline-chip--success {
+    background: rgba(34, 197, 94, 0.14);
+    color: var(--success);
+}
+
+.timeline-chip--danger {
+    background: rgba(239, 68, 68, 0.14);
+    color: var(--danger);
+}
+
+.timeline-content span,
+.timeline-content small,
+.timeline-content p {
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.timeline-note {
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.18);
+}
+
+.detail-items {
+    display: grid;
+    gap: 10px;
+}
+
+.detail-items__title {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.detail-item-row {
+    display: grid;
+    grid-template-columns: 1fr 120px 140px;
+    gap: var(--space-3);
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.reject-textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.action-btn.reject:hover {
+    color: var(--danger);
+    background: rgba(239, 68, 68, 0.08);
 }

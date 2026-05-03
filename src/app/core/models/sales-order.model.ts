@@ -14,6 +14,12 @@ export interface SalesOrder {
     warehouseId: string;
     status: OrderStatus;
     orderDateUtc: string;
+    createdAtUtc: string;
+    approvedAtUtc?: string | null;
+    approvedByUserName?: string | null;
+    cancelledAtUtc?: string | null;
+    cancelledByUserName?: string | null;
+    cancellationReason?: string | null;
     totalAmount: number;
     items?: SalesOrderItemDto[];
 }

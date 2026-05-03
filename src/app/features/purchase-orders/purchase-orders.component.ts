@@ -1,12 +1,14 @@
-import { Component, signal, computed, OnInit, inject } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PurchaseOrderService } from '../../core/services/purchase-order.service';
 import { OrderStatus } from '../../core/models/sales-order.model';
 import {
     CreatePurchaseOrderRequest,
+    PurchaseOrder,
     PurchaseRecommendationItem,
-    PurchaseRecommendationResponse
+    PurchaseRecommendationResponse,
+    PurchaseRecommendationSupplierGroup
 } from '../../core/models/purchase-order.model';
 import { CariAccountService } from '../../core/services/cari-account.service';
 import { CariAccount } from '../../core/models/cari-account.model';
@@ -14,6 +16,7 @@ import { ProductService } from '../../core/services/product.service';
 import { WarehouseService } from '../../core/services/warehouse.service';
 import { ConfirmService } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ToastService } from '../../core/services/toast.service';
+import { firstValueFrom } from 'rxjs';
 
 type OrderRow = {
     id: string;
@@ -22,6 +25,15 @@ type OrderRow = {
     status: string;
     totalAmount: number;
     createdAt: string;
+};
+
+type OrderTimelineItem = {
+    label: string;
+    at: string;
+    by?: string | null;
+    tone: 'info' | 'success' | 'danger';
+    note?: string | null;
+    icon?: string;
 };
 
 @Component({
@@ -45,10 +57,15 @@ export class PurchaseOrdersComponent implements OnInit {
     activeTab = signal<'all' | 'Draft' | 'Approved' | 'Cancelled'>('all');
     showCreateModal = signal(false);
     showRecommendationModal = signal(false);
+    showDetailModal = signal(false);
+    showRejectModal = signal(false);
     isSaving = signal(false);
     isLoadingRecommendations = signal(false);
+    isLoadingDetail = signal(false);
+    isRejecting = signal(false);
     formError = signal('');
     recommendationError = signal('');
+    rejectError = signal('');
 
     orders = signal<OrderRow[]>([]);
     suppliers = signal<CariAccount[]>([]);
@@ -56,6 +73,8 @@ export class PurchaseOrdersComponent implements OnInit {
     warehouses = signal<{ id: string; name: string }[]>([]);
     recommendations = signal<PurchaseRecommendationItem[]>([]);
     recommendationSummary = signal<PurchaseRecommendationResponse['summary'] | null>(null);
+    recommendationGroups = signal<PurchaseRecommendationSupplierGroup[]>([]);
+    selectedOrderDetail = signal<PurchaseOrder | null>(null);
     private cariMap = new Map<string, string>();
 
     recommendationFilters = {
@@ -73,10 +92,14 @@ export class PurchaseOrdersComponent implements OnInit {
         items: [{ productId: '', productName: '', quantity: 1, unitPrice: 0 }]
     };
 
+    rejectTargetId = signal<string | null>(null);
+    rejectReason = '';
+
     readonly filteredOrders = computed(() => {
         let items = this.orders();
         const tab = this.activeTab();
         if (tab !== 'all') items = items.filter(o => o.status === tab);
+
         const term = this.searchTerm.toLowerCase();
         if (term) {
             items = items.filter(o =>
@@ -84,6 +107,7 @@ export class PurchaseOrdersComponent implements OnInit {
                 o.cariAccountName.toLowerCase().includes(term)
             );
         }
+
         if (this.sortColumn) {
             const dir = this.sortDir === 'asc' ? 1 : -1;
             const col = this.sortColumn as keyof OrderRow;
@@ -93,6 +117,7 @@ export class PurchaseOrdersComponent implements OnInit {
                     : dir * String(a[col]).localeCompare(String(b[col]), 'tr')
             );
         }
+
         return items;
     });
 
@@ -110,9 +135,9 @@ export class PurchaseOrdersComponent implements OnInit {
                 cariAccountName: this.cariMap.get(o.supplierCariAccountId) || `${o.supplierCariAccountId.substring(0, 8)}...`,
                 status: this.mapStatus(o.status),
                 totalAmount: o.totalAmount,
-                createdAt: o.orderDateUtc.split('T')[0]
+                createdAt: (o.createdAtUtc || o.orderDateUtc).split('T')[0]
             }))),
-            error: () => this.toastService.error('Hata', 'Satın alma siparişleri yüklenemedi.')
+            error: () => this.toastService.error('Hata', 'Satin alma siparisleri yuklenemedi.')
         });
     }
 
@@ -151,7 +176,7 @@ export class PurchaseOrdersComponent implements OnInit {
         });
     }
 
-    private mapStatus(status: OrderStatus): string {
+    mapStatus(status: OrderStatus): string {
         switch (status) {
             case OrderStatus.Approved: return 'Approved';
             case OrderStatus.Draft: return 'Draft';
@@ -170,7 +195,10 @@ export class PurchaseOrdersComponent implements OnInit {
     }
 
     getStatusBadge(s: string) { return s === 'Approved' ? 'badge-success' : s === 'Draft' ? 'badge-warning' : 'badge-danger'; }
-    getStatusLabel(s: string) { return s === 'Approved' ? 'Onaylı' : s === 'Draft' ? 'Taslak' : 'İptal'; }
+    getStatusLabel(s: string) { return s === 'Approved' ? 'Onayli' : s === 'Draft' ? 'Taslak' : 'Reddedildi'; }
+    getApprovedTotal(): number { return this.orders().filter(o => o.status === 'Approved').reduce((sum, o) => sum + o.totalAmount, 0); }
+    getPendingCount(): number { return this.orders().filter(o => o.status === 'Draft').length; }
+    getRejectedCount(): number { return this.orders().filter(o => o.status === 'Cancelled').length; }
 
     openCreateModal(): void {
         this.formData = {
@@ -198,9 +226,44 @@ export class PurchaseOrdersComponent implements OnInit {
         this.showRecommendationModal.set(false);
     }
 
+    openOrderDetail(id: string): void {
+        this.isLoadingDetail.set(true);
+        this.showDetailModal.set(true);
+        this.purchaseOrderService.getById(id).subscribe({
+            next: order => {
+                this.selectedOrderDetail.set(order);
+                this.isLoadingDetail.set(false);
+            },
+            error: err => {
+                this.showDetailModal.set(false);
+                this.isLoadingDetail.set(false);
+                this.toastService.error('Hata', err.error?.detail || 'Siparis detayi yuklenemedi.');
+            }
+        });
+    }
+
+    closeDetailModal(): void {
+        this.showDetailModal.set(false);
+        this.selectedOrderDetail.set(null);
+    }
+
+    openRejectModal(orderId: string): void {
+        this.rejectTargetId.set(orderId);
+        this.rejectReason = '';
+        this.rejectError.set('');
+        this.showRejectModal.set(true);
+    }
+
+    closeRejectModal(): void {
+        this.showRejectModal.set(false);
+        this.rejectReason = '';
+        this.rejectError.set('');
+        this.rejectTargetId.set(null);
+    }
+
     loadRecommendations(): void {
         if (!this.recommendationFilters.warehouseId) {
-            this.recommendationError.set('Öneri üretmek için önce depo seçin.');
+            this.recommendationError.set('Oneri uretmek icin once depo secin.');
             this.recommendations.set([]);
             return;
         }
@@ -217,13 +280,15 @@ export class PurchaseOrdersComponent implements OnInit {
         }).subscribe({
             next: response => {
                 this.recommendationSummary.set(response.summary);
+                this.recommendationGroups.set(response.supplierGroups);
                 this.recommendations.set(response.items);
                 this.isLoadingRecommendations.set(false);
             },
             error: err => {
-                this.recommendationError.set(err?.error?.detail || 'Öneriler yüklenemedi.');
+                this.recommendationError.set(err?.error?.detail || 'Oneriler yuklenemedi.');
                 this.recommendations.set([]);
                 this.recommendationSummary.set(null);
+                this.recommendationGroups.set([]);
                 this.isLoadingRecommendations.set(false);
             }
         });
@@ -232,7 +297,7 @@ export class PurchaseOrdersComponent implements OnInit {
     applyRecommendationsToDraft(): void {
         const items = this.recommendations();
         if (!items.length) {
-            this.toastService.error('Hata', 'Aktarılacak öneri bulunamadı.');
+            this.toastService.error('Hata', 'Aktarilacak oneri bulunamadi.');
             return;
         }
 
@@ -254,7 +319,61 @@ export class PurchaseOrdersComponent implements OnInit {
         this.formError.set('');
         this.showRecommendationModal.set(false);
         this.showCreateModal.set(true);
-        this.toastService.success('Hazır', 'Öneriler taslak satın alma siparişine aktarıldı.');
+        this.toastService.success('Hazir', 'Oneriler taslak satin alma siparisine aktarildi.');
+    }
+
+    createSupplierSplitDrafts(): void {
+        const items = this.recommendations();
+        const warehouseId = this.recommendationFilters.warehouseId;
+        if (!warehouseId || !items.length) {
+            this.toastService.error('Hata', 'Bolunecek oneri bulunamadi.');
+            return;
+        }
+
+        const groups = items
+            .filter(x => !!x.suggestedSupplierCariAccountId)
+            .reduce((map, item) => {
+                const key = item.suggestedSupplierCariAccountId as string;
+                const list = map.get(key) ?? [];
+                list.push(item);
+                map.set(key, list);
+                return map;
+            }, new Map<string, PurchaseRecommendationItem[]>());
+
+        if (!groups.size) {
+            this.toastService.error('Hata', 'Tedarikci atanmamis oneriler taslaga bolunemedi.');
+            return;
+        }
+
+        const skippedCount = items.filter(x => !x.suggestedSupplierCariAccountId).length;
+        const requests = Array.from(groups.entries()).map(([supplierId, supplierItems], index) => {
+            const now = new Date();
+            const orderNo = `SA-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}-${index + 1}`;
+            const request: CreatePurchaseOrderRequest = {
+                orderNo,
+                supplierCariAccountId: supplierId,
+                warehouseId,
+                items: supplierItems.map(item => ({
+                    productId: item.productId,
+                    quantity: item.recommendedOrderQuantity,
+                    unitPrice: item.suggestedUnitPrice
+                }))
+            };
+
+            return firstValueFrom(this.purchaseOrderService.create(request));
+        });
+
+        Promise.all(requests)
+            .then(() => {
+                this.closeRecommendationModal();
+                this.loadOrders();
+                this.toastService.success(
+                    'Hazir',
+                    `${groups.size} taslak siparis olusturuldu${skippedCount > 0 ? `, ${skippedCount} kalem tedarikcisiz oldugu icin atlandi` : ''}.`);
+            })
+            .catch(() => {
+                this.toastService.error('Hata', 'Tedarikci bazli taslak siparisler olusturulamadi.');
+            });
     }
 
     addItem(): void {
@@ -280,15 +399,15 @@ export class PurchaseOrdersComponent implements OnInit {
 
     saveOrder(): void {
         if (!this.formData.supplierCariAccountId) {
-            this.formError.set('Lütfen bir tedarikçi seçin.');
+            this.formError.set('Lutfen bir tedarikci secin.');
             return;
         }
         if (!this.formData.warehouseId) {
-            this.formError.set('Lütfen bir depo seçin.');
+            this.formError.set('Lutfen bir depo secin.');
             return;
         }
         if (this.formData.items.some(it => !it.productId)) {
-            this.formError.set('Tüm kalemlerde ürün seçilmelidir.');
+            this.formError.set('Tum kalemlerde urun secilmelidir.');
             return;
         }
 
@@ -319,11 +438,11 @@ export class PurchaseOrdersComponent implements OnInit {
                 this.isSaving.set(false);
                 this.closeCreateModal();
                 this.loadOrders();
-                this.toastService.success('Başarılı', 'Satın alma siparişi oluşturuldu.');
+                this.toastService.success('Basarili', 'Satin alma siparisi olusturuldu.');
             },
             error: err => {
                 this.isSaving.set(false);
-                this.formError.set(err.error?.detail || 'Sipariş oluşturulamadı.');
+                this.formError.set(err.error?.detail || 'Siparis olusturulamadi.');
             }
         });
     }
@@ -332,16 +451,46 @@ export class PurchaseOrdersComponent implements OnInit {
         this.purchaseOrderService.approve(id).subscribe({
             next: () => {
                 this.loadOrders();
-                this.toastService.success('Başarılı', 'Sipariş onaylandı.');
+                if (this.selectedOrderDetail()?.id === id) {
+                    this.openOrderDetail(id);
+                }
+                this.toastService.success('Basarili', 'Siparis onaylandi.');
             },
-            error: err => this.toastService.error('Hata', err.error?.detail || 'Onaylama başarısız.')
+            error: err => this.toastService.error('Hata', err.error?.detail || 'Onaylama basarisiz.')
+        });
+    }
+
+    confirmRejectOrder(): void {
+        const orderId = this.rejectTargetId();
+        if (!orderId) {
+            this.rejectError.set('Siparis secilemedi.');
+            return;
+        }
+        if (!this.rejectReason.trim()) {
+            this.rejectError.set('Red nedeni zorunludur.');
+            return;
+        }
+
+        this.isRejecting.set(true);
+        this.rejectError.set('');
+        this.purchaseOrderService.reject(orderId, this.rejectReason.trim()).subscribe({
+            next: () => {
+                this.isRejecting.set(false);
+                this.closeRejectModal();
+                this.loadOrders();
+                this.toastService.success('Basarili', 'Siparis reddedildi.');
+            },
+            error: err => {
+                this.isRejecting.set(false);
+                this.rejectError.set(err.error?.detail || 'Red islemi basarisiz.');
+            }
         });
     }
 
     async deleteOrder(id: string): Promise<void> {
         const confirmed = await this.confirmService.confirm({
-            title: 'Silme Onayı',
-            message: 'Bu siparişi silmek istediğinize emin misiniz?',
+            title: 'Silme Onayi',
+            message: 'Bu siparisi silmek istediginize emin misiniz?',
             confirmText: 'Sil',
             type: 'danger'
         });
@@ -350,9 +499,79 @@ export class PurchaseOrdersComponent implements OnInit {
         this.purchaseOrderService.delete(id).subscribe({
             next: () => {
                 this.loadOrders();
-                this.toastService.success('Silindi', 'Sipariş silindi');
+                this.toastService.success('Silindi', 'Siparis silindi');
             },
-            error: err => this.toastService.error('Hata', err.error?.detail || 'Silme başarısız.')
+            error: err => this.toastService.error('Hata', err.error?.detail || 'Silme basarisiz.')
         });
+    }
+
+    getTimeline(order: PurchaseOrder | null): OrderTimelineItem[] {
+        if (!order) return [];
+
+        const items: OrderTimelineItem[] = [
+            {
+                label: 'Olusturuldu',
+                at: order.createdAtUtc || order.orderDateUtc,
+                tone: 'info',
+                icon: 'edit_note'
+            }
+        ];
+
+        if (order.approvedAtUtc) {
+            items.push({
+                label: 'Onaylandi',
+                at: order.approvedAtUtc,
+                by: order.approvedByUserName,
+                tone: 'success',
+                icon: 'task_alt'
+            });
+        }
+
+        if (order.cancelledAtUtc) {
+            items.push({
+                label: 'Reddedildi',
+                at: order.cancelledAtUtc,
+                by: order.cancelledByUserName,
+                tone: 'danger',
+                note: order.cancellationReason,
+                icon: 'cancel'
+            });
+        }
+
+        return items;
+    }
+
+    getTimelineDuration(order: PurchaseOrder | null): string {
+        if (!order) return '-';
+        const start = new Date(order.createdAtUtc || order.orderDateUtc).getTime();
+        const end = order.approvedAtUtc
+            ? new Date(order.approvedAtUtc).getTime()
+            : order.cancelledAtUtc
+                ? new Date(order.cancelledAtUtc).getTime()
+                : Date.now();
+        return this.formatDuration(Math.max(0, end - start));
+    }
+
+    getTimelineOwner(order: PurchaseOrder | null): string {
+        if (!order) return '-';
+        return order.approvedByUserName || order.cancelledByUserName || 'Sistem';
+    }
+
+    getTimelineStatusHint(order: PurchaseOrder | null): string {
+        if (!order) return '-';
+        if (order.approvedAtUtc) return 'Siparis tamamlandi';
+        if (order.cancelledAtUtc) return 'Siparis reddedildi';
+        return 'Onay bekliyor';
+    }
+
+    private formatDuration(durationMs: number): string {
+        const totalMinutes = Math.max(1, Math.round(durationMs / 60000));
+        if (totalMinutes < 60) return `${totalMinutes} dk`;
+        const hours = Math.floor(totalMinutes / 60);
+        const minutes = totalMinutes % 60;
+        if (hours < 24) return minutes ? `${hours} sa ${minutes} dk` : `${hours} sa`;
+        const days = Math.floor(hours / 24);
+        const remainingHours = hours % 24;
+        return remainingHours ? `${days} gun ${remainingHours} sa` : `${days} gun`;
     }
 }

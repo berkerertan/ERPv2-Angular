@@ -1,8 +1,8 @@
-<div class="page-container">
+﻿<div class="page-container">
     <div class="page-header">
         <div>
-            <h1 class="page-title">Satın Alma Siparişleri</h1>
-            <p class="page-subtitle">Tedarikçi siparişlerini yönetin ve öneri akışını kullanın</p>
+            <h1 class="page-title">Satin Alma Siparisleri</h1>
+            <p class="page-subtitle">Tedarikci siparislerini yonetin ve onay akislarini izleyin</p>
         </div>
         <div class="page-actions">
             <button class="btn btn-secondary" (click)="openRecommendationModal()">
@@ -11,21 +11,37 @@
             </button>
             <button class="btn btn-primary" (click)="openCreateModal()">
                 <span class="material-icons-outlined">add</span>
-                Yeni Sipariş
+                Yeni Siparis
             </button>
         </div>
     </div>
 
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--warning-bg); color: var(--warning);"><span class="material-icons-outlined">pending</span></div>
+            <div class="stat-info"><span class="stat-value">{{ getPendingCount() }}</span><span class="stat-label">Onay Bekliyor</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: var(--success-bg); color: var(--success);"><span class="material-icons-outlined">inventory_2</span></div>
+            <div class="stat-info"><span class="stat-value">â‚º{{ getApprovedTotal().toLocaleString('tr-TR') }}</span><span class="stat-label">Onayli Toplam</span></div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(239, 68, 68, 0.12); color: var(--danger);"><span class="material-icons-outlined">cancel</span></div>
+            <div class="stat-info"><span class="stat-value">{{ getRejectedCount() }}</span><span class="stat-label">Reddedilen</span></div>
+        </div>
+    </div>
+
     <div class="tabs">
-        <button class="tab" [class.active]="activeTab() === 'all'" (click)="activeTab.set('all')">Tümü</button>
+        <button class="tab" [class.active]="activeTab() === 'all'" (click)="activeTab.set('all')">Tumu</button>
         <button class="tab" [class.active]="activeTab() === 'Draft'" (click)="activeTab.set('Draft')">Taslak</button>
-        <button class="tab" [class.active]="activeTab() === 'Approved'" (click)="activeTab.set('Approved')">Onaylı</button>
+        <button class="tab" [class.active]="activeTab() === 'Approved'" (click)="activeTab.set('Approved')">Onayli</button>
+        <button class="tab" [class.active]="activeTab() === 'Cancelled'" (click)="activeTab.set('Cancelled')">Reddedildi</button>
     </div>
 
     <div class="toolbar">
         <div class="toolbar-search">
             <span class="material-icons-outlined search-icon">search</span>
-            <input type="text" placeholder="Sipariş no veya tedarikçi ara..." [(ngModel)]="searchTerm" />
+            <input type="text" placeholder="Siparis no veya tedarikci ara..." [(ngModel)]="searchTerm" />
         </div>
     </div>
 
@@ -33,27 +49,33 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th class="sortable" [class.sorted]="sortColumn==='orderNumber'" (click)="sort('orderNumber')">Sipariş No</th>
-                    <th class="sortable" [class.sorted]="sortColumn==='cariAccountName'" (click)="sort('cariAccountName')">Tedarikçi</th>
+                    <th class="sortable" [class.sorted]="sortColumn==='orderNumber'" (click)="sort('orderNumber')">Siparis No</th>
+                    <th class="sortable" [class.sorted]="sortColumn==='cariAccountName'" (click)="sort('cariAccountName')">Tedarikci</th>
                     <th class="sortable" [class.sorted]="sortColumn==='totalAmount'" (click)="sort('totalAmount')">Tutar</th>
                     <th class="sortable" [class.sorted]="sortColumn==='status'" (click)="sort('status')">Durum</th>
                     <th class="sortable" [class.sorted]="sortColumn==='createdAt'" (click)="sort('createdAt')">Tarih</th>
-                    <th>İşlemler</th>
+                    <th>Islemler</th>
                 </tr>
             </thead>
             <tbody>
                 @for (o of filteredOrders(); track o.id) {
                 <tr>
-                    <td><span class="order-no">{{ o.orderNumber }}</span></td>
+                    <td><button class="row-link" (click)="openOrderDetail(o.id)">{{ o.orderNumber }}</button></td>
                     <td class="font-medium">{{ o.cariAccountName }}</td>
-                    <td class="amount">₺{{ o.totalAmount.toLocaleString('tr-TR') }}</td>
+                    <td class="amount">?{{ o.totalAmount.toLocaleString('tr-TR') }}</td>
                     <td><span class="badge" [ngClass]="getStatusBadge(o.status)">{{ getStatusLabel(o.status) }}</span></td>
                     <td class="text-muted">{{ o.createdAt }}</td>
                     <td>
                         <div class="actions-cell">
+                            <button class="action-btn view" title="Detay" (click)="openOrderDetail(o.id)">
+                                <span class="material-icons-outlined">visibility</span>
+                            </button>
                             @if (o.status === 'Draft') {
                             <button class="action-btn approve" title="Onayla" (click)="approveOrder(o.id)">
                                 <span class="material-icons-outlined">check_circle</span>
+                            </button>
+                            <button class="action-btn reject" title="Reddet" (click)="openRejectModal(o.id)">
+                                <span class="material-icons-outlined">cancel</span>
                             </button>
                             }
                             <button class="action-btn delete" title="Sil" (click)="deleteOrder(o.id)">
@@ -68,11 +90,114 @@
     </div>
 </div>
 
+@if (showDetailModal()) {
+<div class="overlay" (click)="closeDetailModal()"></div>
+<div class="modal detail-modal">
+    <div class="modal-header">
+        <h2><span class="material-icons-outlined">history</span> Onay Gecmisi</h2>
+        <button class="modal-close" (click)="closeDetailModal()"><span class="material-icons-outlined">close</span></button>
+    </div>
+    <div class="modal-form">
+        @if (isLoadingDetail()) {
+        <div class="loading-panel"><div class="spinner"></div><span>Detay yukleniyor...</span></div>
+        } @else if (selectedOrderDetail()) {
+        <div class="detail-head">
+            <div>
+                <strong>{{ selectedOrderDetail()!.orderNo }}</strong>
+                <div class="text-muted">{{ suppliers().find(s => s.id === selectedOrderDetail()!.supplierCariAccountId)?.name || selectedOrderDetail()!.supplierCariAccountId }}</div>
+            </div>
+            <span class="badge" [ngClass]="getStatusBadge(mapStatus(selectedOrderDetail()!.status))">{{ getStatusLabel(mapStatus(selectedOrderDetail()!.status)) }}</span>
+        </div>
+        <div class="detail-summary-grid">
+            <div class="summary-card">
+                <span class="summary-label">Surec Durumu</span>
+                <strong>{{ getTimelineStatusHint(selectedOrderDetail()) }}</strong>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">Gecen Sure</span>
+                <strong>{{ getTimelineDuration(selectedOrderDetail()) }}</strong>
+            </div>
+            <div class="summary-card">
+                <span class="summary-label">Son Islem</span>
+                <strong>{{ getTimelineOwner(selectedOrderDetail()) }}</strong>
+            </div>
+        </div>
+        <div class="timeline-list">
+            @for (item of getTimeline(selectedOrderDetail()); track item.label + item.at) {
+            <div class="timeline-item" [class.timeline-item--success]="item.tone === 'success'" [class.timeline-item--danger]="item.tone === 'danger'">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-headline">
+                        <strong>{{ item.label }}</strong>
+                        <span class="timeline-chip" [class.timeline-chip--success]="item.tone === 'success'" [class.timeline-chip--danger]="item.tone === 'danger'">
+                            <span class="material-icons-outlined">{{ item.icon || 'schedule' }}</span>
+                            {{ item.label }}
+                        </span>
+                    </div>
+                    <span>{{ item.at | date:'medium' }}</span>
+                    @if (item.by) {
+                    <small>Islem yapan: {{ item.by }}</small>
+                    }
+                    @if (item.note) {
+                    <p class="timeline-note">{{ item.note }}</p>
+                    }
+                </div>
+            </div>
+            }
+        </div>
+        <div class="detail-items">
+            <div class="detail-items__title">Siparis Kalemleri</div>
+            @for (item of selectedOrderDetail()!.items || []; track item.productId) {
+            <div class="detail-item-row">
+                <span>{{ products().find(p => p.id === item.productId)?.name || item.productId }}</span>
+                <span>{{ item.quantity }}</span>
+                <span>?{{ item.unitPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) }}</span>
+            </div>
+            }
+        </div>
+        }
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeDetailModal()">Kapat</button>
+    </div>
+</div>
+}
+
+@if (showRejectModal()) {
+<div class="overlay" (click)="closeRejectModal()"></div>
+<div class="modal reject-modal">
+    <div class="modal-header">
+        <h2><span class="material-icons-outlined">cancel</span> Siparisi Reddet</h2>
+        <button class="modal-close" (click)="closeRejectModal()"><span class="material-icons-outlined">close</span></button>
+    </div>
+    <div class="modal-form">
+        <div class="form-group">
+            <label class="form-label">Red Nedeni</label>
+            <textarea class="form-input reject-textarea" [(ngModel)]="rejectReason" placeholder="Bu siparis neden reddedildi?"></textarea>
+        </div>
+        @if (rejectError()) {
+        <div class="form-error">{{ rejectError() }}</div>
+        }
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeRejectModal()">Vazgec</button>
+        <button class="btn btn-danger" (click)="confirmRejectOrder()" [disabled]="isRejecting()">
+            @if (isRejecting()) {
+            <div class="spinner spinner-sm"></div> Gonderiliyor...
+            } @else {
+            <span class="material-icons-outlined">send</span>
+            Reddet
+            }
+        </button>
+    </div>
+</div>
+}
+
 @if (showRecommendationModal()) {
 <div class="overlay" (click)="closeRecommendationModal()"></div>
 <div class="modal recommendation-modal">
     <div class="modal-header">
-        <h2><span class="material-icons-outlined">auto_awesome</span> Akıllı Satın Alma Önerileri</h2>
+        <h2><span class="material-icons-outlined">auto_awesome</span> Akilli Satin Alma Onerileri</h2>
         <button class="modal-close" (click)="closeRecommendationModal()"><span class="material-icons-outlined">close</span></button>
     </div>
 
@@ -81,27 +206,27 @@
             <div class="form-group">
                 <label class="form-label">Depo</label>
                 <select class="form-input" [(ngModel)]="recommendationFilters.warehouseId">
-                    <option value="">-- Depo Seçin --</option>
+                    <option value="">-- Depo Secin --</option>
                     @for (w of warehouses(); track w.id) {
                     <option [value]="w.id">{{ w.name }}</option>
                     }
                 </select>
             </div>
             <div class="form-group">
-                <label class="form-label">Tedarikçi</label>
+                <label class="form-label">Tedarikci</label>
                 <select class="form-input" [(ngModel)]="recommendationFilters.supplierCariAccountId">
-                    <option value="">Tümü</option>
+                    <option value="">Tumu</option>
                     @for (s of suppliers(); track s.id) {
                     <option [value]="s.id">{{ s.name }}</option>
                     }
                 </select>
             </div>
             <div class="form-group">
-                <label class="form-label">Analiz Günü</label>
+                <label class="form-label">Analiz Gunu</label>
                 <input class="form-input" type="number" [(ngModel)]="recommendationFilters.analysisDays" min="7" max="120" />
             </div>
             <div class="form-group">
-                <label class="form-label">Kapsama Günü</label>
+                <label class="form-label">Kapsama Gunu</label>
                 <input class="form-input" type="number" [(ngModel)]="recommendationFilters.coverageDays" min="7" max="90" />
             </div>
             <div class="form-group">
@@ -110,7 +235,7 @@
             </div>
             <label class="checkbox-row">
                 <input type="checkbox" [(ngModel)]="recommendationFilters.criticalOnly" />
-                <span>Sadece kritik ürünleri getir</span>
+                <span>Sadece kritik urunleri getir</span>
             </label>
         </div>
 
@@ -123,7 +248,7 @@
             <div class="recommendation-summary">
                 <span>{{ recommendationSummary()!.totalItems }} kalem</span>
                 <span>{{ recommendationSummary()!.criticalItems }} kritik</span>
-                <span>₺{{ recommendationSummary()!.totalEstimatedCost.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) }}</span>
+                <span>?{{ recommendationSummary()!.totalEstimatedCost.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) }}</span>
             </div>
             }
         </div>
@@ -133,15 +258,27 @@
         }
 
         @if (isLoadingRecommendations()) {
-        <div class="loading-panel"><div class="spinner"></div><span>Öneriler hazırlanıyor...</span></div>
+        <div class="loading-panel"><div class="spinner"></div><span>Oneriler hazirlaniyor...</span></div>
         } @else {
+        @if (recommendationGroups().length) {
+        <div class="recommendation-groups">
+            @for (group of recommendationGroups(); track group.supplierCariAccountId || group.supplierName) {
+            <div class="group-card">
+                <strong>{{ group.supplierName || 'Tedarikci atanmamis' }}</strong>
+                <span>{{ group.itemCount }} kalem</span>
+                <span>{{ group.totalRecommendedQuantity }} adet onerildi</span>
+                <span>Tahmini tutar: â‚º{{ group.totalEstimatedCost.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) }}</span>
+            </div>
+            }
+        </div>
+        }
         <div class="recommendation-list">
             @for (item of recommendations(); track item.productId) {
             <div class="recommendation-card" [class.recommendation-card--critical]="item.isCritical">
                 <div class="recommendation-head">
                     <div>
                         <strong>{{ item.productName }}</strong>
-                        <div class="recommendation-meta">{{ item.productCode }} · {{ item.unit }} · {{ item.barcode || 'Barkod yok' }}</div>
+                        <div class="recommendation-meta">{{ item.productCode }} Â· {{ item.unit }} Â· {{ item.barcode || 'Barkod yok' }}</div>
                     </div>
                     @if (item.isCritical) {
                     <span class="badge badge-danger">Kritik</span>
@@ -150,12 +287,13 @@
                 <div class="recommendation-metrics">
                     <span>Mevcut: {{ item.availableQuantity }}</span>
                     <span>Hedef: {{ item.targetStockLevel }}</span>
-                    <span>Öneri: {{ item.recommendedOrderQuantity }}</span>
-                    <span>Günlük satış: {{ item.averageDailySales }}</span>
+                    <span>Oneri: {{ item.recommendedOrderQuantity }}</span>
+                    <span>Gunluk satis: {{ item.averageDailySales }}</span>
+                    <span>Plan: {{ item.planningDays }} gun</span>
                 </div>
                 <div class="recommendation-foot">
-                    <span>{{ item.suggestedSupplierName || 'Tedarikçi önerisi yok' }}</span>
-                    <span>₺{{ item.suggestedUnitPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) }}</span>
+                    <span>{{ item.suggestedSupplierName || 'Tedarikci onerisi yok' }}</span>
+                    <span>?{{ item.suggestedUnitPrice.toLocaleString('tr-TR', { minimumFractionDigits: 2 }) }}</span>
                 </div>
                 <p class="recommendation-reason">{{ item.recommendationReason }}</p>
             </div>
@@ -164,7 +302,7 @@
             @if (!recommendations().length) {
             <div class="empty-state">
                 <span class="material-icons-outlined">inventory</span>
-                <p>Bu filtrelerle öneri bulunamadı.</p>
+                <p>Bu filtrelerle oneri bulunamadi.</p>
             </div>
             }
         </div>
@@ -173,9 +311,13 @@
 
     <div class="modal-footer">
         <button class="btn btn-secondary" (click)="closeRecommendationModal()">Kapat</button>
+        <button class="btn btn-secondary" (click)="createSupplierSplitDrafts()" [disabled]="recommendationGroups().length < 1">
+            <span class="material-icons-outlined">call_split</span>
+            Tedarikciye Gore Bol
+        </button>
         <button class="btn btn-primary" (click)="applyRecommendationsToDraft()" [disabled]="!recommendations().length">
             <span class="material-icons-outlined">content_paste_go</span>
-            Taslağa Aktar
+            Taslaga Aktar
         </button>
     </div>
 </div>
@@ -185,16 +327,16 @@
 <div class="overlay" (click)="closeCreateModal()"></div>
 <div class="modal">
     <div class="modal-header">
-        <h2><span class="material-icons-outlined">shopping_cart</span> Yeni Satın Alma Siparişi</h2>
+        <h2><span class="material-icons-outlined">shopping_cart</span> Yeni Satin Alma Siparisi</h2>
         <button class="modal-close" (click)="closeCreateModal()"><span class="material-icons-outlined">close</span></button>
     </div>
     <div class="modal-form">
         <div class="form-section">
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label">Tedarikçi *</label>
+                    <label class="form-label">Tedarikci *</label>
                     <select class="form-input" [(ngModel)]="formData.supplierCariAccountId">
-                        <option value="">-- Tedarikçi Seçin --</option>
+                        <option value="">-- Tedarikci Secin --</option>
                         @for (s of suppliers(); track s.id) {
                         <option [value]="s.id">{{ s.name }}{{ s.code ? ' (' + s.code + ')' : '' }}</option>
                         }
@@ -203,7 +345,7 @@
                 <div class="form-group">
                     <label class="form-label">Depo *</label>
                     <select class="form-input" [(ngModel)]="formData.warehouseId">
-                        <option value="">-- Depo Seçin --</option>
+                        <option value="">-- Depo Secin --</option>
                         @for (w of warehouses(); track w.id) {
                         <option [value]="w.id">{{ w.name }}</option>
                         }
@@ -213,14 +355,14 @@
         </div>
         <div class="form-section">
             <div class="form-section-header">
-                <h3 class="form-section-title">Sipariş Kalemleri</h3>
+                <h3 class="form-section-title">Siparis Kalemleri</h3>
                 <button class="btn btn-secondary btn-sm" (click)="addItem()">
                     <span class="material-icons-outlined">add</span> Kalem Ekle
                 </button>
             </div>
             <div class="invoice-items-table">
                 <div class="invoice-items-header">
-                    <span class="col-product">Ürün</span>
+                    <span class="col-product">Urun</span>
                     <span class="col-qty">Miktar</span>
                     <span class="col-price">Birim Fiyat</span>
                     <span class="col-total">Toplam</span>
@@ -229,14 +371,14 @@
                 @for (item of formData.items; track $index; let i = $index) {
                 <div class="invoice-item-row">
                     <select class="form-input col-product" [ngModel]="item.productId" (ngModelChange)="onProductSelect(item, $event)">
-                        <option value="">-- Ürün Seçin --</option>
+                        <option value="">-- Urun Secin --</option>
                         @for (p of products(); track p.id) {
-                        <option [value]="p.id">{{ p.name }}{{ p.barcode ? ' · ' + p.barcode : '' }}</option>
+                        <option [value]="p.id">{{ p.name }}{{ p.barcode ? ' Â· ' + p.barcode : '' }}</option>
                         }
                     </select>
                     <input class="form-input col-qty" type="number" [(ngModel)]="item.quantity" min="1" />
                     <input class="form-input col-price" type="number" [(ngModel)]="item.unitPrice" min="0" step="0.01" />
-                    <span class="col-total item-total">₺{{ (item.quantity * item.unitPrice).toLocaleString('tr-TR', {minimumFractionDigits: 2}) }}</span>
+                    <span class="col-total item-total">?{{ (item.quantity * item.unitPrice).toLocaleString('tr-TR', {minimumFractionDigits: 2}) }}</span>
                     <button class="action-btn delete col-action" (click)="removeItem(i)" [disabled]="formData.items.length === 1">
                         <span class="material-icons-outlined">close</span>
                     </button>
@@ -247,7 +389,7 @@
         <div class="invoice-totals">
             <div class="total-row grand-total">
                 <span>Genel Toplam</span>
-                <span>₺{{ getFormTotal().toLocaleString('tr-TR', {minimumFractionDigits: 2}) }}</span>
+                <span>?{{ getFormTotal().toLocaleString('tr-TR', {minimumFractionDigits: 2}) }}</span>
             </div>
         </div>
     </div>
@@ -255,10 +397,11 @@
     <div class="form-error form-error--pad">{{ formError() }}</div>
     }
     <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="closeCreateModal()">İptal</button>
+        <button class="btn btn-secondary" (click)="closeCreateModal()">Iptal</button>
         <button class="btn btn-primary" (click)="saveOrder()" [disabled]="isSaving()">
-            <span class="material-icons-outlined">save</span> {{ isSaving() ? 'Kaydediliyor...' : 'Sipariş Oluştur' }}
+            <span class="material-icons-outlined">save</span> {{ isSaving() ? 'Kaydediliyor...' : 'Siparis Olustur' }}
         </button>
     </div>
 </div>
 }
+

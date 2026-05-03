@@ -110,12 +110,19 @@ export interface ApplyInventoryCountItemRequest {
 }
 
 export interface ApplyInventoryCountRequest {
+    clientRequestId?: string;
     sessionId?: string;
     warehouseId: string;
     referenceNo?: string;
     notes?: string;
     locationCode?: string;
     items: ApplyInventoryCountItemRequest[];
+}
+
+export interface QueuedInventoryCountRequest extends ApplyInventoryCountRequest {
+    queueId: string;
+    queuedAtUtc: string;
+    warehouseName?: string;
 }
 
 export interface ApplyInventoryCountResponse {

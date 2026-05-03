@@ -25,6 +25,32 @@
     }
   </div>
 
+  <div class="offline-status-banner" [class.offline-status-banner--danger]="!isOnline()" [class.offline-status-banner--warning]="isOnline() && queueCount() > 0">
+    <div class="offline-status-banner__content">
+      <span class="material-icons-outlined">{{ !isOnline() ? 'cloud_off' : queueCount() > 0 ? 'sync_problem' : 'cloud_done' }}</span>
+      <div>
+        @if (!isOnline()) {
+        <strong>Offline mod aktif</strong>
+        <span>Sayim kayitlari cihaza alinacak ve baglanti gelince gonderilecek.</span>
+        } @else if (queueCount() > 0) {
+        <strong>{{ queueCount() }} sayim kuyrukta bekliyor</strong>
+        <span>{{ queueSummary() || 'Baglanti mevcut. Isterseniz hemen senkronlayabilirsiniz.' }}</span>
+        } @else {
+        <strong>Baglanti aktif</strong>
+        <span>Offline kuyrukta bekleyen sayim yok.</span>
+        }
+      </div>
+    </div>
+    <button class="btn btn-secondary btn-sm" (click)="syncOfflineQueue()" [disabled]="!isOnline() || isSyncingQueue() || queueCount() === 0">
+      @if (isSyncingQueue()) {
+      <div class="spinner spinner-sm"></div> Senkronlaniyor...
+      } @else {
+      <span class="material-icons-outlined">sync</span>
+      Simdi Senkronla
+      }
+    </button>
+  </div>
+
   <div class="warehouse-select-card">
     <div class="warehouse-select-label">
       <span class="material-icons-outlined">warehouse</span>
@@ -165,7 +191,7 @@
     <div class="scanner-card__head">
       <div>
         <strong>Barkodlu Sayim</strong>
-        <p>Kamera ile okutun veya barkodu manuel girin. Okutunca adet secip listeye ekleyin.</p>
+        <p>Kamera ile okutun veya barkodu manuel girin. Hizli mod acikken barkodlar dogrudan sayima akar.</p>
       </div>
       <div class="scanner-actions">
         @if (!scannerActive()) {
@@ -182,9 +208,33 @@
       </div>
     </div>
 
+    <div class="scanner-mode-bar">
+      <button class="mode-pill" [class.mode-pill--active]="quickScanEnabled()" (click)="quickScanEnabled.set(!quickScanEnabled())">
+        <span class="material-icons-outlined">{{ quickScanEnabled() ? 'bolt' : 'tune' }}</span>
+        {{ quickScanEnabled() ? 'Hizli Mod Acik' : 'Adet Onay Modu' }}
+      </button>
+      <div class="mode-pill-group">
+        @for (qty of [1,2,5]; track qty) {
+        <button class="qty-pill" [class.qty-pill--active]="quickScanQuantity() === qty" (click)="setQuickScanQuantity(qty)">+{{ qty }}</button>
+        }
+      </div>
+      <button class="mode-pill mode-pill--ghost" [class.mode-pill--active]="scanFeedbackEnabled()" (click)="scanFeedbackEnabled.set(!scanFeedbackEnabled())">
+        <span class="material-icons-outlined">{{ scanFeedbackEnabled() ? 'vibration' : 'notifications_off' }}</span>
+        {{ scanFeedbackEnabled() ? 'Geri Bildirim Acik' : 'Sessiz Mod' }}
+      </button>
+    </div>
+
     <div class="scanner-grid">
       <div class="scanner-preview">
         <video #scannerVideo playsinline muted></video>
+        @if (scannerActive()) {
+        <div class="scanner-hud">
+          <span class="scanner-hud__status">{{ scannerStatus() }}</span>
+          @if (lastScanLabel()) {
+          <strong class="scanner-hud__last">{{ lastScanLabel() }}</strong>
+          }
+        </div>
+        }
         @if (!scannerActive()) {
         <div class="scanner-placeholder">
           <span class="material-icons-outlined">videocam</span>
@@ -198,7 +248,7 @@
           <label class="form-label">Manuel Barkod Girisi</label>
           <div class="manual-barcode__row">
             <input class="form-input" [ngModel]="manualBarcode()" (ngModelChange)="manualBarcode.set($event)" placeholder="Barkod yazin" />
-            <button class="btn btn-secondary" (click)="submitManualBarcode()">Ekle</button>
+            <button class="btn btn-secondary" (click)="submitManualBarcode()">{{ quickScanEnabled() ? 'Hizli Ekle' : 'Ekle' }}</button>
           </div>
         </div>
 
@@ -222,6 +272,17 @@
           </div>
           }
         </div>
+      </div>
+    </div>
+
+    <div class="scanner-tips">
+      <div class="tip-chip">
+        <span class="material-icons-outlined">touch_app</span>
+        Hizli modda her okutma dogrudan +{{ quickScanQuantity() }} ekler
+      </div>
+      <div class="tip-chip">
+        <span class="material-icons-outlined">replay</span>
+        Ayni urunu art arda okutarak seri sayim yapabilirsiniz
       </div>
     </div>
   </div>
@@ -269,6 +330,25 @@
     <button class="btn btn-secondary btn-sm" (click)="clearAllCounts()">
       <span class="material-icons-outlined">clear_all</span>
       Temizle
+    </button>
+  </div>
+
+  <div class="mobile-action-bar">
+    <div class="mobile-action-bar__summary">
+      <strong>{{ enteredCount() }} kalem</strong>
+      <span>{{ diffCount() }} farkli</span>
+    </div>
+    <button class="btn btn-secondary btn-sm" (click)="clearAllCounts()">
+      <span class="material-icons-outlined">clear_all</span>
+      Temizle
+    </button>
+    <button class="btn btn-primary btn-sm" (click)="saveCount()" [disabled]="isSaving()">
+      @if (isSaving()) {
+      <div class="spinner spinner-sm"></div>
+      } @else {
+      <span class="material-icons-outlined">save</span>
+      }
+      Kaydet
     </button>
   </div>
 

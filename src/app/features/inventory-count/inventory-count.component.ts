@@ -7,6 +7,7 @@ import { InventoryCountSessionDetail, InventoryCountSessionListItem, InventoryCo
 import { Warehouse } from '../../core/models/warehouse.model';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfirmService } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { InventoryCountOfflineQueueService } from '../../core/services/inventory-count-offline-queue.service';
 
 declare global {
     interface Window {
@@ -45,6 +46,7 @@ export class InventoryCountComponent implements OnInit, OnDestroy {
     private warehouseService = inject(WarehouseService);
     private toastService = inject(ToastService);
     private confirmService = inject(ConfirmService);
+    private offlineQueueService = inject(InventoryCountOfflineQueueService);
 
     warehouses = signal<Warehouse[]>([]);
     rows = signal<CountRow[]>([]);
@@ -62,11 +64,16 @@ export class InventoryCountComponent implements OnInit, OnDestroy {
     locationCode = signal('');
     manualBarcode = signal('');
     scannerError = signal('');
+    scannerStatus = signal('Hazir');
     barcodeModalOpen = signal(false);
     historyModalOpen = signal(false);
     pendingBarcode = signal('');
     pendingRow = signal<CountRow | null>(null);
     pendingQuantity = signal(1);
+    quickScanEnabled = signal(true);
+    quickScanQuantity = signal(1);
+    scanFeedbackEnabled = signal(true);
+    lastScanLabel = signal('');
 
     isLoadingWarehouses = signal(false);
     isLoadingBalances = signal(false);
@@ -82,6 +89,7 @@ export class InventoryCountComponent implements OnInit, OnDestroy {
     private detector: any = null;
     private lastDetectedCode = '';
     private lastDetectedAt = 0;
+    private audioContext: AudioContext | null = null;
 
     readonly selectedWarehouseName = computed(() => {
         const wh = this.warehouses().find(w => w.id === this.selectedWarehouseId());
@@ -134,10 +142,17 @@ export class InventoryCountComponent implements OnInit, OnDestroy {
     );
 
     readonly totalRows = computed(() => this.rows().length);
+    readonly queueCount = computed(() => this.offlineQueueService.queuedItems().length);
+    readonly isOnline = computed(() => this.offlineQueueService.isOnline());
+    readonly isSyncingQueue = computed(() => this.offlineQueueService.isSyncing());
+    readonly queueSummary = computed(() => this.offlineQueueService.lastSyncSummary());
 
     ngOnInit(): void {
         this.loadWarehouses();
         this.referenceNo.set(`SAYIM-${new Date().toISOString().slice(0, 10)}`);
+        if (this.isOnline() && this.queueCount() > 0) {
+            void this.syncOfflineQueue(false);
+        }
     }
 
     ngOnDestroy(): void {
@@ -335,6 +350,7 @@ export class InventoryCountComponent implements OnInit, OnDestroy {
     clearAllCounts(): void {
         this.rows.update(list => list.map(r => ({ ...r, countedQty: null })));
         this.recentScans.set([]);
+        this.lastScanLabel.set('');
     }
 
     async saveCount(): Promise<void> {
@@ -362,32 +378,58 @@ export class InventoryCountComponent implements OnInit, OnDestroy {
         if (!ok) return;
 
         this.isSaving.set(true);
-        this.stockService.applyInventoryCount({
-            sessionId: this.activeSession()?.id,
-            warehouseId: whId,
-            referenceNo: this.referenceNo(),
-            notes: this.notes(),
-            locationCode: this.locationCode(),
-            items: countedItems
-        }).subscribe({
-            next: response => {
-                this.isSaving.set(false);
-                this.countSaved.set(true);
-                this.toastService.success('Sayim Tamamlandi', `${response.appliedItems} kalem uygulandi.`);
-                this.notes.set('');
-                this.locationCode.set('');
-                this.referenceNo.set(`SAYIM-${new Date().toISOString().slice(0, 10)}`);
-                this.recentScans.set([]);
-                this.activeSession.set(null);
+        try {
+            const result = await this.offlineQueueService.submitOrQueue({
+                sessionId: this.activeSession()?.id,
+                warehouseId: whId,
+                referenceNo: this.referenceNo(),
+                notes: this.notes(),
+                locationCode: this.locationCode(),
+                items: countedItems
+            }, this.selectedWarehouseName());
+
+            this.isSaving.set(false);
+            this.countSaved.set(true);
+            this.notes.set('');
+            this.locationCode.set('');
+            this.referenceNo.set(`SAYIM-${new Date().toISOString().slice(0, 10)}`);
+            this.recentScans.set([]);
+            this.activeSession.set(null);
+
+            if (result.mode === 'online' && result.response) {
+                this.toastService.success('Sayim Tamamlandi', `${result.response.appliedItems} kalem uygulandi.`);
                 this.loadBalances();
                 this.loadSessions();
                 this.loadSessionHistory();
-            },
-            error: err => {
-                this.isSaving.set(false);
-                this.toastService.error('Hata', err?.error?.detail || 'Sayim kaydedilemedi.');
+            } else {
+                this.toastService.info('Offline Kuyruga Alindi', 'Baglanti gelince sayim otomatik senkronlanacak.');
+                this.rows.update(list => list.map(r => ({ ...r, countedQty: null })));
             }
-        });
+        } catch (err: any) {
+            this.isSaving.set(false);
+            this.toastService.error('Hata', err?.error?.detail || 'Sayim kaydedilemedi.');
+        }
+    }
+
+    async syncOfflineQueue(showToast = true): Promise<void> {
+        const result = await this.offlineQueueService.syncPending();
+        if (result.synced > 0) {
+            this.loadBalances();
+            this.loadSessions();
+            this.loadSessionHistory();
+            if (showToast) {
+                this.toastService.success('Senkron Tamamlandi', `${result.synced} offline sayim gonderildi.`);
+            }
+            return;
+        }
+
+        if (showToast) {
+            if (result.failed > 0) {
+                this.toastService.error('Senkron Bekliyor', `${result.failed} offline sayim halen kuyrukta.`);
+            } else {
+                this.toastService.info('Hazir', 'Senkronlanacak bekleyen sayim yok.');
+            }
+        }
     }
 
     async startScanner(): Promise<void> {
@@ -415,9 +457,11 @@ export class InventoryCountComponent implements OnInit, OnDestroy {
             await video.play();
             this.detector = window.BarcodeDetector ? new window.BarcodeDetector({ formats: ['ean_13', 'ean_8', 'code_128', 'qr_code', 'upc_a', 'upc_e'] }) : null;
             this.scannerActive.set(true);
+            this.scannerStatus.set('Kamera hazir');
 
             if (!this.detector) {
                 this.scannerError.set('Tarayici barkod algilama API sunmuyor. Manuel barkod girisini kullanin.');
+                this.scannerStatus.set('Algilayici desteklenmiyor');
                 return;
             }
 
@@ -431,15 +475,18 @@ export class InventoryCountComponent implements OnInit, OnDestroy {
                     }
                 } catch {
                     this.scannerError.set('Kamera acik fakat barkod okunamadi. Manuel giris kullanabilirsiniz.');
+                    this.scannerStatus.set('Okuma bekleniyor');
                 }
             }, 900);
         } catch {
             this.scannerError.set('Kamera izni alinmadi veya cihaza erisilemedi.');
+            this.scannerStatus.set('Kamera erisimi yok');
         }
     }
 
     stopScanner(): void {
         this.scannerActive.set(false);
+        this.scannerStatus.set('Kamera kapali');
         if (this.scannerTimer) {
             clearInterval(this.scannerTimer);
             this.scannerTimer = null;
@@ -470,24 +517,7 @@ export class InventoryCountComponent implements OnInit, OnDestroy {
         const qty = this.pendingQuantity();
         if (!row || qty <= 0) return;
 
-        const existing = row.countedQty ?? 0;
-        this.rows.update(list =>
-            list.map(item =>
-                item.productId === row.productId
-                    ? { ...item, countedQty: existing + qty }
-                    : item
-            )
-        );
-
-        this.recentScans.update(list => [
-            {
-                productId: row.productId,
-                productName: row.productName,
-                barcode: row.barcode,
-                quantity: qty
-            },
-            ...list.filter(item => item.productId !== row.productId).slice(0, 4)
-        ]);
+        this.applyScanQuantity(row, qty);
 
         this.barcodeModalOpen.set(false);
         this.pendingRow.set(null);
@@ -505,15 +535,23 @@ export class InventoryCountComponent implements OnInit, OnDestroy {
     quickAddRecent(scan: RecentScan): void {
         const row = this.rows().find(x => x.productId === scan.productId);
         if (!row) return;
+        if (this.quickScanEnabled()) {
+            this.applyScanQuantity(row, 1);
+            return;
+        }
         this.pendingRow.set(row);
         this.pendingBarcode.set(scan.barcode);
         this.pendingQuantity.set(1);
         this.barcodeModalOpen.set(true);
     }
 
+    setQuickScanQuantity(qty: number): void {
+        this.quickScanQuantity.set(qty);
+    }
+
     private handleDetectedBarcode(barcode: string): void {
         const now = Date.now();
-        if (this.lastDetectedCode === barcode && now - this.lastDetectedAt < 1500) {
+        if (this.lastDetectedCode === barcode && now - this.lastDetectedAt < 450) {
             return;
         }
         this.lastDetectedCode = barcode;
@@ -535,10 +573,65 @@ export class InventoryCountComponent implements OnInit, OnDestroy {
             this.rows.update(list => [row as CountRow, ...list]);
         }
 
+        this.scannerStatus.set(`Okundu: ${barcode}`);
+        if (this.quickScanEnabled()) {
+            this.applyScanQuantity(row, this.quickScanQuantity());
+            return;
+        }
+
         this.pendingRow.set(row);
         this.pendingBarcode.set(barcode);
         this.pendingQuantity.set(1);
         this.barcodeModalOpen.set(true);
+    }
+
+    private applyScanQuantity(row: CountRow, qty: number): void {
+        const existing = row.countedQty ?? 0;
+        this.rows.update(list =>
+            list.map(item =>
+                item.productId === row.productId
+                    ? { ...item, countedQty: existing + qty }
+                    : item
+            )
+        );
+
+        this.recentScans.update(list => [
+            {
+                productId: row.productId,
+                productName: row.productName,
+                barcode: row.barcode,
+                quantity: qty
+            },
+            ...list.filter(item => item.productId !== row.productId).slice(0, 4)
+        ]);
+
+        this.lastScanLabel.set(`${row.productName} (+${qty})`);
+        this.scannerStatus.set(`Sayima eklendi: ${qty}`);
+        this.triggerFeedback();
+    }
+
+    private triggerFeedback(): void {
+        if (!this.scanFeedbackEnabled()) return;
+
+        if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+            navigator.vibrate(60);
+        }
+
+        try {
+            const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+            if (!AudioCtx) return;
+            this.audioContext ??= new AudioCtx();
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+            oscillator.type = 'sine';
+            oscillator.frequency.value = 880;
+            gainNode.gain.value = 0.03;
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+            oscillator.start();
+            oscillator.stop(this.audioContext.currentTime + 0.08);
+        } catch {
+        }
     }
 
     private loadBalancesForSession(session: InventoryCountSessionDetail): void {

@@ -1,18 +1,43 @@
-import { Component, signal, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CariAccountService } from '../../../core/services/cari-account.service';
-import { CariAccount, BuyerDebtItemsBatchImportResult, BuyerDebtItemsBatchImportFileResult } from '../../../core/models/cari-account.model';
+import { BuyerDebtItemsBatchImportResult, BuyerRiskSummaryItem } from '../../../core/models/cari-account.model';
 import { ConfirmService } from '../../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ToastService } from '../../../core/services/toast.service';
 import { DEMO_BUYER_EXTRA } from '../../../core/mock/demo-data';
+
+type BuyerRiskSeverity = 'stable' | 'warning' | 'critical';
+
+interface BuyerAccountView {
+    id: string;
+    code: string;
+    name: string;
+    phone: string;
+    email: string;
+    address: string;
+    taxNumber: string;
+    city: string;
+    balance: number;
+    totalSales: number;
+    totalPayments: number;
+    remainingDebt: number;
+    orderCount: number;
+    lastOrder: string;
+    isActive: boolean;
+    riskLimit: number;
+    maturityDays: number;
+    overdueAmount: number;
+    maxOverdueDays: number;
+    riskUsageRate: number;
+    severity: BuyerRiskSeverity;
+}
 
 @Component({
     selector: 'app-buyers',
     standalone: true,
     imports: [CommonModule, FormsModule],
-
     templateUrl: './buyers.component.html',
     styleUrls: ['./buyers.component.css', '../../../shared/styles/crud-page.css']
 })
@@ -24,13 +49,13 @@ export class BuyersComponent implements OnInit {
     sortColumn = '';
     sortDir: 'asc' | 'desc' = 'asc';
     statusFilter = signal<'all' | 'active' | 'inactive'>('all');
+    riskFilter = signal<'all' | BuyerRiskSeverity>('all');
     showModal = signal(false);
-    editingAccount = signal<any>(null);
+    editingAccount = signal<BuyerAccountView | null>(null);
+    riskLoading = signal(false);
 
-    // Export state — hangi alıcı indiriliyor (id tutar, null = yok)
     exportingId = signal<string | null>(null);
 
-    // Excel upload state (veresiye ürün aktarma)
     showExcelModal = signal(false);
     excelFiles = signal<File[]>([]);
     excelUploading = signal(false);
@@ -44,59 +69,76 @@ export class BuyersComponent implements OnInit {
         taxNumber: '', city: '', notes: ''
     };
 
-    accounts = signal<any[]>([]);
+    accounts = signal<BuyerAccountView[]>([]);
+    riskMap = signal<Map<string, BuyerRiskSummaryItem>>(new Map());
 
     ngOnInit(): void {
         this.loadAccounts();
+        this.loadRiskSummary();
     }
 
     loadAccounts(): void {
         this.cariService.getBuyers().subscribe({
-            next: (data) => this.accounts.set(data.map(a => {
-                const ex = DEMO_BUYER_EXTRA[a.id] ?? {};
-                return {
-                    id: a.id,
-                    code: a.code || '',
-                    name: a.name,
-                    phone:        ex.phone        ?? '',
-                    email:        ex.email        ?? '',
-                    address:      ex.address      ?? '',
-                    taxNumber:    ex.taxNumber    ?? '',
-                    city:         ex.city         ?? '',
-                    balance:      a.currentBalance,
-                    totalSales:   ex.totalSales   ?? 0,
-                    totalPayments:ex.totalPayments ?? 0,
-                    remainingDebt:a.currentBalance,
-                    orderCount:   ex.orderCount   ?? 0,
-                    lastOrder:    ex.lastOrder    ?? '-',
-                    isActive: true
-                };
-            })),
-            error: () => this.toastService.error('Hata', 'Alıcılar yüklenemedi.')
+            next: (data) => {
+                const currentRiskMap = this.riskMap();
+                this.accounts.set(data.map(account => this.mapAccount(account, currentRiskMap.get(account.id))));
+            },
+            error: () => this.toastService.error('Hata', 'Alicilar yuklenemedi.')
+        });
+    }
+
+    loadRiskSummary(): void {
+        this.riskLoading.set(true);
+        this.cariService.getBuyerRiskSummary(100).subscribe({
+            next: (summary) => {
+                const map = new Map(summary.items.map(item => [item.cariAccountId, item]));
+                this.riskMap.set(map);
+                this.accounts.update(items => items.map(item => this.mapAccount(item, map.get(item.id))));
+                this.riskLoading.set(false);
+            },
+            error: () => {
+                this.riskLoading.set(false);
+                this.toastService.error('Hata', 'Risk ozeti yuklenemedi.');
+            }
         });
     }
 
     sort(col: string): void {
-        if (this.sortColumn === col) { this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc'; }
-        else { this.sortColumn = col; this.sortDir = 'asc'; }
+        if (this.sortColumn === col) {
+            this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.sortColumn = col;
+            this.sortDir = 'asc';
+        }
     }
 
-    get filteredAccounts() {
+    get filteredAccounts(): BuyerAccountView[] {
         let items = this.accounts();
         if (this.statusFilter() === 'active') items = items.filter(a => a.isActive);
         if (this.statusFilter() === 'inactive') items = items.filter(a => !a.isActive);
+        if (this.riskFilter() !== 'all') items = items.filter(a => a.severity === this.riskFilter());
+
         const term = this.searchTerm.toLowerCase();
-        if (term) items = items.filter(a =>
-            a.name.toLowerCase().includes(term) ||
-            a.phone.includes(term) ||
-            a.email.toLowerCase().includes(term) ||
-            a.city.toLowerCase().includes(term)
-        );
+        if (term) {
+            items = items.filter(a =>
+                a.name.toLowerCase().includes(term) ||
+                a.phone.includes(term) ||
+                a.email.toLowerCase().includes(term) ||
+                a.city.toLowerCase().includes(term) ||
+                a.code.toLowerCase().includes(term)
+            );
+        }
+
         if (this.sortColumn) {
             const dir = this.sortDir === 'asc' ? 1 : -1;
-            const col = this.sortColumn;
-            items = [...items].sort((a, b) => typeof a[col] === 'number' ? dir * (a[col] - b[col]) : dir * String(a[col]).localeCompare(String(b[col]), 'tr'));
+            const col = this.sortColumn as keyof BuyerAccountView;
+            items = [...items].sort((a, b) =>
+                typeof a[col] === 'number'
+                    ? dir * ((a[col] as number) - (b[col] as number))
+                    : dir * String(a[col] ?? '').localeCompare(String(b[col] ?? ''), 'tr')
+            );
         }
+
         return items;
     }
 
@@ -105,6 +147,9 @@ export class BuyersComponent implements OnInit {
     get totalSalesSum() { return this.accounts().reduce((s, a) => s + a.totalSales, 0); }
     get totalPaymentsSum() { return this.accounts().reduce((s, a) => s + a.totalPayments, 0); }
     get totalDebtSum() { return this.accounts().reduce((s, a) => s + a.remainingDebt, 0); }
+    get riskyCount() { return this.accounts().filter(a => a.severity !== 'stable').length; }
+    get criticalCount() { return this.accounts().filter(a => a.severity === 'critical').length; }
+    get totalOverdueAmount() { return this.accounts().reduce((s, a) => s + a.overdueAmount, 0); }
 
     openAddModal(): void {
         this.editingAccount.set(null);
@@ -112,9 +157,18 @@ export class BuyersComponent implements OnInit {
         this.showModal.set(true);
     }
 
-    openEditModal(account: any): void {
+    openEditModal(account: BuyerAccountView): void {
         this.editingAccount.set(account);
-        this.formData = { code: account.code || '', name: account.name, phone: account.phone, email: account.email, address: account.address, taxNumber: account.taxNumber, city: account.city, notes: '' };
+        this.formData = {
+            code: account.code || '',
+            name: account.name,
+            phone: account.phone,
+            email: account.email,
+            address: account.address,
+            taxNumber: account.taxNumber,
+            city: account.city,
+            notes: ''
+        };
         this.showModal.set(true);
     }
 
@@ -127,15 +181,16 @@ export class BuyersComponent implements OnInit {
         this.saveError.set('');
 
         const code = this.formData.code.trim() || this.generateCode();
+        const editing = this.editingAccount();
 
-        if (this.editingAccount()) {
-            this.cariService.update(this.editingAccount().id, {
+        if (editing) {
+            this.cariService.update(editing.id, {
                 code,
                 name: this.formData.name,
                 type: 1
             }).subscribe({
-                next: () => { this.loadAccounts(); this.closeModal(); },
-                error: (err) => this.saveError.set(err.error?.detail || 'Güncelleme başarısız.')
+                next: () => { this.loadAccounts(); this.loadRiskSummary(); this.closeModal(); },
+                error: (err) => this.saveError.set(err.error?.detail || 'Guncelleme basarisiz.')
             });
         } else {
             this.cariService.create({
@@ -145,8 +200,8 @@ export class BuyersComponent implements OnInit {
                 riskLimit: 0,
                 maturityDays: 0
             }).subscribe({
-                next: () => { this.loadAccounts(); this.closeModal(); },
-                error: (err) => this.saveError.set(err.error?.detail || 'Kayıt başarısız.')
+                next: () => { this.loadAccounts(); this.loadRiskSummary(); this.closeModal(); },
+                error: (err) => this.saveError.set(err.error?.detail || 'Kayit basarisiz.')
             });
         }
     }
@@ -155,7 +210,7 @@ export class BuyersComponent implements OnInit {
         return 'ALI-' + Date.now().toString(36).toUpperCase();
     }
 
-    viewDetail(account: any): void {
+    viewDetail(account: BuyerAccountView): void {
         this.router.navigate(['/cari-accounts/buyers', account.id]);
     }
 
@@ -165,34 +220,35 @@ export class BuyersComponent implements OnInit {
 
     async deleteAccount(id: string): Promise<void> {
         const confirmed = await this.confirmService.confirm({
-            title: 'Silme Onayı',
-            message: 'Bu alıcıyı silmek istediğinize emin misiniz?',
+            title: 'Silme Onayi',
+            message: 'Bu aliciyi silmek istediginize emin misiniz?',
             confirmText: 'Sil',
             type: 'danger'
         });
         if (!confirmed) return;
         this.cariService.delete(id).subscribe({
-            next: () => { this.loadAccounts(); this.toastService.success('Silindi', 'Alıcı silindi'); },
-            error: (err) => this.toastService.error('Hata', err.error?.detail || 'Silme işlemi başarısız.')
+            next: () => {
+                this.loadAccounts();
+                this.loadRiskSummary();
+                this.toastService.success('Silindi', 'Alici silindi');
+            },
+            error: (err) => this.toastService.error('Hata', err.error?.detail || 'Silme islemi basarisiz.')
         });
     }
 
-    // ═══════════ Dışa Aktarma (Export) ═══════════
-
-    exportBuyerExcel(account: any): void {
+    exportBuyerExcel(account: BuyerAccountView): void {
         if (this.exportingId() === account.id) return;
         this.exportingId.set(account.id);
 
         this.cariService.exportBuyerExcel(account.id).subscribe({
             next: (blob) => {
-                // Dosya adı alıcının ismiyle aynı — import formatıyla birebir uyumlu
                 this.downloadFile(blob, `${account.name}.xlsx`);
                 this.exportingId.set(null);
-                this.toastService.success('İndirildi', `${account.name} veresiye defteri indirildi`);
+                this.toastService.success('Indirildi', `${account.name} veresiye defteri indirildi`);
             },
             error: (err) => {
                 this.exportingId.set(null);
-                this.toastService.error('Hata', err.error?.detail || 'Excel indirme başarısız.');
+                this.toastService.error('Hata', err.error?.detail || 'Excel indirme basarisiz.');
             }
         });
     }
@@ -205,8 +261,6 @@ export class BuyersComponent implements OnInit {
         a.click();
         window.URL.revokeObjectURL(url);
     }
-
-    // ═══════════ Veresiye Excel Aktarma ═══════════
 
     openExcelModal(): void {
         this.excelFiles.set([]);
@@ -223,14 +277,16 @@ export class BuyersComponent implements OnInit {
         if (input.files && input.files.length > 0) {
             this.addFiles(Array.from(input.files));
         }
-        input.value = ''; // reset for re-select
+        input.value = '';
     }
 
     onDragOver(event: DragEvent): void { event.preventDefault(); event.stopPropagation(); this.isDragOver.set(true); }
     onDragLeave(event: DragEvent): void { event.preventDefault(); event.stopPropagation(); this.isDragOver.set(false); }
 
     onDrop(event: DragEvent): void {
-        event.preventDefault(); event.stopPropagation(); this.isDragOver.set(false);
+        event.preventDefault();
+        event.stopPropagation();
+        this.isDragOver.set(false);
         if (event.dataTransfer?.files && event.dataTransfer.files.length > 0) {
             this.addFiles(Array.from(event.dataTransfer.files));
         }
@@ -254,7 +310,6 @@ export class BuyersComponent implements OnInit {
     removeExcelFile(): void { this.excelFiles.set([]); this.excelResult.set(null); }
 
     extractBuyerName(fileName: string): string {
-        // Remove extension to get buyer name: "Ali Öztürk.xlsx" -> "Ali Öztürk"
         return fileName.replace(/\.[^/.]+$/, '');
     }
 
@@ -267,12 +322,12 @@ export class BuyersComponent implements OnInit {
             next: (result) => {
                 this.excelResult.set(result);
                 this.excelUploading.set(false);
-                // Refresh accounts list after successful import
                 if (result.totalCreatedCount > 0) {
                     this.loadAccounts();
+                    this.loadRiskSummary();
                 }
             },
-            error: (err) => {
+            error: () => {
                 this.excelResult.set({
                     totalFiles: this.excelFiles().length,
                     processedFiles: 0,
@@ -292,5 +347,47 @@ export class BuyersComponent implements OnInit {
         if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
         return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     }
-}
 
+    getRiskBadgeClass(severity: BuyerRiskSeverity): string {
+        return severity === 'critical'
+            ? 'risk-badge--critical'
+            : severity === 'warning'
+                ? 'risk-badge--warning'
+                : 'risk-badge--stable';
+    }
+
+    getRiskLabel(severity: BuyerRiskSeverity): string {
+        return severity === 'critical'
+            ? 'Kritik'
+            : severity === 'warning'
+                ? 'Riskli'
+                : 'Stabil';
+    }
+
+    private mapAccount(account: any, risk?: BuyerRiskSummaryItem): BuyerAccountView {
+        const ex = DEMO_BUYER_EXTRA[account.id] ?? {};
+        return {
+            id: account.id,
+            code: account.code || '',
+            name: account.name,
+            phone: ex.phone ?? '',
+            email: ex.email ?? '',
+            address: ex.address ?? '',
+            taxNumber: ex.taxNumber ?? '',
+            city: ex.city ?? '',
+            balance: account.currentBalance ?? account.balance ?? 0,
+            totalSales: ex.totalSales ?? 0,
+            totalPayments: ex.totalPayments ?? 0,
+            remainingDebt: account.currentBalance ?? account.balance ?? 0,
+            orderCount: ex.orderCount ?? 0,
+            lastOrder: ex.lastOrder ?? '-',
+            isActive: account.isActive ?? true,
+            riskLimit: risk?.riskLimit ?? account.riskLimit ?? 0,
+            maturityDays: risk?.maturityDays ?? account.maturityDays ?? 0,
+            overdueAmount: risk?.overdueAmount ?? 0,
+            maxOverdueDays: risk?.maxOverdueDays ?? 0,
+            riskUsageRate: risk?.riskUsageRate ?? 0,
+            severity: risk?.severity ?? 'stable'
+        };
+    }
+}

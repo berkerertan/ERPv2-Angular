@@ -61,4 +61,8 @@ export class PurchaseOrderService {
     approve(id: string): Observable<void> {
         return this.http.post<void>(`${this.apiUrl}/${id}/approve`, {});
     }
+
+    reject(id: string, reason: string): Observable<void> {
+        return this.http.post<void>(`${this.apiUrl}/${id}/reject`, { reason });
+    }
 }

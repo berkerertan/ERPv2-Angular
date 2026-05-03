@@ -70,6 +70,18 @@
     color: var(--warning);
 }
 
+.lead-time-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    font-weight: 600;
+    font-size: 0.8125rem;
+}
+
 .rating-stars {
     color: #f59e0b;
     font-size: 0.8125rem;

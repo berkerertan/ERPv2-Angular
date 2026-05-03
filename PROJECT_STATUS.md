@@ -1,6 +1,6 @@
 ﻿# StokNet Project Status
 
-Last updated: 2026-05-01
+Last updated: 2026-05-03
 
 ## Repo layout
 - Backend/API repo: `C:\Users\User\Documents\ERPv2`
@@ -14,18 +14,13 @@ Last updated: 2026-05-01
 
 ## Synced features expected here
 - Barcode-assisted inventory counting
-- Inventory count session UI:
-  - start session
-  - open sessions
-  - resume session
-- Inventory count history UI:
-  - difference summary
-  - completed session history
-  - session detail modal
-  - item-level location and operator trace
+- Inventory count sessions, history and mobile quick-count UX
 - Purchase recommendations UI
+- Recommendation supplier grouping and split-to-draft flow
 - Real notification center
-- Buyer risk notifications
+- Buyer risk notifications and buyer risk screen
+- Purchase/sales order approval flow UI
+- Supplier lead-time field on supplier forms/list
 - Landing/demo CTA flow
 - Demo login without showing demo credentials in visible fields
 
@@ -33,10 +28,13 @@ Last updated: 2026-05-01
 1. Session start / open / resume
 2. Difference summary + session history
 3. Shelf/location visibility + operator trace
-4. Mobile UX tightening
+4. Buyer risk screen
+5. Approval timeline + rejection flow
+6. Mobile counting UX tightening
+7. Purchase recommendations 2.0
 
 ## Next backlog
-1. Buyer risk badges on buyer screens
-2. Approval timeline improvements
-3. Supplier lead-time support in purchase recommendations
-4. Better mobile barcode batching
+1. Better multi-supplier recommendation refinement
+2. Richer approval timeline polish
+3. Offline queue and delayed sync
+

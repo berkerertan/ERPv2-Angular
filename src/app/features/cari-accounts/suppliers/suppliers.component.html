@@ -3,23 +3,22 @@
         <div>
             <h1 class="page-title">
                 <span class="material-icons-outlined page-title-icon supplier-icon">local_shipping</span>
-                Tedarikçiler
+                Tedarikciler
             </h1>
-            <p class="page-subtitle">Tedarikçi hesaplarını ve alım geçmişini yönetin</p>
+            <p class="page-subtitle">Tedarikci hesaplarini ve alim gecmisini yonetin</p>
         </div>
         <div class="page-header-actions">
             <button class="btn btn-secondary" (click)="openExcelModal()">
                 <span class="material-icons-outlined">upload_file</span>
-                Excel Yükle
+                Excel Yukle
             </button>
             <button class="btn btn-primary" (click)="openAddModal()">
                 <span class="material-icons-outlined">person_add</span>
-                Yeni Tedarikçi
+                Yeni Tedarikci
             </button>
         </div>
     </div>
 
-    <!-- Stats -->
     <div class="stats-row">
         <div class="stat-card">
             <div class="stat-icon" style="background: var(--warning-bg); color: var(--warning);">
@@ -27,12 +26,12 @@
             </div>
             <div class="stat-info">
                 <span class="stat-value">{{ accounts().length }}</span>
-                <span class="stat-label">Toplam Tedarikçi</span>
+                <span class="stat-label">Toplam Tedarikci</span>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-icon" style="background: var(--success-bg); color: var(--success);">
-                <span class="material-icons-outlined">check_circle</span>
+                <span class="material-icons-outlined">schedule</span>
             </div>
             <div class="stat-info">
                 <span class="stat-value">{{ activeCount }}</span>
@@ -40,54 +39,50 @@
             </div>
         </div>
         <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(59,130,246,0.12); color: #3b82f6;">
+                <span class="material-icons-outlined">timer</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">{{ filteredAccounts.length ? (filteredAccounts[0].supplierLeadTimeDays || 0) : 0 }} gun</span>
+                <span class="stat-label">Ornek Teslim Suresi</span>
+            </div>
+        </div>
+        <div class="stat-card">
             <div class="stat-icon" style="background: var(--danger-bg); color: var(--danger);">
                 <span class="material-icons-outlined">account_balance_wallet</span>
             </div>
             <div class="stat-info">
-                <span class="stat-value">₺{{ (totalBalance * -1).toLocaleString('tr-TR') }}</span>
-                <span class="stat-label">Toplam Borç</span>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon" style="background: rgba(76,110,245,0.12); color: var(--primary-400);">
-                <span class="material-icons-outlined">shopping_cart</span>
-            </div>
-            <div class="stat-info">
-                <span class="stat-value">₺{{ totalPurchaseSum.toLocaleString('tr-TR') }}</span>
-                <span class="stat-label">Toplam Alım</span>
+                <span class="stat-value">?{{ (totalBalance * -1).toLocaleString('tr-TR') }}</span>
+                <span class="stat-label">Toplam Borc</span>
             </div>
         </div>
     </div>
 
-    <!-- Filters -->
     <div class="toolbar">
         <div class="toolbar-search">
             <span class="material-icons-outlined search-icon">search</span>
-            <input type="text" placeholder="Firma, yetkili, telefon veya şehir ara..." [(ngModel)]="searchTerm" />
+            <input type="text" placeholder="Firma, yetkili, telefon veya sehir ara..." [(ngModel)]="searchTerm" />
         </div>
         <select class="toolbar-filter" [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
-            <option value="all">Tüm Durumlar</option>
+            <option value="all">Tum Durumlar</option>
             <option value="active">Aktif</option>
             <option value="inactive">Pasif</option>
         </select>
     </div>
 
-    <!-- Table -->
     <div class="table-container">
         <table class="data-table">
             <thead>
                 <tr>
-                    <th class="sortable" [class.sorted]="sortColumn==='name'" (click)="sort('name')">Firma Adı <span class="sort-icon material-icons-outlined">{{ sortColumn==='name' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
-                    <th class="sortable" [class.sorted]="sortColumn==='contactPerson'" (click)="sort('contactPerson')">Yetkili <span class="sort-icon material-icons-outlined">{{ sortColumn==='contactPerson' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='name'" (click)="sort('name')">Firma Adi</th>
+                    <th class="sortable" [class.sorted]="sortColumn==='contactPerson'" (click)="sort('contactPerson')">Yetkili</th>
                     <th>Telefon</th>
-                    <th class="sortable" [class.sorted]="sortColumn==='city'" (click)="sort('city')">Şehir <span class="sort-icon material-icons-outlined">{{ sortColumn==='city' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
-                    <th class="sortable" [class.sorted]="sortColumn==='orderCount'" (click)="sort('orderCount')">Sipariş <span class="sort-icon material-icons-outlined">{{ sortColumn==='orderCount' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
-                    <th class="sortable" [class.sorted]="sortColumn==='totalPurchase'" (click)="sort('totalPurchase')">Toplam Tutar <span class="sort-icon material-icons-outlined">{{ sortColumn==='totalPurchase' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
-                    <th class="sortable" [class.sorted]="sortColumn==='totalPayments'" (click)="sort('totalPayments')">Yapılan Ödeme <span class="sort-icon material-icons-outlined">{{ sortColumn==='totalPayments' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
-                    <th class="sortable" [class.sorted]="sortColumn==='remainingDebt'" (click)="sort('remainingDebt')">Kalan Borç <span class="sort-icon material-icons-outlined">{{ sortColumn==='remainingDebt' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
-                    <th class="sortable" [class.sorted]="sortColumn==='rating'" (click)="sort('rating')">Puan <span class="sort-icon material-icons-outlined">{{ sortColumn==='rating' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='city'" (click)="sort('city')">Sehir</th>
+                    <th>Teslim</th>
+                    <th class="sortable" [class.sorted]="sortColumn==='orderCount'" (click)="sort('orderCount')">Siparis</th>
+                    <th class="sortable" [class.sorted]="sortColumn==='remainingDebt'" (click)="sort('remainingDebt')">Kalan Borc</th>
                     <th>Durum</th>
-                    <th>İşlemler</th>
+                    <th>Islemler</th>
                 </tr>
             </thead>
             <tbody>
@@ -98,32 +93,16 @@
                             <div class="customer-avatar supplier">{{ a.name.charAt(0) }}</div>
                             <div class="customer-info">
                                 <span class="customer-name">{{ a.name }}</span>
-                                <span class="customer-email">{{ a.email }}</span>
+                                <span class="customer-email">{{ a.code }}</span>
                             </div>
                         </div>
                     </td>
-                    <td class="text-muted">{{ a.contactPerson }}</td>
-                    <td>{{ a.phone }}</td>
-                    <td>
-                        <span class="cell-with-icon">
-                            <span class="material-icons-outlined">location_on</span>
-                            {{ a.city }}
-                        </span>
-                    </td>
-                    <td>
-                        <span class="order-count supplier-order">{{ a.orderCount }}</span>
-                    </td>
-                    <td class="amount">₺{{ a.totalPurchase.toLocaleString('tr-TR') }}</td>
-                    <td>
-                        <span class="amount positive">₺{{ a.totalPayments.toLocaleString('tr-TR') }}</span>
-                    </td>
-                    <td>
-                        <span class="amount" [class.negative]="a.remainingDebt > 0">₺{{
-                            a.remainingDebt.toLocaleString('tr-TR') }}</span>
-                    </td>
-                    <td>
-                        <span class="rating-stars">{{ getRatingStars(a.rating) }}</span>
-                    </td>
+                    <td class="text-muted">{{ a.contactPerson || '-' }}</td>
+                    <td>{{ a.phone || '-' }}</td>
+                    <td>{{ a.city || '-' }}</td>
+                    <td><span class="lead-time-chip">{{ a.supplierLeadTimeDays || 0 }} gun</span></td>
+                    <td><span class="order-count supplier-order">{{ a.orderCount }}</span></td>
+                    <td><span class="amount" [class.negative]="a.remainingDebt > 0">?{{ a.remainingDebt.toLocaleString('tr-TR') }}</span></td>
                     <td>
                         <span class="badge" [class.badge-success]="a.isActive" [class.badge-danger]="!a.isActive">
                             {{ a.isActive ? 'Aktif' : 'Pasif' }}
@@ -131,20 +110,9 @@
                     </td>
                     <td>
                         <div class="actions-cell" (click)="$event.stopPropagation()">
-                            <button class="action-btn view" title="Detay" (click)="viewDetail(a)">
-                                <span class="material-icons-outlined">visibility</span>
-                            </button>
-                            <button class="action-btn edit" title="Düzenle" (click)="openEditModal(a)">
-                                <span class="material-icons-outlined">edit</span>
-                            </button>
-                            <button class="action-btn" [title]="a.isActive ? 'Pasife Al' : 'Aktife Al'"
-                                (click)="toggleStatus(a.id)"
-                                [style.color]="a.isActive ? 'var(--warning)' : 'var(--success)'">
-                                <span class="material-icons-outlined">{{ a.isActive ? 'block' : 'check_circle' }}</span>
-                            </button>
-                            <button class="action-btn delete" title="Sil" (click)="deleteAccount(a.id)">
-                                <span class="material-icons-outlined">delete</span>
-                            </button>
+                            <button class="action-btn view" title="Detay" (click)="viewDetail(a)"><span class="material-icons-outlined">visibility</span></button>
+                            <button class="action-btn edit" title="Duzenle" (click)="openEditModal(a)"><span class="material-icons-outlined">edit</span></button>
+                            <button class="action-btn delete" title="Sil" (click)="deleteAccount(a.id)"><span class="material-icons-outlined">delete</span></button>
                         </div>
                     </td>
                 </tr>
@@ -152,52 +120,24 @@
             </tbody>
         </table>
     </div>
-
-    <!-- Summary Footer -->
-    <div class="summary-footer">
-        <div class="summary-item">
-            <span class="material-icons-outlined summary-icon" style="color: var(--warning);">receipt_long</span>
-            <div class="summary-text">
-                <span class="summary-label">Toplam Tutar</span>
-                <span class="summary-value">₺{{ totalPurchaseSum.toLocaleString('tr-TR') }}</span>
-            </div>
-        </div>
-        <div class="summary-divider"></div>
-        <div class="summary-item">
-            <span class="material-icons-outlined summary-icon" style="color: var(--success);">paid</span>
-            <div class="summary-text">
-                <span class="summary-label">Yapılan Ödeme</span>
-                <span class="summary-value positive">₺{{ totalPaymentsSum.toLocaleString('tr-TR') }}</span>
-            </div>
-        </div>
-        <div class="summary-divider"></div>
-        <div class="summary-item">
-            <span class="material-icons-outlined summary-icon" style="color: var(--danger);">account_balance</span>
-            <div class="summary-text">
-                <span class="summary-label">Kalan Borç</span>
-                <span class="summary-value negative">₺{{ totalDebtSum.toLocaleString('tr-TR') }}</span>
-            </div>
-        </div>
-    </div>
 </div>
 
-<!-- ─── Yeni/Düzenle Modalı ──────────────────────────────── -->
 @if (showModal()) {
 <div class="overlay" (click)="closeModal()"></div>
 <div class="modal" style="width: 600px;">
     <div class="modal-header">
-        <h2>{{ editingAccount() ? 'Tedarikçi Düzenle' : 'Yeni Tedarikçi' }}</h2>
+        <h2>{{ editingAccount() ? 'Tedarikci Duzenle' : 'Yeni Tedarikci' }}</h2>
         <button class="modal-close" (click)="closeModal()"><span class="material-icons-outlined">close</span></button>
     </div>
     <div class="modal-form">
         <div class="form-group">
-            <label class="form-label">Firma Adı</label>
-            <input class="form-input" [(ngModel)]="formData.name" placeholder="Tedarikçi firma adı" />
+            <label class="form-label">Firma Adi</label>
+            <input class="form-input" [(ngModel)]="formData.name" placeholder="Tedarikci firma adi" />
         </div>
         <div class="form-row">
             <div class="form-group">
-                <label class="form-label">Yetkili Kişi</label>
-                <input class="form-input" [(ngModel)]="formData.contactPerson" placeholder="Yetkili adı soyadı" />
+                <label class="form-label">Yetkili Kisi</label>
+                <input class="form-input" [(ngModel)]="formData.contactPerson" placeholder="Yetkili adi soyadi" />
             </div>
             <div class="form-group">
                 <label class="form-label">Telefon</label>
@@ -210,105 +150,74 @@
                 <input class="form-input" [(ngModel)]="formData.email" placeholder="email@firma.com" />
             </div>
             <div class="form-group">
-                <label class="form-label">Şehir</label>
-                <input class="form-input" [(ngModel)]="formData.city" placeholder="Şehir" />
+                <label class="form-label">Sehir</label>
+                <input class="form-input" [(ngModel)]="formData.city" placeholder="Sehir" />
             </div>
         </div>
         <div class="form-row">
             <div class="form-group">
                 <label class="form-label">VKN</label>
-                <input class="form-input" [(ngModel)]="formData.taxNumber" placeholder="Vergi numarası" />
+                <input class="form-input" [(ngModel)]="formData.taxNumber" placeholder="Vergi numarasi" />
             </div>
             <div class="form-group">
                 <label class="form-label">Vergi Dairesi</label>
-                <input class="form-input" [(ngModel)]="formData.taxOffice" placeholder="Vergi dairesi adı" />
+                <input class="form-input" [(ngModel)]="formData.taxOffice" placeholder="Vergi dairesi" />
             </div>
         </div>
-        <div class="form-group">
-            <label class="form-label">Adres</label>
-            <input class="form-input" [(ngModel)]="formData.address" placeholder="Açık adres" />
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">Teslim Suresi (gun)</label>
+                <input class="form-input" type="number" min="0" max="120" [(ngModel)]="formData.supplierLeadTimeDays" placeholder="0" />
+            </div>
+            <div class="form-group">
+                <label class="form-label">Adres</label>
+                <input class="form-input" [(ngModel)]="formData.address" placeholder="Acik adres" />
+            </div>
         </div>
         <div class="form-group">
             <label class="form-label">Not</label>
             <input class="form-input" [(ngModel)]="formData.notes" placeholder="Not (opsiyonel)" />
         </div>
+        @if (saveError()) {
+        <div class="form-error">{{ saveError() }}</div>
+        }
     </div>
     <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="closeModal()">İptal</button>
-        <button class="btn btn-primary" (click)="save()">
-            <span class="material-icons-outlined">save</span>
-            {{ editingAccount() ? 'Güncelle' : 'Kaydet' }}
-        </button>
+        <button class="btn btn-secondary" (click)="closeModal()">Iptal</button>
+        <button class="btn btn-primary" (click)="save()"><span class="material-icons-outlined">save</span>{{ editingAccount() ? 'Guncelle' : 'Kaydet' }}</button>
     </div>
 </div>
 }
 
-<!-- ─── Detay Modalı ─────────────────────────────────────── -->
 @if (showDetailModal() && selectedAccount()) {
 <div class="overlay" (click)="closeDetailModal()"></div>
 <div class="modal" style="width: 560px;">
     <div class="modal-header">
-        <h2>Tedarikçi Detayı</h2>
-        <button class="modal-close" (click)="closeDetailModal()"><span
-                class="material-icons-outlined">close</span></button>
+        <h2>Tedarikci Detayi</h2>
+        <button class="modal-close" (click)="closeDetailModal()"><span class="material-icons-outlined">close</span></button>
     </div>
     <div class="detail-avatar-section">
         <div class="detail-avatar-large supplier">{{ selectedAccount().name.charAt(0) }}</div>
         <h3>{{ selectedAccount().name }}</h3>
-        <div class="detail-badges">
-            <span class="badge" [class.badge-success]="selectedAccount().isActive"
-                [class.badge-danger]="!selectedAccount().isActive">
-                {{ selectedAccount().isActive ? 'Aktif' : 'Pasif' }}
-            </span>
-            <span class="rating-stars">{{ getRatingStars(selectedAccount().rating) }}</span>
-        </div>
     </div>
     <div class="detail-grid">
-        <div class="detail-row"><span class="detail-label">Yetkili</span><span class="detail-value">{{
-                selectedAccount().contactPerson }}</span></div>
-        <div class="detail-row"><span class="detail-label">Telefon</span><span class="detail-value">{{
-                selectedAccount().phone }}</span></div>
-        <div class="detail-row"><span class="detail-label">E-posta</span><span class="detail-value">{{
-                selectedAccount().email }}</span></div>
-        <div class="detail-row"><span class="detail-label">Şehir</span><span class="detail-value">{{
-                selectedAccount().city }}</span></div>
-        <div class="detail-row"><span class="detail-label">VKN</span><span class="detail-value font-mono">{{
-                selectedAccount().taxNumber }}</span></div>
-        <div class="detail-row"><span class="detail-label">Vergi Dairesi</span><span class="detail-value">{{
-                selectedAccount().taxOffice }}</span></div>
-        <div class="detail-row" style="grid-column: 1 / -1;"><span class="detail-label">Adres</span><span
-                class="detail-value">{{ selectedAccount().address }}</span></div>
-    </div>
-    <div class="detail-stats">
-        <div class="detail-stat-card">
-            <span class="detail-stat-value">{{ selectedAccount().orderCount }}</span>
-            <span class="detail-stat-label">Sipariş</span>
-        </div>
-        <div class="detail-stat-card">
-            <span class="detail-stat-value">₺{{ selectedAccount().totalPurchase.toLocaleString('tr-TR') }}</span>
-            <span class="detail-stat-label">Toplam Alım</span>
-        </div>
-        <div class="detail-stat-card">
-            <span class="detail-stat-value amount negative">₺{{ (selectedAccount().balance * -1).toLocaleString('tr-TR')
-                }}</span>
-            <span class="detail-stat-label">Borç</span>
-        </div>
+        <div class="detail-row"><span class="detail-label">Telefon</span><span class="detail-value">{{ selectedAccount().phone || '-' }}</span></div>
+        <div class="detail-row"><span class="detail-label">Sehir</span><span class="detail-value">{{ selectedAccount().city || '-' }}</span></div>
+        <div class="detail-row"><span class="detail-label">Teslim Suresi</span><span class="detail-value">{{ selectedAccount().supplierLeadTimeDays || 0 }} gun</span></div>
+        <div class="detail-row"><span class="detail-label">Kalan Borc</span><span class="detail-value">?{{ selectedAccount().remainingDebt.toLocaleString('tr-TR') }}</span></div>
     </div>
     <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="openEditModal(selectedAccount()); closeDetailModal()">
-            <span class="material-icons-outlined">edit</span> Düzenle
-        </button>
+        <button class="btn btn-secondary" (click)="openEditModal(selectedAccount()); closeDetailModal()"><span class="material-icons-outlined">edit</span> Duzenle</button>
         <button class="btn btn-primary" (click)="closeDetailModal()">Kapat</button>
     </div>
 </div>
 }
 
-<!-- Excel Upload Modal -->
 @if (showExcelModal()) {
 <div class="overlay" (click)="closeExcelModal()"></div>
 <div class="modal excel-modal">
     <div class="modal-header">
-        <h2>Toplu Tedarikçi Yükleme</h2>
+        <h2>Toplu Tedarikci Yukleme</h2>
         <button class="modal-close" (click)="closeExcelModal()"><span class="material-icons-outlined">close</span></button>
     </div>
 
@@ -323,8 +232,8 @@
         <div class="upload-icon-wrap">
             <span class="material-icons-outlined">cloud_upload</span>
         </div>
-        <p class="upload-title">Excel dosyasını sürükleyin veya tıklayın</p>
-        <p class="upload-subtitle">Desteklenen formatlar: .xlsx, .xls, .csv — Maks. 5MB</p>
+        <p class="upload-title">Excel dosyasini surukleyin veya tiklayin</p>
+        <p class="upload-subtitle">Desteklenen formatlar: .xlsx, .xls, .csv - Maks. 5MB</p>
     </div>
     } @else {
     <div class="excel-file-info">
@@ -335,59 +244,39 @@
             <span class="file-name">{{ excelFile()!.name }}</span>
             <span class="file-size">{{ formatFileSize(excelFile()!.size) }}</span>
         </div>
-        <button class="action-btn delete" title="Kaldır" (click)="removeExcelFile()">
+        <button class="action-btn delete" title="Kaldir" (click)="removeExcelFile()">
             <span class="material-icons-outlined">close</span>
         </button>
     </div>
     }
-
-    <div class="excel-template-info">
-        <span class="material-icons-outlined">info</span>
-        <div>
-            <strong>Şablon Formatı:</strong> Excel dosyanız şu sütunları içermelidir:
-            <span class="template-cols">Firma Adı, Yetkili Kişi, Telefon, E-posta, Şehir, VKN, Vergi Dairesi, Adres</span>
-        </div>
-    </div>
 
     @if (excelResult()) {
     <div class="excel-result" [class.has-errors]="excelResult()!.failedCount > 0">
         <div class="result-stats">
             <div class="result-stat success">
                 <span class="material-icons-outlined">check_circle</span>
-                <span>{{ excelResult()!.createdCount }} tedarikçi başarıyla eklendi</span>
+                <span>{{ excelResult()!.createdCount }} tedarikci basariyla eklendi</span>
             </div>
             @if (excelResult()!.failedCount > 0) {
             <div class="result-stat error">
                 <span class="material-icons-outlined">error</span>
-                <span>{{ excelResult()!.failedCount }} kayıtta hata oluştu</span>
+                <span>{{ excelResult()!.failedCount }} kayitta hata olustu</span>
             </div>
             }
         </div>
-        @if (excelResult()!.errors && excelResult()!.errors!.length > 0) {
-        <div class="result-errors">
-            @for (err of excelResult()!.errors!; track err) {
-            <div class="result-error-item">
-                <span class="material-icons-outlined">warning</span>
-                {{ err }}
-            </div>
-            }
-        </div>
-        }
     </div>
     }
 
     <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="closeExcelModal()">
-            {{ excelResult() ? 'Kapat' : 'İptal' }}
-        </button>
+        <button class="btn btn-secondary" (click)="closeExcelModal()">{{ excelResult() ? 'Kapat' : 'Iptal' }}</button>
         @if (!excelResult()) {
         <button class="btn btn-primary" [disabled]="!excelFile() || excelUploading()" (click)="uploadExcel()">
             @if (excelUploading()) {
             <div class="spinner spinner-sm"></div>
-            Yükleniyor...
+            Yukleniyor...
             } @else {
             <span class="material-icons-outlined">upload</span>
-            Yükle
+            Yukle
             }
         </button>
         }

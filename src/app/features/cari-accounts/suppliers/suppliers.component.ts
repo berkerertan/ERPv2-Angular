@@ -43,7 +43,7 @@ export class SuppliersComponent implements OnInit {
 
     formData = {
         code: '', name: '', phone: '', email: '', address: '',
-        taxNumber: '', taxOffice: '', city: '', contactPerson: '', notes: ''
+        taxNumber: '', taxOffice: '', city: '', contactPerson: '', notes: '', supplierLeadTimeDays: 0
     };
 
     accounts = signal<any[]>([]);
@@ -67,6 +67,7 @@ export class SuppliersComponent implements OnInit {
                 taxOffice: '',
                 city: '',
                 contactPerson: '',
+                supplierLeadTimeDays: a.supplierLeadTimeDays ?? 0,
                 balance: a.currentBalance,
                 totalPurchase: 0,
                 totalPayments: 0,
@@ -118,7 +119,7 @@ export class SuppliersComponent implements OnInit {
     openAddModal(): void {
         this.editingAccount.set(null);
         this.saveError.set('');
-        this.formData = { code: '', name: '', phone: '', email: '', address: '', taxNumber: '', taxOffice: '', city: '', contactPerson: '', notes: '' };
+        this.formData = { code: '', name: '', phone: '', email: '', address: '', taxNumber: '', taxOffice: '', city: '', contactPerson: '', notes: '', supplierLeadTimeDays: 0 };
         this.showModal.set(true);
     }
 
@@ -128,7 +129,7 @@ export class SuppliersComponent implements OnInit {
         this.formData = {
             code: account.code || '', name: account.name, phone: account.phone, email: account.email, address: account.address,
             taxNumber: account.taxNumber, taxOffice: account.taxOffice, city: account.city,
-            contactPerson: account.contactPerson, notes: ''
+            contactPerson: account.contactPerson, notes: '', supplierLeadTimeDays: account.supplierLeadTimeDays ?? 0
         };
         this.showModal.set(true);
     }
@@ -145,7 +146,8 @@ export class SuppliersComponent implements OnInit {
             this.cariService.update(this.editingAccount().id, {
                 code,
                 name: this.formData.name,
-                type: 2 // Supplier
+                type: 2, // Supplier
+                supplierLeadTimeDays: this.formData.supplierLeadTimeDays || 0
             }).subscribe({
                 next: () => { this.loadAccounts(); this.closeModal(); },
                 error: (err) => this.saveError.set(err.error?.detail || 'Güncelleme başarısız.')
@@ -156,7 +158,8 @@ export class SuppliersComponent implements OnInit {
                 name: this.formData.name,
                 type: 2, // Supplier
                 riskLimit: 0,
-                maturityDays: 0
+                maturityDays: 0,
+                supplierLeadTimeDays: this.formData.supplierLeadTimeDays || 0
             }).subscribe({
                 next: () => { this.loadAccounts(); this.closeModal(); },
                 error: (err) => this.saveError.set(err.error?.detail || 'Kayıt başarısız.')

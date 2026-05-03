@@ -14,6 +14,7 @@ export interface CariAccount {
     type: CariType;
     riskLimit: number;
     maturityDays: number;
+    supplierLeadTimeDays: number;
     currentBalance: number;
     phone?: string;
 }
@@ -24,6 +25,7 @@ export interface CreateCariAccountRequest {
     type: CariType;
     riskLimit?: number;
     maturityDays?: number;
+    supplierLeadTimeDays?: number;
 }
 
 export interface UpdateCariAccountRequest {
@@ -32,6 +34,7 @@ export interface UpdateCariAccountRequest {
     type?: CariType;
     riskLimit?: number;
     maturityDays?: number;
+    supplierLeadTimeDays?: number;
 }
 
 export interface CariAccountSuggestionDto {

@@ -3,9 +3,9 @@
         <div>
             <h1 class="page-title">
                 <span class="material-icons-outlined page-title-icon buyer-icon">shopping_bag</span>
-                Alıcılar
+                Alicilar
             </h1>
-            <p class="page-subtitle">Müşterilerinizi ve alıcı hesaplarını yönetin</p>
+            <p class="page-subtitle">Musterilerinizi, risklerini ve tahsilat onceliklerini yonetin</p>
         </div>
         <div class="page-header-actions">
             <button class="btn btn-secondary" (click)="openExcelModal()">
@@ -14,20 +14,19 @@
             </button>
             <button class="btn btn-primary" (click)="openAddModal()">
                 <span class="material-icons-outlined">person_add</span>
-                Yeni Alıcı
+                Yeni Alici
             </button>
         </div>
     </div>
 
-    <!-- Stats -->
-    <div class="stats-row">
+    <div class="stats-row stats-row--buyers">
         <div class="stat-card">
             <div class="stat-icon" style="background: rgba(76,110,245,0.12); color: var(--primary-400);">
                 <span class="material-icons-outlined">shopping_bag</span>
             </div>
             <div class="stat-info">
                 <span class="stat-value">{{ accounts().length }}</span>
-                <span class="stat-label">Toplam Alıcı</span>
+                <span class="stat-label">Toplam Alici</span>
             </div>
         </div>
         <div class="stat-card">
@@ -40,84 +39,111 @@
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon" style="background: var(--warning-bg); color: var(--warning);">
-                <span class="material-icons-outlined">account_balance_wallet</span>
+            <div class="stat-icon" style="background: rgba(245,158,11,0.12); color: #f59e0b;">
+                <span class="material-icons-outlined">warning_amber</span>
             </div>
             <div class="stat-info">
-                <span class="stat-value">₺{{ totalBalance.toLocaleString('tr-TR') }}</span>
-                <span class="stat-label">Toplam Bakiye</span>
+                <span class="stat-value">{{ riskyCount }}</span>
+                <span class="stat-label">Riskli</span>
             </div>
         </div>
         <div class="stat-card">
-            <div class="stat-icon" style="background: rgba(34,197,94,0.1); color: #22c55e;">
-                <span class="material-icons-outlined">trending_up</span>
+            <div class="stat-icon" style="background: rgba(239,68,68,0.12); color: #ef4444;">
+                <span class="material-icons-outlined">error</span>
             </div>
             <div class="stat-info">
-                <span class="stat-value">₺{{ totalSalesSum.toLocaleString('tr-TR') }}</span>
-                <span class="stat-label">Toplam Satış</span>
+                <span class="stat-value">{{ criticalCount }}</span>
+                <span class="stat-label">Kritik</span>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon" style="background: rgba(168,85,247,0.12); color: #a855f7;">
+                <span class="material-icons-outlined">account_balance_wallet</span>
+            </div>
+            <div class="stat-info">
+                <span class="stat-value">?{{ totalOverdueAmount.toLocaleString('tr-TR') }}</span>
+                <span class="stat-label">Toplam Geciken</span>
             </div>
         </div>
     </div>
 
-    <!-- Filters -->
+    @if (criticalCount > 0) {
+    <div class="risk-alert-banner">
+        <span class="material-icons-outlined">priority_high</span>
+        <div>
+            <strong>{{ criticalCount }} kritik alici tespit edildi</strong>
+            <span>Geciken borcu veya limit kullanimi yuksek olan musterileri once takip edin.</span>
+        </div>
+        <div class="risk-alert-amount">?{{ totalOverdueAmount.toLocaleString('tr-TR') }}</div>
+    </div>
+    }
+
     <div class="toolbar">
         <div class="toolbar-search">
             <span class="material-icons-outlined search-icon">search</span>
-            <input type="text" placeholder="Ad, telefon, e-posta veya şehir ara..." [(ngModel)]="searchTerm" />
+            <input type="text" placeholder="Ad, kod, telefon, e-posta veya sehir ara..." [(ngModel)]="searchTerm" />
         </div>
         <select class="toolbar-filter" [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
-            <option value="all">Tüm Durumlar</option>
+            <option value="all">Tum Durumlar</option>
             <option value="active">Aktif</option>
             <option value="inactive">Pasif</option>
         </select>
+        <select class="toolbar-filter" [ngModel]="riskFilter()" (ngModelChange)="riskFilter.set($event)">
+            <option value="all">Tum Riskler</option>
+            <option value="critical">Kritik</option>
+            <option value="warning">Riskli</option>
+            <option value="stable">Stabil</option>
+        </select>
     </div>
 
-    <!-- Table -->
     <div class="table-container">
         <table class="data-table">
             <thead>
                 <tr>
-                    <th class="sortable" [class.sorted]="sortColumn==='name'" (click)="sort('name')">Ad Soyad <span class="sort-icon material-icons-outlined">{{ sortColumn==='name' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='name'" (click)="sort('name')">Alici <span class="sort-icon material-icons-outlined">{{ sortColumn==='name' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
                     <th>Telefon</th>
-                    <th class="sortable" [class.sorted]="sortColumn==='city'" (click)="sort('city')">Şehir <span class="sort-icon material-icons-outlined">{{ sortColumn==='city' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
-                    <th class="sortable" [class.sorted]="sortColumn==='orderCount'" (click)="sort('orderCount')">Sipariş <span class="sort-icon material-icons-outlined">{{ sortColumn==='orderCount' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
-                    <th class="sortable" [class.sorted]="sortColumn==='totalSales'" (click)="sort('totalSales')">Toplam Tutar <span class="sort-icon material-icons-outlined">{{ sortColumn==='totalSales' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
-                    <th class="sortable" [class.sorted]="sortColumn==='totalPayments'" (click)="sort('totalPayments')">Yapılan Ödeme <span class="sort-icon material-icons-outlined">{{ sortColumn==='totalPayments' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='city'" (click)="sort('city')">Sehir <span class="sort-icon material-icons-outlined">{{ sortColumn==='city' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='orderCount'" (click)="sort('orderCount')">Siparis <span class="sort-icon material-icons-outlined">{{ sortColumn==='orderCount' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
                     <th class="sortable" [class.sorted]="sortColumn==='remainingDebt'" (click)="sort('remainingDebt')">Kalan Bakiye <span class="sort-icon material-icons-outlined">{{ sortColumn==='remainingDebt' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='overdueAmount'" (click)="sort('overdueAmount')">Geciken <span class="sort-icon material-icons-outlined">{{ sortColumn==='overdueAmount' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th class="sortable" [class.sorted]="sortColumn==='riskUsageRate'" (click)="sort('riskUsageRate')">Risk <span class="sort-icon material-icons-outlined">{{ sortColumn==='riskUsageRate' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
                     <th>Durum</th>
-                    <th class="sortable" [class.sorted]="sortColumn==='lastOrder'" (click)="sort('lastOrder')">Son Sipariş <span class="sort-icon material-icons-outlined">{{ sortColumn==='lastOrder' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
-                    <th>İşlemler</th>
+                    <th class="sortable" [class.sorted]="sortColumn==='lastOrder'" (click)="sort('lastOrder')">Son Siparis <span class="sort-icon material-icons-outlined">{{ sortColumn==='lastOrder' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                    <th>Islemler</th>
                 </tr>
             </thead>
             <tbody>
                 @for (a of filteredAccounts; track a.id) {
-                <tr class="clickable-row" (click)="viewDetail(a)">
+                <tr class="clickable-row" [class.risk-row-critical]="a.severity === 'critical'" [class.risk-row-warning]="a.severity === 'warning'" (click)="viewDetail(a)">
                     <td>
                         <div class="customer-cell">
                             <div class="customer-avatar">{{ a.name.charAt(0) }}</div>
                             <div class="customer-info">
                                 <span class="customer-name">{{ a.name }}</span>
-                                <span class="customer-email">{{ a.email }}</span>
+                                <span class="customer-email">{{ a.email || a.code }}</span>
                             </div>
                         </div>
                     </td>
-                    <td>{{ a.phone }}</td>
+                    <td>{{ a.phone || '-' }}</td>
                     <td>
                         <span class="cell-with-icon">
                             <span class="material-icons-outlined">location_on</span>
-                            {{ a.city }}
+                            {{ a.city || '-' }}
                         </span>
                     </td>
+                    <td><span class="order-count">{{ a.orderCount }}</span></td>
+                    <td><span class="amount" [class.negative]="a.remainingDebt > 0">?{{ a.remainingDebt.toLocaleString('tr-TR') }}</span></td>
                     <td>
-                        <span class="order-count">{{ a.orderCount }}</span>
+                        <div class="risk-metric">
+                            <strong [class.negative]="a.overdueAmount > 0">?{{ a.overdueAmount.toLocaleString('tr-TR') }}</strong>
+                            <small>@if (a.maxOverdueDays > 0) { {{ a.maxOverdueDays }} gun } @else { Vadesinde }</small>
+                        </div>
                     </td>
-                    <td class="amount">₺{{ a.totalSales.toLocaleString('tr-TR') }}</td>
                     <td>
-                        <span class="amount positive">₺{{ a.totalPayments.toLocaleString('tr-TR') }}</span>
-                    </td>
-                    <td>
-                        <span class="amount" [class.negative]="a.remainingDebt > 0">₺{{
-                            a.remainingDebt.toLocaleString('tr-TR') }}</span>
+                        <div class="risk-cell">
+                            <span class="risk-badge" [ngClass]="getRiskBadgeClass(a.severity)">{{ getRiskLabel(a.severity) }}</span>
+                            <small>%{{ (a.riskUsageRate * 100).toLocaleString('tr-TR', { maximumFractionDigits: 0 }) }} limit</small>
+                        </div>
                     </td>
                     <td>
                         <span class="badge" [class.badge-success]="a.isActive" [class.badge-danger]="!a.isActive">
@@ -130,22 +156,17 @@
                             <button class="action-btn view" title="Detay" (click)="viewDetail(a)">
                                 <span class="material-icons-outlined">visibility</span>
                             </button>
-                            <button class="action-btn edit" title="Düzenle" (click)="openEditModal(a)">
+                            <button class="action-btn edit" title="Duzenle" (click)="openEditModal(a)">
                                 <span class="material-icons-outlined">edit</span>
                             </button>
-                            <button class="action-btn export"
-                                [title]="exportingId() === a.id ? 'İndiriliyor...' : 'Veresiye Dışa Aktar'"
-                                (click)="exportBuyerExcel(a)"
-                                [disabled]="exportingId() === a.id">
+                            <button class="action-btn export" [title]="exportingId() === a.id ? 'Indiriliyor...' : 'Veresiye Disa Aktar'" (click)="exportBuyerExcel(a)" [disabled]="exportingId() === a.id">
                                 @if (exportingId() === a.id) {
                                     <div class="spinner spinner-sm"></div>
                                 } @else {
                                     <span class="material-icons-outlined">download</span>
                                 }
                             </button>
-                            <button class="action-btn" [title]="a.isActive ? 'Pasife Al' : 'Aktife Al'"
-                                (click)="toggleStatus(a.id)"
-                                [style.color]="a.isActive ? 'var(--warning)' : 'var(--success)'">
+                            <button class="action-btn" [title]="a.isActive ? 'Pasife Al' : 'Aktife Al'" (click)="toggleStatus(a.id)" [style.color]="a.isActive ? 'var(--warning)' : 'var(--success)'">
                                 <span class="material-icons-outlined">{{ a.isActive ? 'block' : 'check_circle' }}</span>
                             </button>
                             <button class="action-btn delete" title="Sil" (click)="deleteAccount(a.id)">
@@ -159,57 +180,55 @@
         </table>
     </div>
 
-    <!-- Summary Footer -->
     <div class="summary-footer">
         <div class="summary-item">
             <span class="material-icons-outlined summary-icon" style="color: var(--primary-400);">receipt_long</span>
             <div class="summary-text">
                 <span class="summary-label">Toplam Tutar</span>
-                <span class="summary-value">₺{{ totalSalesSum.toLocaleString('tr-TR') }}</span>
+                <span class="summary-value">?{{ totalSalesSum.toLocaleString('tr-TR') }}</span>
             </div>
         </div>
         <div class="summary-divider"></div>
         <div class="summary-item">
             <span class="material-icons-outlined summary-icon" style="color: var(--success);">paid</span>
             <div class="summary-text">
-                <span class="summary-label">Yapılan Ödeme</span>
-                <span class="summary-value positive">₺{{ totalPaymentsSum.toLocaleString('tr-TR') }}</span>
+                <span class="summary-label">Yapilan Odeme</span>
+                <span class="summary-value positive">?{{ totalPaymentsSum.toLocaleString('tr-TR') }}</span>
             </div>
         </div>
         <div class="summary-divider"></div>
         <div class="summary-item">
             <span class="material-icons-outlined summary-icon" style="color: var(--danger);">account_balance</span>
             <div class="summary-text">
-                <span class="summary-label">Kalan Borç</span>
-                <span class="summary-value negative">₺{{ totalDebtSum.toLocaleString('tr-TR') }}</span>
+                <span class="summary-label">Kalan Borc</span>
+                <span class="summary-value negative">?{{ totalDebtSum.toLocaleString('tr-TR') }}</span>
             </div>
         </div>
     </div>
 </div>
 
-<!-- ─── Yeni/Düzenle Modalı ──────────────────────────────── -->
 @if (showModal()) {
 <div class="overlay" (click)="closeModal()"></div>
 <div class="modal" style="width: 560px;">
     <div class="modal-header">
-        <h2>{{ editingAccount() ? 'Alıcı Düzenle' : 'Yeni Alıcı' }}</h2>
+        <h2>{{ editingAccount() ? 'Alici Duzenle' : 'Yeni Alici' }}</h2>
         <button class="modal-close" (click)="closeModal()"><span class="material-icons-outlined">close</span></button>
     </div>
     <div class="modal-form">
         @if (saveError()) {
-        <div style="padding: 10px 14px; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; color: #ef4444; font-size: 13px; display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
-            <span class="material-icons-outlined" style="font-size: 18px;">error</span>
+        <div class="form-error-box">
+            <span class="material-icons-outlined">error</span>
             {{ saveError() }}
         </div>
         }
         <div class="form-row">
             <div class="form-group">
-                <label class="form-label">Müşteri Kodu</label>
-                <input class="form-input" [(ngModel)]="formData.code" placeholder="Boş bırakılırsa otomatik oluşturulur" />
+                <label class="form-label">Musteri Kodu</label>
+                <input class="form-input" [(ngModel)]="formData.code" placeholder="Bos birakilirsa otomatik olusturulur" />
             </div>
             <div class="form-group">
                 <label class="form-label">Ad Soyad</label>
-                <input class="form-input" [(ngModel)]="formData.name" placeholder="Müşteri adı" />
+                <input class="form-input" [(ngModel)]="formData.name" placeholder="Musteri adi" />
             </div>
         </div>
         <div class="form-row">
@@ -228,8 +247,8 @@
                 <input class="form-input" [(ngModel)]="formData.taxNumber" placeholder="Vergi / TC kimlik no" />
             </div>
             <div class="form-group">
-                <label class="form-label">Şehir</label>
-                <input class="form-input" [(ngModel)]="formData.city" placeholder="Şehir" />
+                <label class="form-label">Sehir</label>
+                <input class="form-input" [(ngModel)]="formData.city" placeholder="Sehir" />
             </div>
         </div>
         <div class="form-group">
@@ -242,23 +261,22 @@
         </div>
     </div>
     <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="closeModal()">İptal</button>
+        <button class="btn btn-secondary" (click)="closeModal()">Iptal</button>
         <button class="btn btn-primary" (click)="save()">
             <span class="material-icons-outlined">save</span>
-            {{ editingAccount() ? 'Güncelle' : 'Kaydet' }}
+            {{ editingAccount() ? 'Guncelle' : 'Kaydet' }}
         </button>
     </div>
 </div>
 }
 
-<!-- Veresiye Excel Aktarma Modal -->
 @if (showExcelModal()) {
 <div class="overlay" (click)="closeExcelModal()"></div>
 <div class="modal excel-modal">
     <div class="modal-header">
         <h2>
             <span class="material-icons-outlined" style="color: var(--primary-400); vertical-align: middle; margin-right: 6px;">receipt_long</span>
-            Veresiye Ürün Aktarma
+            Veresiye Urun Aktarma
         </h2>
         <button class="modal-close" (click)="closeExcelModal()"><span class="material-icons-outlined">close</span></button>
     </div>
@@ -266,9 +284,9 @@
     <div class="excel-template-info" style="margin-top: 0;">
         <span class="material-icons-outlined">lightbulb</span>
         <div>
-            <strong>Nasıl Çalışır:</strong> Her Excel dosyasının adı, alıcı adı olarak eşleştirilir.
-            Örneğin <code>Ali Öztürk.xlsx</code> dosyası <b>Ali Öztürk</b> alıcısına ürün ekler.
-            <span class="template-cols">Dosya İçeriği Sütunları: Ürün Adı, Barkod, Kategori, Adet, Birim Fiyat, Satış Fiyatı</span>
+            <strong>Nasil Calisir:</strong> Her Excel dosyasinin adi, alici adi olarak eslesir.
+            Ornegin <code>Ali Ozturk.xlsx</code> dosyasi <b>Ali Ozturk</b> alicisina urun ekler.
+            <span class="template-cols">Dosya icerigi sutunlari: Urun Adi, Barkod, Kategori, Adet, Birim Fiyat, Satis Fiyati</span>
         </div>
     </div>
 
@@ -283,9 +301,9 @@
         <div class="upload-icon-wrap">
             <span class="material-icons-outlined">cloud_upload</span>
         </div>
-        <p class="upload-title">Excel dosyalarını sürükleyin veya tıklayın</p>
-        <p class="upload-subtitle">Birden fazla dosya seçebilirsiniz — Her dosya adı = Alıcı adı</p>
-        <p class="upload-subtitle">Desteklenen formatlar: .xlsx, .xls, .csv — Maks. 5MB/dosya</p>
+        <p class="upload-title">Excel dosyalarini surukleyin veya tiklayin</p>
+        <p class="upload-subtitle">Birden fazla dosya secebilirsiniz - Her dosya adi = Alici adi</p>
+        <p class="upload-subtitle">Desteklenen formatlar: .xlsx, .xls, .csv - Maks. 5MB/dosya</p>
     </div>
     } @else {
     <div class="excel-files-list">
@@ -296,9 +314,9 @@
             </div>
             <div class="file-details">
                 <span class="file-name">{{ extractBuyerName(f.name) }}</span>
-                <span class="file-size">{{ f.name }} — {{ formatFileSize(f.size) }}</span>
+                <span class="file-size">{{ f.name }} - {{ formatFileSize(f.size) }}</span>
             </div>
-            <button class="action-btn delete" title="Kaldır" (click)="removeExcelFileAt(idx)">
+            <button class="action-btn delete" title="Kaldir" (click)="removeExcelFileAt(idx)">
                 <span class="material-icons-outlined">close</span>
             </button>
         </div>
@@ -316,57 +334,54 @@
         <div class="result-stats">
             <div class="result-stat success">
                 <span class="material-icons-outlined">check_circle</span>
-                <span>{{ excelResult()!.totalCreatedCount }} veresiye ürün başarıyla eklendi</span>
+                <span>{{ excelResult()!.totalCreatedCount }} veresiye urun basariyla eklendi</span>
             </div>
             @if (excelResult()!.totalFailedCount > 0) {
             <div class="result-stat error">
                 <span class="material-icons-outlined">error</span>
-                <span>{{ excelResult()!.totalFailedCount }} kayıtta hata oluştu</span>
+                <span>{{ excelResult()!.totalFailedCount }} kayitta hata olustu</span>
             </div>
             }
         </div>
         @if (excelResult()!.files && excelResult()!.files!.length > 0) {
-            <div class="excel-file-results" style="margin-top: 12px;">
-                @for (fileResult of excelResult()!.files!; track fileResult.fileName) {
-                    <div style="padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,0.03); margin-bottom: 6px; font-size: 13px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-weight: 500;">{{ fileResult.cariAccountName || fileResult.fileName }}</span>
-                            <span>
-                                <span style="color: var(--success);">{{ fileResult.createdCount }} başarılı</span>
-                                @if (fileResult.failedCount > 0) {
-                                    <span style="color: var(--danger); margin-left: 8px;">{{ fileResult.failedCount }} hatalı</span>
-                                }
-                                @if (fileResult.cariCreated) {
-                                    <span class="badge badge-info" style="margin-left: 8px; font-size: 10px;">Yeni alıcı</span>
-                                }
-                            </span>
-                        </div>
-                        @if (fileResult.errors && fileResult.errors.length > 0) {
-                            <ul style="margin: 6px 0 0 0; padding-left: 20px; color: var(--danger); font-size: 12px;">
-                                @for (err of fileResult.errors; track err) {
-                                    <li>{{ err }}</li>
-                                }
-                            </ul>
+        <div class="excel-file-results" style="margin-top: 12px;">
+            @for (fileResult of excelResult()!.files!; track fileResult.fileName) {
+            <div class="excel-file-result-item">
+                <div class="excel-file-result-head">
+                    <span class="excel-file-result-name">{{ fileResult.cariAccountName || fileResult.fileName }}</span>
+                    <span>
+                        <span style="color: var(--success);">{{ fileResult.createdCount }} basarili</span>
+                        @if (fileResult.failedCount > 0) {
+                        <span style="color: var(--danger); margin-left: 8px;">{{ fileResult.failedCount }} hatali</span>
                         }
-                    </div>
+                        @if (fileResult.cariCreated) {
+                        <span class="badge badge-info" style="margin-left: 8px; font-size: 10px;">Yeni alici</span>
+                        }
+                    </span>
+                </div>
+                @if (fileResult.errors && fileResult.errors.length > 0) {
+                <ul class="excel-file-result-errors">
+                    @for (err of fileResult.errors; track err) {
+                    <li>{{ err }}</li>
+                    }
+                </ul>
                 }
             </div>
+            }
+        </div>
         }
     </div>
     }
 
     <div class="modal-footer">
-        <button class="btn btn-secondary" (click)="closeExcelModal()">
-            {{ excelResult() ? 'Kapat' : 'İptal' }}
-        </button>
+        <button class="btn btn-secondary" (click)="closeExcelModal()">{{ excelResult() ? 'Kapat' : 'Iptal' }}</button>
         @if (!excelResult()) {
-        <button class="btn btn-primary" [disabled]="excelFiles().length === 0 || excelUploading()" (click)="uploadExcel()">
+        <button class="btn btn-primary" (click)="uploadExcel()" [disabled]="excelUploading() || excelFiles().length === 0">
             @if (excelUploading()) {
-            <div class="spinner spinner-sm"></div>
-            Yükleniyor...
+            <div class="spinner spinner-sm"></div> Aktariliyor...
             } @else {
             <span class="material-icons-outlined">upload</span>
-            {{ excelFiles().length }} Dosyayı Aktar
+            Aktar
             }
         </button>
         }

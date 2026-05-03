@@ -9,6 +9,12 @@ export interface PurchaseOrder {
     warehouseId: string;
     status: OrderStatus;
     orderDateUtc: string;
+    createdAtUtc: string;
+    approvedAtUtc?: string | null;
+    approvedByUserName?: string | null;
+    cancelledAtUtc?: string | null;
+    cancelledByUserName?: string | null;
+    cancellationReason?: string | null;
     totalAmount: number;
     items?: PurchaseOrderItemDto[];
 }
@@ -52,6 +58,15 @@ export interface PurchaseRecommendationSummary {
     totalEstimatedCost: number;
 }
 
+export interface PurchaseRecommendationSupplierGroup {
+    supplierCariAccountId?: string | null;
+    supplierName: string;
+    supplierLeadTimeDays: number;
+    itemCount: number;
+    totalRecommendedQuantity: number;
+    totalEstimatedCost: number;
+}
+
 export interface PurchaseRecommendationItem {
     productId: string;
     productCode: string;
@@ -65,6 +80,8 @@ export interface PurchaseRecommendationItem {
     availableQuantity: number;
     averageDailySales: number;
     daysOfCover: number;
+    supplierLeadTimeDays: number;
+    planningDays: number;
     criticalStockLevel: number;
     minimumStockLevel: number;
     maximumStockLevel?: number | null;
@@ -82,5 +99,6 @@ export interface PurchaseRecommendationResponse {
     analysisDays: number;
     coverageDays: number;
     summary: PurchaseRecommendationSummary;
+    supplierGroups: PurchaseRecommendationSupplierGroup[];
     items: PurchaseRecommendationItem[];
 }
