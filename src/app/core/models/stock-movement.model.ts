@@ -123,6 +123,9 @@ export interface QueuedInventoryCountRequest extends ApplyInventoryCountRequest 
     queueId: string;
     queuedAtUtc: string;
     warehouseName?: string;
+    syncAttempts?: number;
+    lastSyncAttemptAtUtc?: string;
+    lastSyncError?: string;
 }
 
 export interface ApplyInventoryCountResponse {

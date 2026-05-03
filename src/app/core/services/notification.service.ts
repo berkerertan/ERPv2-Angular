@@ -35,6 +35,8 @@ export class NotificationService {
   private readonly refreshMs = 30000;
   private _notifications = signal<AppNotification[]>([]);
   public notifications = this._notifications.asReadonly();
+  private _showUnreadOnly = signal(false);
+  public showUnreadOnly = this._showUnreadOnly.asReadonly();
 
   constructor(
     private http: HttpClient,
@@ -52,6 +54,14 @@ export class NotificationService {
 
   get unreadCount() {
     return this._notifications().filter(n => !n.isRead).length;
+  }
+
+  get readCount() {
+    return this._notifications().filter(n => n.isRead).length;
+  }
+
+  get visibleNotifications() {
+    return this._notifications().filter(item => !this._showUnreadOnly() || !item.isRead);
   }
 
   refresh(): void {
@@ -98,11 +108,20 @@ export class NotificationService {
     this.http.post<void>(`${this.apiUrl}/read-all`, {}).pipe(catchError(() => of(void 0))).subscribe();
   }
 
+  setUnreadOnly(value: boolean) {
+    this._showUnreadOnly.set(value);
+  }
+
   deleteNotification(id: string) {
     this._notifications.update(n => n.filter(item => item.id !== id));
     if (!id.startsWith('system-risk-')) {
       this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(catchError(() => of(void 0))).subscribe();
     }
+  }
+
+  clearReadNotifications() {
+    this._notifications.update(n => n.filter(item => !item.isRead));
+    this.http.delete<void>(`${this.apiUrl}/read`).pipe(catchError(() => of(void 0))).subscribe();
   }
 
   private mapApiNotification(item: NotificationApiDto): AppNotification {

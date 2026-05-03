@@ -2,6 +2,8 @@ export interface TenantActivityLogDto {
     id: string;
     tenantId?: string;
     userId?: string;
+    userName?: string;
+    description?: string;
     httpMethod?: string;
     path?: string;
     statusCode: number;

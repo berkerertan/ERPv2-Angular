@@ -67,3 +67,6 @@ API_OPENAPI*.json
 # Örnek ve test veri dosyaları
 *.pdf
 *.xlsx
+
+# Local project memory file
+PROJECT_STATUS.md

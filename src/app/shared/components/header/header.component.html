@@ -1,11 +1,9 @@
 <header class="header">
     <div class="header-left">
-        <!-- Mobile Menu Toggle -->
         <button class="btn-icon mobile-menu-btn" (click)="onMenuToggle()">
             <span class="material-icons-outlined">menu</span>
         </button>
 
-        <!-- Search Bar -->
         <div class="search-bar">
             <span class="material-icons-outlined search-icon">search</span>
             <input type="text" placeholder="Ara... (Ctrl+K)" class="search-input" />
@@ -13,12 +11,10 @@
     </div>
 
     <div class="header-right">
-        <!-- Theme Toggle -->
-        <button class="btn-icon" (click)="themeService.toggle()" [title]="themeService.isDark() ? 'Gündüz Modu' : 'Gece Modu'">
+        <button class="btn-icon" (click)="themeService.toggle()" [title]="themeService.isDark() ? 'Gunduz Modu' : 'Gece Modu'">
             <span class="material-icons-outlined">{{ themeService.isDark() ? 'light_mode' : 'dark_mode' }}</span>
         </button>
 
-        <!-- Notifications -->
         <div class="header-action" (click)="toggleNotifications()">
             <button class="btn-icon" title="Bildirimler">
                 <span class="material-icons-outlined">notifications</span>
@@ -27,24 +23,37 @@
                 }
             </button>
 
-            <!-- Notifications Dropdown -->
             @if (showNotifications()) {
             <div class="dropdown notifications-dropdown" (click)="$event.stopPropagation()">
-                <div class="dropdown-header">
-                    <h4>Bildirimler</h4>
-                    @if (notificationService.unreadCount > 0) {
-                    <button class="btn-ghost btn-sm" (click)="markAllAsRead()">Tümünü Okundu İşaretle</button>
-                    }
+                <div class="dropdown-header dropdown-header--notifications">
+                    <div class="notif-header-copy">
+                        <h4>Bildirimler</h4>
+                        <small>{{ notificationService.unreadCount }} okunmamis, {{ notificationService.readCount }} okundu</small>
+                    </div>
+                    <div class="notif-header-actions">
+                        <button class="btn-ghost btn-sm" (click)="toggleUnreadOnly()">
+                            {{ notificationService.showUnreadOnly() ? 'Tumunu Goster' : 'Sadece Okunmamis' }}
+                        </button>
+                        @if (notificationService.unreadCount > 0) {
+                        <button class="btn-ghost btn-sm" (click)="markAllAsRead()">Tumunu Okundu Yap</button>
+                        }
+                    </div>
                 </div>
                 <div class="dropdown-body">
-                    @if (notificationService.notifications().length === 0) {
+                    @if (notificationService.visibleNotifications.length === 0) {
                     <div class="empty-state">
                         <span class="material-icons-outlined">notifications_none</span>
-                        <p>Yeni bildirim yok</p>
+                        <p>Gosterilecek bildirim yok</p>
                     </div>
                     } @else {
+                    <div class="notif-toolbar">
+                        <span class="notif-toolbar__hint">Bildirime tiklayinca ilgili kayda gidilir.</span>
+                        @if (notificationService.readCount > 0) {
+                        <button class="btn-ghost btn-sm" (click)="clearReadNotifications()">Okunanlari Temizle</button>
+                        }
+                    </div>
                     <div class="notifications-list">
-                        @for (notif of notificationService.notifications(); track notif.id) {
+                        @for (notif of notificationService.visibleNotifications; track notif.id) {
                         <div class="notification-item" [class.unread]="!notif.isRead" (click)="markAsRead(notif)">
                             <div class="notif-icon-wrap" [ngClass]="'type-' + notif.type">
                                 <span class="material-icons-outlined">
@@ -56,6 +65,9 @@
                                 <span class="notif-message">{{ notif.message }}</span>
                                 <span class="notif-time">{{ notif.timestamp | date:'dd.MM.yyyy HH:mm' }}</span>
                             </div>
+                            <button class="notif-delete-btn" (click)="removeNotification($event, notif)" title="Bildirimi sil">
+                                <span class="material-icons-outlined">close</span>
+                            </button>
                             @if (!notif.isRead) {
                             <div class="notif-unread-dot"></div>
                             }
@@ -68,7 +80,6 @@
             }
         </div>
 
-        <!-- Profile -->
         <div class="header-action" (click)="toggleProfileMenu()">
             <button class="profile-btn">
                 <div class="avatar">
@@ -83,17 +94,16 @@
                 <span class="material-icons-outlined chevron">expand_more</span>
             </button>
 
-            <!-- Profile Dropdown -->
             @if (showProfileMenu()) {
             <div class="dropdown profile-dropdown" (click)="$event.stopPropagation()">
                 <div class="dropdown-item" routerLink="/profile" (click)="closeMenus()">
                     <span class="material-icons-outlined">manage_accounts</span>
-                    <span>Hesap Ayarları</span>
+                    <span>Hesap Ayarlari</span>
                 </div>
                 <div class="dropdown-divider"></div>
                 <div class="dropdown-item danger" (click)="logout()">
                     <span class="material-icons-outlined">logout</span>
-                    <span>Çıkış Yap</span>
+                    <span>Cikis Yap</span>
                 </div>
             </div>
             }
@@ -101,7 +111,6 @@
     </div>
 </header>
 
-<!-- Click outside to close -->
 @if (showProfileMenu() || showNotifications()) {
 <div class="backdrop" (click)="closeMenus()"></div>
 }

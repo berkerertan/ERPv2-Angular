@@ -5,11 +5,12 @@ import { SidebarComponent } from '../../shared/components/sidebar/sidebar.compon
 import { HeaderComponent } from '../../shared/components/header/header.component';
 import { ToastComponent } from '../../shared/components/toast/toast.component';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
+import { VersionBadgeComponent } from '../../shared/components/version-badge/version-badge.component';
 
 @Component({
     selector: 'app-main-layout',
     standalone: true,
-    imports: [CommonModule, RouterOutlet, SidebarComponent, HeaderComponent, ToastComponent, ConfirmDialogComponent],
+    imports: [CommonModule, RouterOutlet, SidebarComponent, HeaderComponent, ToastComponent, ConfirmDialogComponent, VersionBadgeComponent],
     templateUrl: './main-layout.component.html',
     styleUrl: './main-layout.component.css'
 })

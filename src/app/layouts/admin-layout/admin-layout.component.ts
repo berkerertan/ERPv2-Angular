@@ -4,6 +4,7 @@ import { Router, RouterModule, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { ConfirmDialogComponent } from '../../shared/components/confirm-dialog/confirm-dialog.component';
 import { ToastComponent } from '../../shared/components/toast/toast.component';
+import { VersionBadgeComponent } from '../../shared/components/version-badge/version-badge.component';
 
 interface NavItem {
     label: string;
@@ -15,7 +16,7 @@ interface NavItem {
 @Component({
     selector: 'app-admin-layout',
     standalone: true,
-    imports: [CommonModule, RouterModule, RouterLinkActive, ConfirmDialogComponent, ToastComponent],
+    imports: [CommonModule, RouterModule, RouterLinkActive, ConfirmDialogComponent, ToastComponent, VersionBadgeComponent],
     templateUrl: './admin-layout.component.html',
     styleUrl: './admin-layout.component.css'
 })

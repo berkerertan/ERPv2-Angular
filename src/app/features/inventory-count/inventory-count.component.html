@@ -51,6 +51,42 @@
     </button>
   </div>
 
+  @if (queueCount() > 0) {
+  <div class="queue-panel">
+    <div class="queue-panel__head">
+      <div>
+        <strong>Offline Kuyruk Detayi</strong>
+        <p>Bekleyen kayitlari, hata nedenlerini ve son deneme durumunu buradan takip edin.</p>
+      </div>
+      <div class="queue-panel__actions">
+        @if (lastQueueSyncAtUtc()) {
+        <span class="queue-panel__sync-time">Son deneme: {{ lastQueueSyncAtUtc() | date:'dd.MM HH:mm' }}</span>
+        }
+        <button class="btn btn-secondary btn-sm" (click)="clearQueuedCounts()">Kuyrugu Temizle</button>
+      </div>
+    </div>
+
+    <div class="queue-list">
+      @for (item of queueItems(); track item.queueId) {
+      <div class="queue-item">
+        <div class="queue-item__main">
+          <strong>{{ item.referenceNo || 'Referanssiz sayim' }}</strong>
+          <span>{{ item.warehouseName || selectedWarehouseName() }} @if (item.locationCode) { - {{ item.locationCode }} }</span>
+          <small>{{ item.queuedAtUtc | date:'dd.MM.yyyy HH:mm' }} - {{ getQueuedItemCount(item) }} kalem</small>
+        </div>
+        <div class="queue-item__meta">
+          <span class="queue-chip">{{ item.syncAttempts || 0 }} deneme</span>
+          @if (item.lastSyncError) {
+          <span class="queue-chip queue-chip--error">{{ item.lastSyncError }}</span>
+          }
+          <button class="btn btn-ghost btn-sm" (click)="removeQueuedCount(item.queueId)">Sil</button>
+        </div>
+      </div>
+      }
+    </div>
+  </div>
+  }
+
   <div class="warehouse-select-card">
     <div class="warehouse-select-label">
       <span class="material-icons-outlined">warehouse</span>

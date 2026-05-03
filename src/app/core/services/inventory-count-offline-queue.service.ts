@@ -11,6 +11,7 @@ export class InventoryCountOfflineQueueService {
     readonly isOnline = signal(typeof navigator === 'undefined' ? true : navigator.onLine);
     readonly isSyncing = signal(false);
     readonly lastSyncSummary = signal('');
+    readonly lastSyncAtUtc = signal<string | null>(null);
 
     constructor(private stockMovementService: StockMovementService) {
         if (typeof window !== 'undefined') {
@@ -28,7 +29,8 @@ export class InventoryCountOfflineQueueService {
             clientRequestId: request.clientRequestId || this.generateId(),
             queueId: this.generateId(),
             queuedAtUtc: new Date().toISOString(),
-            warehouseName
+            warehouseName,
+            syncAttempts: 0
         };
 
         const items = [...this.queuedItems(), queued];
@@ -51,18 +53,25 @@ export class InventoryCountOfflineQueueService {
         this.isSyncing.set(true);
         let synced = 0;
         const failed: QueuedInventoryCountRequest[] = [];
+        const attemptedAt = new Date().toISOString();
 
         for (const item of current) {
             try {
                 await firstValueFrom(this.stockMovementService.applyInventoryCount(item));
                 synced++;
-            } catch {
-                failed.push(item);
+            } catch (error: any) {
+                failed.push({
+                    ...item,
+                    syncAttempts: (item.syncAttempts ?? 0) + 1,
+                    lastSyncAttemptAtUtc: attemptedAt,
+                    lastSyncError: this.resolveErrorMessage(error)
+                });
             }
         }
 
         this.writeQueue(failed);
         this.queuedItems.set(failed);
+        this.lastSyncAtUtc.set(attemptedAt);
         this.lastSyncSummary.set(
             synced > 0
                 ? `${synced} offline sayim senkronlandi${failed.length ? `, ${failed.length} kuyrukta kaldi` : ''}.`
@@ -118,6 +127,24 @@ export class InventoryCountOfflineQueueService {
         }
 
         localStorage.setItem(this.storageKey, JSON.stringify(items));
+    }
+
+    removeQueuedItem(queueId: string): void {
+        const items = this.queuedItems().filter(item => item.queueId !== queueId);
+        this.writeQueue(items);
+        this.queuedItems.set(items);
+    }
+
+    clearQueue(): void {
+        this.writeQueue([]);
+        this.queuedItems.set([]);
+    }
+
+    private resolveErrorMessage(error: any): string {
+        return error?.error?.detail
+            || error?.error?.title
+            || error?.message
+            || 'Senkron sirasinda hata olustu.';
     }
 
     private generateId(): string {

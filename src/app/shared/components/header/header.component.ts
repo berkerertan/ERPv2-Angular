@@ -62,6 +62,19 @@ export class HeaderComponent {
         this.notificationService.markAllAsRead();
     }
 
+    clearReadNotifications(): void {
+        this.notificationService.clearReadNotifications();
+    }
+
+    toggleUnreadOnly(): void {
+        this.notificationService.setUnreadOnly(!this.notificationService.showUnreadOnly());
+    }
+
+    removeNotification(event: Event, notification: AppNotification): void {
+        event.stopPropagation();
+        this.notificationService.deleteNotification(notification.id);
+    }
+
     logout(): void {
         this.authService.logout();
     }

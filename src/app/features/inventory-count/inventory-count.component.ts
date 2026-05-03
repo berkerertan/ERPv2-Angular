@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { StockMovementService } from '../../core/services/stock-movement.service';
 import { WarehouseService } from '../../core/services/warehouse.service';
-import { InventoryCountSessionDetail, InventoryCountSessionListItem, InventoryCountSessionStatus, StockBalance } from '../../core/models/stock-movement.model';
+import { InventoryCountSessionDetail, InventoryCountSessionListItem, InventoryCountSessionStatus, QueuedInventoryCountRequest, StockBalance } from '../../core/models/stock-movement.model';
 import { Warehouse } from '../../core/models/warehouse.model';
 import { ToastService } from '../../core/services/toast.service';
 import { ConfirmService } from '../../shared/components/confirm-dialog/confirm-dialog.component';
@@ -143,9 +143,11 @@ export class InventoryCountComponent implements OnInit, OnDestroy {
 
     readonly totalRows = computed(() => this.rows().length);
     readonly queueCount = computed(() => this.offlineQueueService.queuedItems().length);
+    readonly queueItems = computed(() => this.offlineQueueService.queuedItems());
     readonly isOnline = computed(() => this.offlineQueueService.isOnline());
     readonly isSyncingQueue = computed(() => this.offlineQueueService.isSyncing());
     readonly queueSummary = computed(() => this.offlineQueueService.lastSyncSummary());
+    readonly lastQueueSyncAtUtc = computed(() => this.offlineQueueService.lastSyncAtUtc());
 
     ngOnInit(): void {
         this.loadWarehouses();
@@ -430,6 +432,40 @@ export class InventoryCountComponent implements OnInit, OnDestroy {
                 this.toastService.info('Hazir', 'Senkronlanacak bekleyen sayim yok.');
             }
         }
+    }
+
+    async removeQueuedCount(queueId: string): Promise<void> {
+        const ok = await this.confirmService.confirm({
+            title: 'Kuyruktan Sil',
+            message: 'Bu offline sayim kaydi kuyruktan kaldirilacak. Devam edilsin mi?',
+            confirmText: 'Sil',
+            type: 'warning'
+        });
+
+        if (!ok) return;
+
+        this.offlineQueueService.removeQueuedItem(queueId);
+        this.toastService.info('Kaldirildi', 'Offline sayim kuyruktan silindi.');
+    }
+
+    async clearQueuedCounts(): Promise<void> {
+        if (this.queueCount() === 0) return;
+
+        const ok = await this.confirmService.confirm({
+            title: 'Kuyrugu Temizle',
+            message: `${this.queueCount()} offline sayim kaydi silinecek. Devam edilsin mi?`,
+            confirmText: 'Temizle',
+            type: 'warning'
+        });
+
+        if (!ok) return;
+
+        this.offlineQueueService.clearQueue();
+        this.toastService.info('Temizlendi', 'Offline kuyruk bosaltildi.');
+    }
+
+    getQueuedItemCount(item: QueuedInventoryCountRequest): number {
+        return item?.items?.length ?? 0;
     }
 
     async startScanner(): Promise<void> {

@@ -1,115 +1,86 @@
 <div class="page-container">
-
-    <!-- Header -->
     <div class="page-header">
         <div>
-            <h1 class="page-title">
-                <span class="material-icons-outlined" style="font-size:28px;vertical-align:middle;margin-right:8px;">manage_search</span>
-                Aktivite GeÃ§miÅŸi
-            </h1>
-            <p class="page-subtitle">HesabÄ±nÄ±zla gerÃ§ekleÅŸtirilen tÃ¼m iÅŸlemleri takip edin</p>
+            <h1 class="page-title">Aktivite Geçmiþi</h1>
+            <p class="page-subtitle">Yaptýðýnýz iþlemleri ve onay akýþlarýný buradan takip edin.</p>
         </div>
-        <div class="header-actions">
-            <button class="btn btn-secondary" (click)="onFilterChange()">
-                <span class="material-icons-outlined">refresh</span>
-                Yenile
-            </button>
-        </div>
+        <button class="btn btn-secondary" (click)="refresh()">Yenile</button>
     </div>
 
-    <!-- Ã–zet Kartlar -->
     @if (summary()) {
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-icon primary"><span class="material-icons-outlined">receipt_long</span></div>
-                <div class="stat-info">
-                    <span class="stat-value">{{ summary()!.totalCount | number }}</span>
-                    <span class="stat-label">Toplam Ä°ÅŸlem</span>
-                </div>
+                <span class="stat-value">{{ summary()!.totalCount | number }}</span>
+                <span class="stat-label">Toplam iþlem</span>
             </div>
             <div class="stat-card">
-                <div class="stat-icon success"><span class="material-icons-outlined">today</span></div>
-                <div class="stat-info">
-                    <span class="stat-value">{{ summary()!.todayCount | number }}</span>
-                    <span class="stat-label">BugÃ¼n</span>
-                </div>
+                <span class="stat-value">{{ summary()!.todayCount | number }}</span>
+                <span class="stat-label">Bugün</span>
             </div>
             <div class="stat-card">
-                <div class="stat-icon warning"><span class="material-icons-outlined">error_outline</span></div>
-                <div class="stat-info">
-                    <span class="stat-value">{{ summary()!.errorCount | number }}</span>
-                    <span class="stat-label">Hata</span>
-                </div>
+                <span class="stat-value">{{ summary()!.errorCount | number }}</span>
+                <span class="stat-label">Hata</span>
             </div>
             <div class="stat-card">
-                <div class="stat-icon gold"><span class="material-icons-outlined">speed</span></div>
-                <div class="stat-info">
-                    <span class="stat-value">{{ summary()!.averageDurationMs | number:'1.0-0' }}ms</span>
-                    <span class="stat-label">Ort. YanÄ±t</span>
-                </div>
+                <span class="stat-value">{{ summary()!.averageDurationMs | number:'1.0-0' }} ms</span>
+                <span class="stat-label">Ort. yanýt</span>
             </div>
         </div>
     }
 
-    <!-- Filtreler -->
     <div class="filter-bar">
-        <div class="filter-group">
-            <div class="search-wrapper">
-                <span class="material-icons-outlined search-icon">search</span>
-                <input type="text" class="form-input search-input"
-                    placeholder="Ä°ÅŸlem veya modÃ¼l ara..."
-                    [(ngModel)]="searchTerm" (input)="onFilterChange()">
-            </div>
-            <input type="date" class="form-input date-input" [(ngModel)]="fromDate" (change)="onFilterChange()">
-            <input type="date" class="form-input date-input" [(ngModel)]="toDate"   (change)="onFilterChange()">
-            <button class="btn btn-sm" [class.btn-danger]="onlyErrors" [class.btn-secondary]="!onlyErrors"
-                    (click)="toggleErrors()">
-                <span class="material-icons-outlined" style="font-size:16px">{{ onlyErrors ? 'error' : 'filter_list' }}</span>
-                {{ onlyErrors ? 'TÃ¼m Ä°ÅŸlemler' : 'Sadece Hatalar' }}
-            </button>
+        <div class="search-wrapper">
+            <input
+                type="text"
+                class="form-input"
+                placeholder="Ýþlem, modül veya kullanýcý ara"
+                [(ngModel)]="searchTerm"
+            >
         </div>
+        <input type="date" class="form-input" [(ngModel)]="fromDate" (change)="onFilterChange()">
+        <input type="date" class="form-input" [(ngModel)]="toDate" (change)="onFilterChange()">
+        <button class="btn" [class.btn-danger]="onlyErrors" [class.btn-secondary]="!onlyErrors" (click)="toggleErrors()">
+            {{ onlyErrors ? 'Tüm iþlemler' : 'Sadece hatalar' }}
+        </button>
     </div>
 
-    <!-- Tablo -->
     <div class="table-wrapper">
         @if (isLoading()) {
-            <div class="loading-state">
-                <span class="material-icons-outlined spin">sync</span>
-                <span>YÃ¼kleniyor...</span>
-            </div>
+            <div class="empty-state">Yükleniyor...</div>
         } @else if (sortedLogs.length === 0) {
-            <div class="empty-state">
-                <span class="material-icons-outlined" style="font-size:48px;opacity:0.3">manage_search</span>
-                <p>KayÄ±t bulunamadÄ±</p>
-            </div>
+            <div class="empty-state">Kayýt bulunamadý.</div>
         } @else {
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th class="sortable" [class.sorted]="sortColumn==='occurredAtUtc'" (click)="sort('occurredAtUtc')" style="width:155px">Tarih & Saat <span class="sort-icon material-icons-outlined">{{ sortColumn==='occurredAtUtc' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
-                        <th style="width:130px">ModÃ¼l</th>
-                        <th>Ä°ÅŸlem</th>
-                        <th class="sortable" [class.sorted]="sortColumn==='statusCode'" (click)="sort('statusCode')" style="width:110px">Durum <span class="sort-icon material-icons-outlined">{{ sortColumn==='statusCode' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
-                        <th class="sortable" [class.sorted]="sortColumn==='durationMs'" (click)="sort('durationMs')" style="width:80px">SÃ¼re <span class="sort-icon material-icons-outlined">{{ sortColumn==='durationMs' ? (sortDir==='asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more' }}</span></th>
+                        <th class="sortable" (click)="sort('occurredAtUtc')">Tarih</th>
+                        <th>Modül</th>
+                        <th>Ýþlem</th>
+                        <th class="sortable" (click)="sort('statusCode')">Durum</th>
+                        <th class="sortable" (click)="sort('durationMs')">Süre</th>
                     </tr>
                 </thead>
                 <tbody>
                     @for (log of sortedLogs; track log.id) {
-                        <tr class="clickable-row" [class.error-row]="log.statusCode >= 400" (click)="viewDetail(log)">
-                            <td class="date-cell">{{ log.occurredAtUtc | date:'dd.MM.yy HH:mm' }}</td>
+                        <tr class="clickable-row" [class.business-row]="isBusinessFlow(log)" (click)="viewDetail(log)">
+                            <td class="mono">{{ log.occurredAtUtc | date:'dd.MM.yyyy HH:mm' }}</td>
                             <td>
-                                <span class="module-badge" [ngClass]="getModuleClass(log.path)">
-                                    <span class="material-icons-outlined" style="font-size:13px">{{ getModuleIcon(log.path) }}</span>
-                                    {{ getModuleLabel(log.path) }}
-                                </span>
+                                <span class="module-badge" [ngClass]="getModuleClass(log.path)">{{ getModuleLabel(log.path) }}</span>
                             </td>
-                            <td class="action-cell">{{ getActionLabel(log.httpMethod, log.path) }}</td>
+                            <td>
+                                <div class="action-cell">
+                                    <span class="action-title">{{ getActionLabel(log) }}</span>
+                                    @if (log.userName) {
+                                        <span class="action-meta">{{ log.userName }}</span>
+                                    }
+                                </div>
+                            </td>
                             <td>
                                 <span class="status-chip" [ngClass]="getStatusClass(log.statusCode)">
                                     {{ getStatusLabel(log.statusCode) }}
                                 </span>
                             </td>
-                            <td class="duration-cell">{{ formatDuration(log.durationMs) }}</td>
+                            <td class="mono">{{ formatDuration(log.durationMs) }}</td>
                         </tr>
                     }
                 </tbody>
@@ -117,71 +88,58 @@
         }
     </div>
 
-    <!-- Sayfalama -->
-    @if (sortedLogs.length >= pageSize) {
-        <div class="pagination">
-            <button class="btn btn-sm btn-secondary" [disabled]="currentPage <= 1" (click)="onPageChange(currentPage - 1)">
-                <span class="material-icons-outlined">chevron_left</span>
-            </button>
-            <span class="page-info">Sayfa {{ currentPage }}</span>
-            <button class="btn btn-sm btn-secondary" (click)="onPageChange(currentPage + 1)">
-                <span class="material-icons-outlined">chevron_right</span>
-            </button>
-        </div>
-    }
-
-    <!-- Detay Modal -->
-    @if (selected()) {
+    @if (selected(); as log) {
         <div class="modal-overlay" (click)="closeDetail()">
-            <div class="modal detail-modal" (click)="$event.stopPropagation()">
+            <div class="detail-modal" (click)="$event.stopPropagation()">
                 <div class="modal-header">
-                    <div class="modal-title-area">
-                        <span class="modal-title-icon material-icons-outlined">info</span>
-                        <h3>Ä°ÅŸlem DetayÄ±</h3>
+                    <div>
+                        <h3>Ýþlem detayý</h3>
+                        <p>{{ getModuleLabel(log.path) }}</p>
                     </div>
-                    <button class="btn-icon" (click)="closeDetail()">
-                        <span class="material-icons-outlined">close</span>
-                    </button>
+                    <button class="btn-icon" (click)="closeDetail()">Kapat</button>
                 </div>
+
                 <div class="modal-body">
-                    <!-- Ã–zet satÄ±r -->
-                    <div class="detail-summary-bar">
-                        <span class="module-badge lg" [ngClass]="getModuleClass(selected()!.path)">
-                            <span class="material-icons-outlined">{{ getModuleIcon(selected()!.path) }}</span>
-                            {{ getModuleLabel(selected()!.path) }}
-                        </span>
-                        <span class="action-title">{{ getActionLabel(selected()!.httpMethod, selected()!.path) }}</span>
-                        <span class="status-chip" [ngClass]="getStatusClass(selected()!.statusCode)">
-                            {{ selected()!.statusCode }} â€” {{ getStatusLabel(selected()!.statusCode) }}
-                        </span>
+                    <div class="detail-top">
+                        <span class="method-badge" [ngClass]="getMethodClass(log.httpMethod)">{{ getMethodLabel(log.httpMethod) }}</span>
+                        <span class="status-chip" [ngClass]="getStatusClass(log.statusCode)">{{ log.statusCode }}</span>
+                    </div>
+
+                    <div class="detail-highlight">
+                        <strong>{{ getActionLabel(log) }}</strong>
+                        @if (log.description) {
+                            <p>{{ log.description }}</p>
+                        }
                     </div>
 
                     <div class="detail-grid">
                         <div class="detail-item">
-                            <label>Tarih & Saat</label>
-                            <span>{{ selected()!.occurredAtUtc | date:'dd.MM.yyyy HH:mm:ss' }}</span>
+                            <label>Tarih</label>
+                            <span>{{ log.occurredAtUtc | date:'dd.MM.yyyy HH:mm:ss' }}</span>
                         </div>
                         <div class="detail-item">
-                            <label>YanÄ±t SÃ¼resi</label>
-                            <span>{{ formatDuration(selected()!.durationMs) }}</span>
+                            <label>Kullanýcý</label>
+                            <span>{{ log.userName || '-' }}</span>
                         </div>
                         <div class="detail-item">
-                            <label>IP Adresi</label>
-                            <span class="mono">{{ selected()!.ipAddress || '-' }}</span>
+                            <label>Süre</label>
+                            <span>{{ formatDuration(log.durationMs) }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>IP</label>
+                            <span class="mono">{{ log.ipAddress || '-' }}</span>
                         </div>
                         <div class="detail-item full-width">
-                            <label>Teknik Detay</label>
-                            <div class="request-info">
-                                <span class="method-badge" [ngClass]="getMethodClass(selected()!.httpMethod)">
-                                    {{ selected()!.httpMethod }}
-                                </span>
-                                <code class="path-code">{{ selected()!.path }}</code>
-                            </div>
+                            <label>Ýstek yolu</label>
+                            <code>{{ log.path || '-' }}</code>
+                        </div>
+                        <div class="detail-item full-width">
+                            <label>User agent</label>
+                            <span>{{ log.userAgent || '-' }}</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     }
-
 </div>

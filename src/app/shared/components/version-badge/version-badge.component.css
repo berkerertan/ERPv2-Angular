@@ -1,0 +1,37 @@
+.version-badge {
+    position: fixed;
+    top: 8px;
+    right: 12px;
+    z-index: 2500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(12, 10, 8, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: rgba(241, 243, 245, 0.55);
+    backdrop-filter: blur(8px);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    pointer-events: none;
+    user-select: none;
+}
+
+.version-badge__label {
+    font-weight: 600;
+}
+
+.version-badge__build {
+    opacity: 0.75;
+}
+
+@media (max-width: 768px) {
+    .version-badge {
+        top: 6px;
+        right: 8px;
+        font-size: 9px;
+        padding: 2px 6px;
+    }
+}
