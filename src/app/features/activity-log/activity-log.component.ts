@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+ï»¿import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivityLogService } from '../../core/services/activity-log.service';
@@ -138,32 +138,32 @@ export class ActivityLogComponent implements OnInit {
 
         if (method === 'APPROVE') return 'Onay verildi';
         if (method === 'REJECT') return 'Reddedildi';
-        if (path.includes('/auth/login')) return 'Giriþ yapýldý';
-        if (path.includes('/auth/logout')) return 'Çýkýþ yapýldý';
-        if (path.includes('/purchase-orders/recommendations')) return 'Satýn alma önerileri görüntülendi';
-        if (path.includes('/inventory-count-sessions')) return 'Sayým oturumu iþlendi';
-        if (path.includes('/sales-orders') && path.includes('/approve')) return 'Satýþ sipariþi onaylandý';
-        if (path.includes('/sales-orders') && path.includes('/reject')) return 'Satýþ sipariþi reddedildi';
-        if (path.includes('/purchase-orders') && path.includes('/approve')) return 'Satýn alma sipariþi onaylandý';
-        if (path.includes('/purchase-orders') && path.includes('/reject')) return 'Satýn alma sipariþi reddedildi';
-        if (path.includes('/stock-movements') && path.includes('/inventory-count')) return 'Stok sayýmý kaydedildi';
-        if (path.includes('/notifications')) return 'Bildirimler görüntülendi';
+        if (path.includes('/auth/login')) return 'GiriÅŸ yapÄ±ldÄ±';
+        if (path.includes('/auth/logout')) return 'Ã‡Ä±kÄ±ÅŸ yapÄ±ldÄ±';
+        if (path.includes('/purchase-orders/recommendations')) return 'SatÄ±n alma Ã¶nerileri gÃ¶rÃ¼ntÃ¼lendi';
+        if (path.includes('/inventory-count-sessions')) return 'SayÄ±m oturumu iÅŸlendi';
+        if (path.includes('/sales-orders') && path.includes('/approve')) return 'SatÄ±ÅŸ sipariÅŸi onaylandÄ±';
+        if (path.includes('/sales-orders') && path.includes('/reject')) return 'SatÄ±ÅŸ sipariÅŸi reddedildi';
+        if (path.includes('/purchase-orders') && path.includes('/approve')) return 'SatÄ±n alma sipariÅŸi onaylandÄ±';
+        if (path.includes('/purchase-orders') && path.includes('/reject')) return 'SatÄ±n alma sipariÅŸi reddedildi';
+        if (path.includes('/stock-movements') && path.includes('/inventory-count')) return 'Stok sayÄ±mÄ± kaydedildi';
+        if (path.includes('/notifications')) return 'Bildirimler gÃ¶rÃ¼ntÃ¼lendi';
 
         return method === 'GET'
-            ? 'Kayýt görüntülendi'
+            ? 'KayÄ±t gÃ¶rÃ¼ntÃ¼lendi'
             : method === 'POST'
-                ? 'Yeni kayýt oluþturuldu'
+                ? 'Yeni kayÄ±t oluÅŸturuldu'
                 : method === 'PUT'
-                    ? 'Kayýt güncellendi'
+                    ? 'KayÄ±t gÃ¼ncellendi'
                     : method === 'DELETE'
-                        ? 'Kayýt silindi'
-                        : 'Ýþlem yapýldý';
+                        ? 'KayÄ±t silindi'
+                        : 'Ä°ÅŸlem yapÄ±ldÄ±';
     }
 
     getModuleLabel(path?: string): string {
         const value = (path ?? '').toLowerCase();
-        if (value.includes('/purchase-orders')) return 'Satýn alma';
-        if (value.includes('/sales-orders')) return 'Satýþ';
+        if (value.includes('/purchase-orders')) return 'SatÄ±n alma';
+        if (value.includes('/sales-orders')) return 'SatÄ±ÅŸ';
         if (value.includes('/stock-movements')) return 'Stok';
         if (value.includes('/cari-accounts')) return 'Cari';
         if (value.includes('/notifications')) return 'Bildirim';
@@ -175,8 +175,8 @@ export class ActivityLogComponent implements OnInit {
     getModuleClass(path?: string): string {
         const module = this.getModuleLabel(path);
         return {
-            'Satýn alma': 'mod-purchase',
-            'Satýþ': 'mod-sales',
+            'SatÄ±n alma': 'mod-purchase',
+            'SatÄ±ÅŸ': 'mod-sales',
             'Stok': 'mod-stock',
             'Cari': 'mod-cari',
             'Bildirim': 'mod-notification',
@@ -194,9 +194,9 @@ export class ActivityLogComponent implements OnInit {
     }
 
     getStatusLabel(code: number): string {
-        if (code >= 500) return 'Sunucu hatasý';
-        if (code >= 400) return 'Ýstek hatasý';
-        if (code >= 200) return 'Baþarýlý';
+        if (code >= 500) return 'Sunucu hatasÄ±';
+        if (code >= 400) return 'Ä°stek hatasÄ±';
+        if (code >= 200) return 'BaÅŸarÄ±lÄ±';
         return 'Bilinmiyor';
     }
 
@@ -215,7 +215,7 @@ export class ActivityLogComponent implements OnInit {
 
     getMethodLabel(method?: string): string {
         const value = (method ?? '').toUpperCase();
-        return value || 'ÝÞLEM';
+        return value || 'Ä°ÅžLEM';
     }
 
     isBusinessFlow(log: TenantActivityLogDto): boolean {

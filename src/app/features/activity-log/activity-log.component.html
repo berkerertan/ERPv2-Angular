@@ -1,8 +1,8 @@
-<div class="page-container">
+ï»¿<div class="page-container">
     <div class="page-header">
         <div>
-            <h1 class="page-title">Aktivite Geçmiþi</h1>
-            <p class="page-subtitle">Yaptýðýnýz iþlemleri ve onay akýþlarýný buradan takip edin.</p>
+            <h1 class="page-title">Aktivite GeÃ§miÅŸi</h1>
+            <p class="page-subtitle">YaptÄ±ÄŸÄ±nÄ±z iÅŸlemleri ve onay akÄ±ÅŸlarÄ±nÄ± buradan takip edin.</p>
         </div>
         <button class="btn btn-secondary" (click)="refresh()">Yenile</button>
     </div>
@@ -11,11 +11,11 @@
         <div class="stats-grid">
             <div class="stat-card">
                 <span class="stat-value">{{ summary()!.totalCount | number }}</span>
-                <span class="stat-label">Toplam iþlem</span>
+                <span class="stat-label">Toplam iÅŸlem</span>
             </div>
             <div class="stat-card">
                 <span class="stat-value">{{ summary()!.todayCount | number }}</span>
-                <span class="stat-label">Bugün</span>
+                <span class="stat-label">BugÃ¼n</span>
             </div>
             <div class="stat-card">
                 <span class="stat-value">{{ summary()!.errorCount | number }}</span>
@@ -23,7 +23,7 @@
             </div>
             <div class="stat-card">
                 <span class="stat-value">{{ summary()!.averageDurationMs | number:'1.0-0' }} ms</span>
-                <span class="stat-label">Ort. yanýt</span>
+                <span class="stat-label">Ort. yanÄ±t</span>
             </div>
         </div>
     }
@@ -33,31 +33,31 @@
             <input
                 type="text"
                 class="form-input"
-                placeholder="Ýþlem, modül veya kullanýcý ara"
+                placeholder="Ä°ÅŸlem, modÃ¼l veya kullanÄ±cÄ± ara"
                 [(ngModel)]="searchTerm"
             >
         </div>
         <input type="date" class="form-input" [(ngModel)]="fromDate" (change)="onFilterChange()">
         <input type="date" class="form-input" [(ngModel)]="toDate" (change)="onFilterChange()">
         <button class="btn" [class.btn-danger]="onlyErrors" [class.btn-secondary]="!onlyErrors" (click)="toggleErrors()">
-            {{ onlyErrors ? 'Tüm iþlemler' : 'Sadece hatalar' }}
+            {{ onlyErrors ? 'TÃ¼m iÅŸlemler' : 'Sadece hatalar' }}
         </button>
     </div>
 
     <div class="table-wrapper">
         @if (isLoading()) {
-            <div class="empty-state">Yükleniyor...</div>
+            <div class="empty-state">YÃ¼kleniyor...</div>
         } @else if (sortedLogs.length === 0) {
-            <div class="empty-state">Kayýt bulunamadý.</div>
+            <div class="empty-state">KayÄ±t bulunamadÄ±.</div>
         } @else {
             <table class="data-table">
                 <thead>
                     <tr>
                         <th class="sortable" (click)="sort('occurredAtUtc')">Tarih</th>
-                        <th>Modül</th>
-                        <th>Ýþlem</th>
+                        <th>ModÃ¼l</th>
+                        <th>Ä°ÅŸlem</th>
                         <th class="sortable" (click)="sort('statusCode')">Durum</th>
-                        <th class="sortable" (click)="sort('durationMs')">Süre</th>
+                        <th class="sortable" (click)="sort('durationMs')">SÃ¼re</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -93,7 +93,7 @@
             <div class="detail-modal" (click)="$event.stopPropagation()">
                 <div class="modal-header">
                     <div>
-                        <h3>Ýþlem detayý</h3>
+                        <h3>Ä°ÅŸlem detayÄ±</h3>
                         <p>{{ getModuleLabel(log.path) }}</p>
                     </div>
                     <button class="btn-icon" (click)="closeDetail()">Kapat</button>
@@ -118,11 +118,11 @@
                             <span>{{ log.occurredAtUtc | date:'dd.MM.yyyy HH:mm:ss' }}</span>
                         </div>
                         <div class="detail-item">
-                            <label>Kullanýcý</label>
+                            <label>KullanÄ±cÄ±</label>
                             <span>{{ log.userName || '-' }}</span>
                         </div>
                         <div class="detail-item">
-                            <label>Süre</label>
+                            <label>SÃ¼re</label>
                             <span>{{ formatDuration(log.durationMs) }}</span>
                         </div>
                         <div class="detail-item">
@@ -130,7 +130,7 @@
                             <span class="mono">{{ log.ipAddress || '-' }}</span>
                         </div>
                         <div class="detail-item full-width">
-                            <label>Ýstek yolu</label>
+                            <label>Ä°stek yolu</label>
                             <code>{{ log.path || '-' }}</code>
                         </div>
                         <div class="detail-item full-width">

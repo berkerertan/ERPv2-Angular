@@ -6,7 +6,7 @@
             <span class="material-icons-outlined">hub</span>
         </div>
         <h1 class="login-title">StokNet</h1>
-        <p class="login-subtitle">Kurumsal YÃ¶netim Sistemine GiriÅŸ YapÄ±n</p>
+        <p class="login-subtitle">Kurumsal Yönetim Sistemine Giriş Yapın</p>
     </div>
 
     <!-- Social Login Buttons -->
@@ -31,7 +31,7 @@
 
     <!-- Divider -->
     <div class="social-divider">
-        <span>veya e-posta ile giriÅŸ yap</span>
+        <span>veya e-posta ile giriş yap</span>
     </div>
 
     <!-- Error Message -->
@@ -70,7 +70,7 @@
     <!-- Login Form -->
     <form class="login-form" (ngSubmit)="onSubmit()">
         <div class="form-group">
-            <label class="form-label" for="userName">KullanÄ±cÄ± AdÄ±</label>
+            <label class="form-label" for="userName">Kullanıcı Adı</label>
             <div class="input-wrapper">
                 <span class="input-icon material-icons-outlined">person</span>
                 <input id="userName" type="text" class="form-input has-icon" placeholder="admin"
@@ -79,11 +79,11 @@
         </div>
 
         <div class="form-group">
-            <label class="form-label" for="password">Åifre</label>
+            <label class="form-label" for="password">Şifre</label>
             <div class="input-wrapper">
                 <span class="input-icon material-icons-outlined">lock</span>
                 <input id="password" [type]="showPassword() ? 'text' : 'password'"
-                    class="form-input has-icon has-toggle" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" [(ngModel)]="password" name="password"
+                    class="form-input has-icon has-toggle" placeholder="••••••••" [(ngModel)]="password" name="password"
                     autocomplete="current-password" [disabled]="isLoading()" />
                 <button type="button" class="password-toggle" (click)="togglePassword()">
                     <span class="material-icons-outlined">
@@ -96,15 +96,15 @@
         <button type="submit" class="btn btn-primary btn-lg login-btn" [disabled]="isLoading()">
             @if (isLoading()) {
             <div class="spinner spinner-sm"></div>
-            <span>GiriÅŸ YapÄ±lÄ±yor...</span>
+            <span>Giriş Yapılıyor...</span>
             } @else {
             <span class="material-icons-outlined">login</span>
-            <span>GiriÅŸ Yap</span>
+            <span>Giriş Yap</span>
             }
         </button>
     </form>
 
-    <!-- Demo GiriÅŸ -->
+    <!-- Demo Giriş -->
     <div class="demo-divider">
         <span>veya</span>
     </div>
@@ -116,7 +116,7 @@
 
     <!-- Footer -->
     <div class="login-footer">
-        <p>HesabÄ±nÄ±z yok mu? <a routerLink="/auth/register" class="link">KayÄ±t Olun</a></p>
+        <p>Hesabınız yok mu? <a routerLink="/auth/register" class="link">Kayıt Olun</a></p>
     </div>
 </div>
 

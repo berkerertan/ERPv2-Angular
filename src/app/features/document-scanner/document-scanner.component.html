@@ -1,8 +1,8 @@
-<div class="page-container">
+﻿<div class="page-container">
     <div class="page-header">
         <div>
-            <h1 class="page-title">Evrak Tarayici</h1>
-            <p class="page-subtitle">Fatura, irsaliye veya fis gorselini yukleyin - yapay zeka otomatik okusun</p>
+            <h1 class="page-title">Evrak Tarayıcı</h1>
+            <p class="page-subtitle">Fatura, irsaliye veya fiş görselini yükleyin, yapay zeka otomatik okusun</p>
         </div>
 
         <div class="provider-toggle">
@@ -39,9 +39,9 @@
                 <div class="upload-icon">
                     <span class="material-icons-outlined">document_scanner</span>
                 </div>
-                <h3 class="upload-title">Belgeyi buraya surukleyin</h3>
-                <p class="upload-hint">veya tiklayarak dosya secin</p>
-                <p class="upload-formats">JPEG � PNG � WebP - Maks. 10 MB</p>
+                <h3 class="upload-title">Belgeyi buraya sürükleyin</h3>
+                <p class="upload-hint">veya tıklayarak dosya seçin</p>
+                <p class="upload-formats">JPEG - PNG - WebP - Maks. 10 MB</p>
             </div>
             }
 
@@ -55,12 +55,12 @@
                             <span class="preview-filesize">{{ fileSize() }}</span>
                         </div>
                     </div>
-                    <button class="preview-reset-btn" (click)="reset()" title="Yeni belge yukle">
+                    <button class="preview-reset-btn" (click)="reset()" title="Yeni belge yükle">
                         <span class="material-icons-outlined">close</span>
                     </button>
                 </div>
                 <div class="preview-img-wrap">
-                    <img [src]="previewUrl()" alt="Belge onizleme" class="preview-img" />
+                    <img [src]="previewUrl()" alt="Belge önizleme" class="preview-img" />
                     @if (pageState() === 'analyzing') {
                     <div class="preview-overlay">
                         <div class="spinner spinner-lg"></div>
@@ -83,15 +83,15 @@
             @if (pageState() === 'idle' || pageState() === 'preview') {
             <div class="results-placeholder">
                 <span class="material-icons-outlined">receipt_long</span>
-                <p>Belgeyi analiz ettikten sonra<br>sonuclar burada gorunecek</p>
+                <p>Belgeyi analiz ettikten sonra<br>sonuçlar burada görünecek</p>
                 <div class="capabilities">
                     <div class="capability-item">
                         <span class="material-icons-outlined">store</span>
-                        Tedarikci bilgisi
+                        Tedarikçi bilgisi
                     </div>
                     <div class="capability-item">
                         <span class="material-icons-outlined">list_alt</span>
-                        Urun kalemleri
+                        Ürün kalemleri
                     </div>
                     <div class="capability-item">
                         <span class="material-icons-outlined">payments</span>
@@ -108,7 +108,7 @@
             @if (pageState() === 'analyzing') {
             <div class="results-placeholder">
                 <div class="spinner spinner-lg"></div>
-                <p class="analyzing-hint">Belge okunuyor, lutfen bekleyin...</p>
+                <p class="analyzing-hint">Belge okunuyor, lütfen bekleyin...</p>
             </div>
             }
 
@@ -127,10 +127,10 @@
                 </div>
 
                 <div class="result-section">
-                    <h3 class="result-section-title">Tedarikci Bilgisi</h3>
+                    <h3 class="result-section-title">Tedarikçi Bilgisi</h3>
                     <div class="info-grid">
                         <div class="info-item">
-                            <span class="info-label">Firma Adi</span>
+                            <span class="info-label">Firma Adı</span>
                             <span class="info-value">{{ res.vendorName || '-' }}</span>
                         </div>
                         <div class="info-item">
@@ -160,7 +160,7 @@
                         <table class="items-table">
                             <thead>
                                 <tr>
-                                    <th>Aciklama</th>
+                                    <th>Açıklama</th>
                                     <th class="col-num">Miktar</th>
                                     <th>Birim</th>
                                     <th class="col-num">B.Fiyat</th>
@@ -207,7 +207,7 @@
                                 </tr>
                                 }
                                 @if (editableItems().length === 0) {
-                                <tr><td colspan="6" class="items-empty">Kalem bulunamadi</td></tr>
+                                <tr><td colspan="6" class="items-empty">Kalem bulunamadı</td></tr>
                                 }
                             </tbody>
                         </table>
@@ -233,30 +233,30 @@
                 </div>
 
                 <div class="result-section operation-section">
-                    <h3 class="result-section-title">Islem Secimi</h3>
+                    <h3 class="result-section-title">İşlem Seçimi</h3>
 
                     <div class="operation-toggle">
                         <button class="operation-btn"
                                 [class.operation-btn--active]="operation() === 'buyerDebt'"
                                 (click)="setOperation('buyerDebt')">
-                            Alici Borcuna Ekle
+                            Alıcı Borcuna Ekle
                         </button>
                         <button class="operation-btn"
                                 [class.operation-btn--active]="operation() === 'supplierPurchaseOrder'"
                                 (click)="setOperation('supplierPurchaseOrder')">
-                            Satin Alma Siparisi
+                            Satın Alma Siparişi
                         </button>
                         <button class="operation-btn"
                                 [class.operation-btn--active]="operation() === 'stockIn'"
                                 (click)="setOperation('stockIn')">
-                            Stoga Giris
+                            Stoğa Giriş
                         </button>
                     </div>
 
                     @if (isLoadingTargets()) {
                     <div class="target-loading">
                         <div class="spinner"></div>
-                        <span>Hedef listeleri yukleniyor...</span>
+                        <span>Hedef listeleri yükleniyor...</span>
                     </div>
                     }
 
@@ -264,7 +264,7 @@
                     <div class="target-grid">
                         @if (operation() === 'buyerDebt') {
                         <label class="target-field">
-                            <span>Alici</span>
+                            <span>Alıcı</span>
                             <select [ngModel]="selectedBuyerId()"
                                     (ngModelChange)="selectedBuyerId.set($event); commitResult.set(null)">
                                 @for (buyer of buyers(); track buyer.id) {
@@ -276,7 +276,7 @@
 
                         @if (operation() === 'supplierPurchaseOrder') {
                         <label class="target-field">
-                            <span>Tedarikci</span>
+                            <span>Tedarikçi</span>
                             <select [ngModel]="selectedSupplierId()"
                                     (ngModelChange)="selectedSupplierId.set($event); commitResult.set(null)">
                                 @for (supplier of suppliers(); track supplier.id) {
@@ -312,7 +312,7 @@
                             <input type="checkbox"
                                    [ngModel]="createMissingProducts()"
                                    (ngModelChange)="createMissingProducts.set(!!$event); commitResult.set(null)" />
-                            <span>Bulunamayan urunleri otomatik olustur</span>
+                            <span>Bulunamayan ürünleri otomatik oluştur</span>
                         </label>
                         }
                     </div>
@@ -326,7 +326,7 @@
                         <span>Kaydediliyor...</span>
                         } @else {
                         <span class="material-icons-outlined">save</span>
-                        <span>Secime Gore Isle</span>
+                        <span>Seçime Göre İşle</span>
                         }
                     </button>
 
@@ -334,9 +334,9 @@
                     <div class="commit-result">
                         <div class="commit-title">{{ commit.message }}</div>
                         <div class="commit-meta">
-                            <span>Islenen kalem: {{ commit.processedItemCount }}</span>
-                            <span>Yeni urun: {{ commit.createdProductCount }}</span>
-                            <span>Olusan kayit: {{ commit.createdRecordIds.length }}</span>
+                            <span>İşlenen kalem: {{ commit.processedItemCount }}</span>
+                            <span>Yeni ürün: {{ commit.createdProductCount }}</span>
+                            <span>Oluşan kayıt: {{ commit.createdRecordIds.length }}</span>
                         </div>
                     </div>
                     }
