@@ -1,0 +1,215 @@
+<div class="crud-page">
+  <div class="page-header">
+    <div>
+      <h1>Tedarikçi Teklif Toplama</h1>
+      <p class="text-muted">Bir ihtiyaç listesini birden fazla tedarikçiden fiyat toplayarak karşılaştırın.</p>
+    </div>
+    <button class="btn btn-primary" (click)="openCreateModal()">Yeni Talep</button>
+  </div>
+
+  <div class="toolbar-card">
+    <input class="form-input" [(ngModel)]="searchTerm" placeholder="Talep no, başlık, depo..." />
+  </div>
+
+  <div class="workspace-grid">
+    <section class="list-panel card">
+      <div class="panel-head">
+        <h3>Talepler</h3>
+        <span class="text-muted">{{ filteredItems().length }} kayıt</span>
+      </div>
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Başlık</th>
+              <th>Depo</th>
+              <th>Durum</th>
+              <th>Teklif</th>
+              <th>En İyi Toplam</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (row of filteredItems(); track row.id) {
+              <tr [class.active-row]="selectedId() === row.id" (click)="openDetail(row.id)">
+                <td>{{ row.requestNo }}</td>
+                <td>{{ row.title }}</td>
+                <td>{{ row.warehouseName }}</td>
+                <td><span class="status-pill">{{ statusLabel(row.status) }}</span></td>
+                <td>{{ row.receivedOfferCount }}/{{ row.supplierCount }}</td>
+                <td>{{ row.estimatedBestTotal | number:'1.2-2' }} TL</td>
+              </tr>
+            } @empty {
+              <tr><td colspan="6" class="empty-state">Kayıt bulunamadı.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="detail-panel card">
+      @if (isLoadingDetail()) {
+        <div class="empty-state">Detay yükleniyor...</div>
+      } @else if (detail()) {
+        <div class="panel-head">
+          <div>
+            <h3>{{ detail()!.requestNo }} - {{ detail()!.title }}</h3>
+            <p class="text-muted">{{ detail()!.warehouseName }} · {{ statusLabel(detail()!.status) }}</p>
+          </div>
+          @if (detail()!.selectedOfferId) {
+            <button class="btn btn-success" (click)="convertSelected()">Siparişe Dönüştür</button>
+          }
+        </div>
+
+        <div class="meta-grid">
+          <div class="meta-card"><span>İstenen Tarih</span><strong>{{ detail()!.neededByDateUtc ? (detail()!.neededByDateUtc | date:'dd.MM.yyyy') : '—' }}</strong></div>
+          <div class="meta-card"><span>Oluşturan</span><strong>{{ detail()!.createdByUserName || 'Sistem' }}</strong></div>
+          <div class="meta-card"><span>Ürün</span><strong>{{ detail()!.items.length }}</strong></div>
+          <div class="meta-card"><span>Gelen Teklif</span><strong>{{ detail()!.offers.filter(o => +o.status === 2).length }}</strong></div>
+        </div>
+
+        <div class="request-items">
+          <h4>İstenen Kalemler</h4>
+          <table class="table compact">
+            <thead>
+              <tr><th>Ürün</th><th>Miktar</th><th>Hedef Fiyat</th></tr>
+            </thead>
+            <tbody>
+              @for (item of detail()!.items; track item.productId) {
+                <tr>
+                  <td>{{ item.productCode }} - {{ item.productName }}</td>
+                  <td>{{ item.quantity }} {{ item.unit }}</td>
+                  <td>{{ item.targetUnitPrice || 0 | number:'1.2-2' }} TL</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <div class="offers-grid">
+          @for (offer of detail()!.offers; track offer.id) {
+            <article class="offer-card" [class.selected-offer]="offer.isSelected">
+              <div class="offer-head">
+                <div>
+                  <h4>{{ offer.supplierName }}</h4>
+                  <p class="text-muted">{{ offerStatusLabel(offer.status) }}</p>
+                </div>
+                <div class="offer-actions">
+                  <span class="offer-total">{{ offer.totalAmount | number:'1.2-2' }} TL</span>
+                  <button class="btn btn-secondary btn-sm" (click)="selectOffer(offer)">Seç</button>
+                </div>
+              </div>
+
+              @if (getOfferDraft(offer.id); as draft) {
+                <div class="offer-meta">
+                  <label>Durum
+                    <select class="form-input" [(ngModel)]="draft.status">
+                      <option [ngValue]="1">Bekleniyor</option>
+                      <option [ngValue]="2">Geldi</option>
+                      <option [ngValue]="3">Reddedildi</option>
+                    </select>
+                  </label>
+                  <label>Termin (gün)
+                    <input class="form-input" type="number" [(ngModel)]="draft.leadTimeDays" />
+                  </label>
+                </div>
+
+                <table class="table compact">
+                  <thead>
+                    <tr><th>Ürün</th><th>Miktar</th><th>Birim Fiyat</th><th>Min.</th></tr>
+                  </thead>
+                  <tbody>
+                    @for (item of draft.items; track item.productId) {
+                      <tr>
+                        <td>{{ detail()!.items.find(x => x.productId === item.productId)?.productName }}</td>
+                        <td><input class="form-input mini" type="number" [(ngModel)]="item.offeredQuantity" /></td>
+                        <td><input class="form-input mini" type="number" [(ngModel)]="item.unitPrice" /></td>
+                        <td><input class="form-input mini" type="number" [(ngModel)]="item.minimumOrderQuantity" /></td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+
+                <textarea class="form-input" rows="2" [(ngModel)]="draft.notes" placeholder="Teklif notu"></textarea>
+                <div class="offer-foot">
+                  @if (offer.isSelected) {
+                    <span class="selected-label">Seçili teklif</span>
+                  }
+                  <button class="btn btn-primary btn-sm" (click)="saveOffer(offer)">Teklifi Kaydet</button>
+                </div>
+              }
+            </article>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">Soldan bir teklif talebi seçin.</div>
+      }
+    </section>
+  </div>
+</div>
+
+@if (showCreateModal()) {
+  <div class="modal-overlay" (click)="closeCreateModal()">
+    <div class="modal-card wide" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Yeni Teklif Talebi</h3>
+        <button class="icon-btn" (click)="closeCreateModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <label>Başlık<input class="form-input" [(ngModel)]="formData.title" /></label>
+          <label>Depo
+            <select class="form-input" [(ngModel)]="formData.warehouseId">
+              @for (warehouse of warehouses(); track warehouse.id) {
+                <option [value]="warehouse.id">{{ warehouse.name }}</option>
+              }
+            </select>
+          </label>
+          <label>İstenen Tarih<input class="form-input" type="date" [(ngModel)]="formData.neededByDateUtc" /></label>
+        </div>
+
+        <label>Tedarikçiler</label>
+        <div class="supplier-picks">
+          @for (supplier of suppliers(); track supplier.id) {
+            <label class="check-chip">
+              <input type="checkbox" [checked]="formData.supplierCariAccountIds.includes(supplier.id)"
+                (change)="
+                  $any($event.target).checked
+                    ? formData.supplierCariAccountIds.push(supplier.id)
+                    : formData.supplierCariAccountIds = formData.supplierCariAccountIds.filter(x => x !== supplier.id)
+                " />
+              <span>{{ supplier.name }}</span>
+            </label>
+          }
+        </div>
+
+        <div class="modal-items">
+          <div class="items-head">
+            <h4>Kalemler</h4>
+            <button class="btn btn-secondary btn-sm" (click)="addItemRow()">Satır Ekle</button>
+          </div>
+          @for (row of formData.items; track $index) {
+            <div class="item-row">
+              <select class="form-input" [(ngModel)]="row.productId">
+                <option value="">Ürün seçin</option>
+                @for (product of products(); track product.id) {
+                  <option [value]="product.id">{{ product.code }} - {{ product.name }}</option>
+                }
+              </select>
+              <input class="form-input" type="number" [(ngModel)]="row.quantity" placeholder="Miktar" />
+              <input class="form-input" type="number" [(ngModel)]="row.targetUnitPrice" placeholder="Hedef fiyat" />
+              <button class="btn btn-danger btn-sm" (click)="removeItemRow($index)">Sil</button>
+            </div>
+          }
+        </div>
+
+        <label>Not</label>
+        <textarea class="form-input" rows="3" [(ngModel)]="formData.notes"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeCreateModal()">Vazgeç</button>
+        <button class="btn btn-primary" [disabled]="isSaving()" (click)="saveRequest()">{{ isSaving() ? 'Kaydediliyor...' : 'Kaydet' }}</button>
+      </div>
+    </div>
+  </div>
+}

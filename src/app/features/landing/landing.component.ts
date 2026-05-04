@@ -1,8 +1,20 @@
-import { Component, signal, HostListener, OnInit, OnDestroy, inject } from '@angular/core';
+﻿import { Component, HostListener, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { environment } from '../../../environments/environment';
+
+interface PricingPlan {
+    id: string;
+    name: string;
+    icon: string;
+    description: string;
+    monthlyPrice: number;
+    annualPrice: number;
+    color: string;
+    popular: boolean;
+    features: { text: string; included: boolean }[];
+}
 
 @Component({
     selector: 'app-landing',
@@ -13,14 +25,14 @@ import { environment } from '../../../environments/environment';
 })
 export class LandingComponent implements OnInit, OnDestroy {
     public authService = inject(AuthService);
-    private _featureInterval: any = null;
+    private featureInterval: ReturnType<typeof setInterval> | null = null;
     readonly offlineDownloadUrl = `${environment.apiUrl}/downloads/ERPv2-Offline-Package.zip`;
 
     isScrolled = signal(false);
     billingAnnual = signal(false);
     activeFeature = signal(0);
 
-    plans = [
+    plans: PricingPlan[] = [
         {
             id: 'starter',
             name: 'Başlangıç',
@@ -31,15 +43,15 @@ export class LandingComponent implements OnInit, OnDestroy {
             color: 'blue',
             popular: false,
             features: [
-                { text: '1 Şube', included: true },
-                { text: '3 Kullanıcı', included: true },
-                { text: 'POS & Hızlı Satış', included: true },
-                { text: 'Stok Yönetimi', included: true },
-                { text: 'Temel Raporlar', included: true },
-                { text: 'E-posta Desteği', included: true },
-                { text: 'Cari Hesaplar', included: false },
+                { text: '1 şube', included: true },
+                { text: '3 kullanıcı', included: true },
+                { text: 'POS ve hızlı satış', included: true },
+                { text: 'Stok yönetimi', included: true },
+                { text: 'Temel raporlar', included: true },
+                { text: 'E-posta desteği', included: true },
+                { text: 'Cari hesaplar', included: false },
                 { text: 'E-Fatura / E-Arşiv', included: false },
-                { text: 'Çoklu Şube', included: false },
+                { text: 'Çoklu şube', included: false }
             ]
         },
         {
@@ -52,15 +64,15 @@ export class LandingComponent implements OnInit, OnDestroy {
             color: 'purple',
             popular: true,
             features: [
-                { text: '3 Şube', included: true },
-                { text: '10 Kullanıcı', included: true },
-                { text: 'POS & Hızlı Satış', included: true },
-                { text: 'Stok Yönetimi', included: true },
-                { text: 'Gelişmiş Raporlar', included: true },
-                { text: 'Öncelikli Destek', included: true },
-                { text: 'Cari Hesaplar', included: true },
+                { text: '3 şube', included: true },
+                { text: '10 kullanıcı', included: true },
+                { text: 'POS ve hızlı satış', included: true },
+                { text: 'Stok yönetimi', included: true },
+                { text: 'Gelişmiş raporlar', included: true },
+                { text: 'Öncelikli destek', included: true },
+                { text: 'Cari hesaplar', included: true },
                 { text: 'E-Fatura / E-Arşiv', included: true },
-                { text: 'Çoklu Şube', included: false },
+                { text: 'Çoklu şube', included: false }
             ]
         },
         {
@@ -73,15 +85,15 @@ export class LandingComponent implements OnInit, OnDestroy {
             color: 'gold',
             popular: false,
             features: [
-                { text: 'Sınırsız Şube', included: true },
-                { text: 'Sınırsız Kullanıcı', included: true },
-                { text: 'POS & Hızlı Satış', included: true },
-                { text: 'Stok Yönetimi', included: true },
-                { text: 'Gelişmiş Raporlar', included: true },
-                { text: 'Dedike Destek Hattı', included: true },
-                { text: 'Cari Hesaplar', included: true },
+                { text: 'Sınırsız şube', included: true },
+                { text: 'Sınırsız kullanıcı', included: true },
+                { text: 'POS ve hızlı satış', included: true },
+                { text: 'Stok yönetimi', included: true },
+                { text: 'Gelişmiş raporlar', included: true },
+                { text: 'Özel destek hattı', included: true },
+                { text: 'Cari hesaplar', included: true },
                 { text: 'E-Fatura / E-Arşiv', included: true },
-                { text: 'Çoklu Şube & Depo', included: true },
+                { text: 'Çoklu şube ve depo', included: true }
             ]
         }
     ];
@@ -90,7 +102,7 @@ export class LandingComponent implements OnInit, OnDestroy {
         {
             icon: 'point_of_sale',
             title: 'Hızlı POS Sistemi',
-            description: 'Dokunmatik ekran uyumlu, barkod okuyucu destekli hızlı satış. Kasayı saniyeler içinde açın, müşteri bekletmeyin.',
+            description: 'Dokunmatik ekran uyumlu, barkod okuyucu destekli hızlı satış. Kasayı saniyeler içinde açın, müşteriyi bekletmeyin.',
             stat: '3x',
             statLabel: 'daha hızlı satış'
         },
@@ -103,8 +115,8 @@ export class LandingComponent implements OnInit, OnDestroy {
         },
         {
             icon: 'receipt_long',
-            title: 'E-Fatura & E-Arşiv',
-            description: 'GİB entegrasyonu ile e-fatura ve e-arşiv fatura kesme. Yasal yükümlülüklerinizi otomatik karşılayın.',
+            title: 'E-Fatura ve E-Arşiv',
+            description: 'GİB entegrasyonu ile e-fatura ve e-arşiv süreçlerini yöneterek yasal yükümlülüklerinizi kolaylaştırın.',
             stat: '100%',
             statLabel: 'yasal uyumluluk'
         },
@@ -117,84 +129,92 @@ export class LandingComponent implements OnInit, OnDestroy {
         },
         {
             icon: 'bar_chart',
-            title: 'Raporlar & Analiz',
-            description: 'Satış, stok, cari ve finans raporları. Gerçek zamanlı dashboard ile işletmenizi anlık izleyin.',
+            title: 'Raporlar ve Analiz',
+            description: 'Satış, stok, cari ve finans raporlarını tek dashboard üzerinden gerçek zamanlı izleyin.',
             stat: '20+',
             statLabel: 'hazır rapor'
         },
         {
             icon: 'store',
             title: 'Çoklu Şube Yönetimi',
-            description: 'Tüm şubelerinizi tek panelden yönetin. Şube bazlı stok, satış ve personel takibi.',
+            description: 'Tüm şubelerinizi tek panelden yönetin. Şube bazlı stok, satış ve ekip takibini kolaylaştırın.',
             stat: 'N',
             statLabel: 'sınırsız şube'
         }
     ];
 
     stats = [
-        { value: '1.200+', label: 'Aktif İşletme' },
-        { value: '850K+', label: 'İşlem/Gün' },
-        { value: '%99.9', label: 'Çalışma Süresi' },
-        { value: '4.8/5', label: 'Müşteri Puanı' }
+        { value: '1.200+', label: 'Aktif işletme' },
+        { value: '850K+', label: 'İşlem / gün' },
+        { value: '%99,9', label: 'Çalışma süresi' },
+        { value: '4,8/5', label: 'Müşteri puanı' }
     ];
 
     testimonials = [
         {
             name: 'Ahmet Yılmaz',
-            role: 'Market Sahibi, İstanbul',
+            role: 'Market sahibi, İstanbul',
             avatar: 'AY',
-            text: 'StokNet sayesinde kasadan stoğa kadar her şeyi tek sistemden yönetiyorum. Aylık 15 saat iş gücü tasarrufu sağladım.',
+            text: 'StokNet sayesinde kasadan stoğa kadar her şeyi tek sistemden yönetiyorum. Aylık ciddi bir iş gücü tasarrufu sağladık.',
             rating: 5
         },
         {
             name: 'Fatma Kaya',
-            role: 'Butik Sahibi, Ankara',
+            role: 'Butik sahibi, Ankara',
             avatar: 'FK',
-            text: 'E-fatura entegrasyonu mükemmel çalışıyor. Muhasebecim artık her şeyi sistemden alıyor, kafam çok rahatladı.',
+            text: 'E-fatura entegrasyonu çok düzenli çalışıyor. Muhasebe süreçleri hızlandı, ekip olarak daha rahat ilerliyoruz.',
             rating: 5
         },
         {
             name: 'Mehmet Demir',
-            role: '3 Şubeli Eczane, İzmir',
+            role: '3 şubeli eczane, İzmir',
             avatar: 'MD',
-            text: 'Çoklu şube özelliği benim için vazgeçilmez. Tüm eczanelerimi tek ekrandan takip ediyorum.',
+            text: 'Çoklu şube özelliği bizim için kritik. Tüm operasyonu tek ekrandan izleyebilmek büyük rahatlık sağlıyor.',
             rating: 5
         }
     ];
 
-    ngOnInit() {
-        this._featureInterval = setInterval(() => {
-            this.activeFeature.update(v => (v + 1) % this.features.length);
+    ngOnInit(): void {
+        this.featureInterval = setInterval(() => {
+            this.activeFeature.update(value => (value + 1) % this.features.length);
         }, 3000);
 
-        // Fetch real plan prices from API
         this.authService.getSubscriptionPlans().subscribe({
             next: (apiPlans) => {
                 const planMap: Record<number, number> = {};
-                apiPlans.forEach(p => planMap[p.plan] = p.monthlyPrice);
-                // Update plans with API prices: plan enum 1=starter, 2=pro, 3=enterprise
-                if (planMap[1]) { this.plans[0].monthlyPrice = planMap[1]; this.plans[0].annualPrice = Math.round(planMap[1] * 0.83); }
-                if (planMap[2]) { this.plans[1].monthlyPrice = planMap[2]; this.plans[1].annualPrice = Math.round(planMap[2] * 0.83); }
-                if (planMap[3]) { this.plans[2].monthlyPrice = planMap[3]; this.plans[2].annualPrice = Math.round(planMap[3] * 0.83); }
+                apiPlans.forEach(plan => {
+                    planMap[plan.plan] = plan.monthlyPrice;
+                });
+
+                if (planMap[1]) {
+                    this.plans[0].monthlyPrice = planMap[1];
+                    this.plans[0].annualPrice = Math.round(planMap[1] * 0.83);
+                }
+                if (planMap[2]) {
+                    this.plans[1].monthlyPrice = planMap[2];
+                    this.plans[1].annualPrice = Math.round(planMap[2] * 0.83);
+                }
+                if (planMap[3]) {
+                    this.plans[2].monthlyPrice = planMap[3];
+                    this.plans[2].annualPrice = Math.round(planMap[3] * 0.83);
+                }
             },
-            error: () => {} // Keep fallback prices on error
+            error: () => {
+                // API yanıt vermezse ekrandaki varsayılan planlar kullanılmaya devam eder.
+            }
         });
     }
 
     @HostListener('window:scroll')
-    onScroll() {
+    onScroll(): void {
         this.isScrolled.set(window.scrollY > 60);
     }
 
-    getPrice(plan: typeof this.plans[0]): number {
+    getPrice(plan: PricingPlan): number {
         return this.billingAnnual() ? plan.annualPrice : plan.monthlyPrice;
     }
 
-    getSavings(plan: typeof this.plans[0]): number {
-        return Math.round(((plan.monthlyPrice - plan.annualPrice) / plan.monthlyPrice) * 100);
-    }
-
-    scrollTo(section: string) {
+    scrollTo(section: string): void {
         document.getElementById(section)?.scrollIntoView({ behavior: 'smooth' });
     }
 
@@ -207,6 +227,8 @@ export class LandingComponent implements OnInit, OnDestroy {
     }
 
     ngOnDestroy(): void {
-        if (this._featureInterval) clearInterval(this._featureInterval);
+        if (this.featureInterval) {
+            clearInterval(this.featureInterval);
+        }
     }
 }

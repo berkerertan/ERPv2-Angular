@@ -1,7 +1,4 @@
-<!-- ============================================
-     NAVBAR
-     ============================================ -->
-<nav class="navbar" [class.scrolled]="isScrolled()">
+﻿<nav class="navbar" [class.scrolled]="isScrolled()">
     <div class="nav-container">
         <a class="nav-logo" routerLink="/">
             <div class="logo-icon">
@@ -18,34 +15,30 @@
 
         <div class="nav-actions">
             @if (authService.isAuthenticated()) {
-            <a [routerLink]="getPanelRoute()" class="landing-profile-btn" title="Panele Git">
-                <div class="landing-avatar">
-                    <span class="landing-avatar-text">
-                        {{ authService.currentUser()?.userName?.charAt(0)?.toUpperCase() }}
-                    </span>
-                </div>
-                <div class="landing-profile-info">
-                    <span class="landing-profile-name">{{ authService.currentUser()?.userName }}</span>
-                    <span class="landing-profile-role">{{ authService.currentUser()?.role }}</span>
-                </div>
-            </a>
-            <button class="btn btn-ghost btn-sm" (click)="logout()">Çıkış</button>
+                <a [routerLink]="getPanelRoute()" class="landing-profile-btn" title="Panele Git">
+                    <div class="landing-avatar">
+                        <span class="landing-avatar-text">
+                            {{ authService.currentUser()?.userName?.charAt(0)?.toUpperCase() }}
+                        </span>
+                    </div>
+                    <div class="landing-profile-info">
+                        <span class="landing-profile-name">{{ authService.currentUser()?.userName }}</span>
+                        <span class="landing-profile-role">{{ authService.currentUser()?.role }}</span>
+                    </div>
+                </a>
+                <button class="btn btn-ghost btn-sm" (click)="logout()">Çıkış</button>
             } @else {
-            <a routerLink="/auth/login" class="btn btn-ghost btn-sm">Giriş Yap</a>
-            <a routerLink="/auth/login" [queryParams]="{ demo: 1 }" class="btn btn-primary btn-sm">
-                <span class="material-icons-outlined">play_circle</span>
-                Demo'yu Dene
-            </a>
+                <a routerLink="/auth/login" class="btn btn-ghost btn-sm">Giriş Yap</a>
+                <a routerLink="/auth/login" [queryParams]="{ demo: 1 }" class="btn btn-primary btn-sm">
+                    <span class="material-icons-outlined">play_circle</span>
+                    Demo'yu Dene
+                </a>
             }
         </div>
     </div>
 </nav>
 
-<!-- ============================================
-     HERO SECTION
-     ============================================ -->
 <section class="hero">
-    <!-- Background effects -->
     <div class="hero-bg">
         <div class="hero-orb orb-1"></div>
         <div class="hero-orb orb-2"></div>
@@ -56,17 +49,17 @@
     <div class="hero-container">
         <div class="hero-badge">
             <span class="material-icons-outlined">verified</span>
-            Türkiye'nin En Hızlı Büyüyen Stok Yönetim Platformu
+            Türkiye'nin hızlı büyüyen stok yönetim platformlarından biri
         </div>
 
         <h1 class="hero-title">
-            Perakende İşletmenizi<br>
-            <span class="hero-gradient">Dijitalleştirin.</span>
+            Perakende operasyonunuzu<br>
+            <span class="hero-gradient">tek merkezden yönetin.</span>
         </h1>
 
         <p class="hero-desc">
-            POS, stok, cari hesap, e-fatura ve daha fazlası tek platformda.
-            Dakikalar içinde kurulum, işletmenize özel abonelik planı.
+            POS, stok, cari hesap, e-fatura, satın alma ve raporlama süreçlerini tek panelde toplayın.
+            Demo hesabıyla akışı görün, işinize uyarsa dakikalar içinde canlıya geçin.
         </p>
 
         <div class="hero-actions">
@@ -75,7 +68,7 @@
                 Demo'yu Deneyin
             </a>
             <button class="btn btn-outline btn-xl" (click)="scrollTo('features')">
-                <span class="material-icons-outlined">play_circle</span>
+                <span class="material-icons-outlined">visibility</span>
                 Nasıl Çalışır?
             </button>
         </div>
@@ -87,16 +80,15 @@
             </div>
             <div class="trust-item">
                 <span class="material-icons-outlined">cancel</span>
-                İstediğin zaman iptal
+                İstediğiniz zaman iptal edin
             </div>
             <div class="trust-item">
                 <span class="material-icons-outlined">support_agent</span>
-                7/24 Türkçe destek
+                Türkçe destek ekibi
             </div>
         </div>
     </div>
 
-    <!-- Hero visual - floating dashboard cards -->
     <div class="hero-visual">
         <div class="dashboard-preview">
             <div class="preview-header">
@@ -109,7 +101,7 @@
                 <div class="preview-stat">
                     <span class="stat-label">Bugünkü Satış</span>
                     <span class="stat-val green">₺24.850</span>
-                    <span class="stat-change">+12.4%</span>
+                    <span class="stat-change">+12,4%</span>
                 </div>
                 <div class="preview-stat">
                     <span class="stat-label">Aktif Ürün</span>
@@ -143,17 +135,16 @@
                     <span class="list-price">₺320,00</span>
                 </div>
                 <div class="list-row">
-                    <span class="list-icon" style="background:rgba(252,196,25,0.15);color:#fcc419">⏳</span>
+                    <span class="list-icon" style="background:rgba(252,196,25,0.15);color:#fcc419">⌛</span>
                     <span>Zımba Teli x10</span>
                     <span class="list-price">₺48,00</span>
                 </div>
             </div>
         </div>
 
-        <!-- Floating badges -->
         <div class="float-badge badge-pos">
             <span class="material-icons-outlined">point_of_sale</span>
-            POS Aktif
+            POS aktif
         </div>
         <div class="float-badge badge-stock">
             <span class="material-icons-outlined">inventory_2</span>
@@ -161,28 +152,22 @@
         </div>
         <div class="float-badge badge-invoice">
             <span class="material-icons-outlined">receipt_long</span>
-            E-Fatura Gönderildi
+            E-fatura gönderildi
         </div>
     </div>
 </section>
 
-<!-- ============================================
-     STATS BAR
-     ============================================ -->
 <section class="stats-bar">
     <div class="stats-container">
         @for (stat of stats; track stat.label) {
-        <div class="stat-item">
-            <span class="stat-number">{{ stat.value }}</span>
-            <span class="stat-label">{{ stat.label }}</span>
-        </div>
+            <div class="stat-item">
+                <span class="stat-number">{{ stat.value }}</span>
+                <span class="stat-label">{{ stat.label }}</span>
+            </div>
         }
     </div>
 </section>
 
-<!-- ============================================
-     FEATURES SECTION
-     ============================================ -->
 <section class="features" id="features">
     <div class="section-container">
         <div class="section-header">
@@ -190,33 +175,33 @@
                 <span class="material-icons-outlined">auto_awesome</span>
                 Özellikler
             </div>
-            <h2 class="section-title">İşletmenizin İhtiyacı Olan Her Şey</h2>
-            <p class="section-desc">Perakende satıştan muhasebe entegrasyonuna, stok takibinden çoklu şubeye kadar tüm ihtiyaçlarınız tek çatı altında.</p>
+            <h2 class="section-title">İşletmenizin ihtiyaç duyduğu operasyon katmanı</h2>
+            <p class="section-desc">
+                Perakende satıştan stok sayımına, satın almadan raporlamaya kadar günlük iş akışınızın tamamını
+                tek platformda yönetin.
+            </p>
         </div>
 
         <div class="features-grid">
             @for (feature of features; track feature.title; let i = $index) {
-            <div class="feature-card" [class.active]="activeFeature() === i" (mouseenter)="activeFeature.set(i)">
-                <div class="feature-icon-wrap">
-                    <span class="material-icons-outlined feature-icon">{{ feature.icon }}</span>
+                <div class="feature-card" [class.active]="activeFeature() === i" (mouseenter)="activeFeature.set(i)">
+                    <div class="feature-icon-wrap">
+                        <span class="material-icons-outlined feature-icon">{{ feature.icon }}</span>
+                    </div>
+                    <div class="feature-body">
+                        <h3 class="feature-title">{{ feature.title }}</h3>
+                        <p class="feature-desc">{{ feature.description }}</p>
+                    </div>
+                    <div class="feature-stat">
+                        <span class="stat-big">{{ feature.stat }}</span>
+                        <span class="stat-small">{{ feature.statLabel }}</span>
+                    </div>
                 </div>
-                <div class="feature-body">
-                    <h3 class="feature-title">{{ feature.title }}</h3>
-                    <p class="feature-desc">{{ feature.description }}</p>
-                </div>
-                <div class="feature-stat">
-                    <span class="stat-big">{{ feature.stat }}</span>
-                    <span class="stat-small">{{ feature.statLabel }}</span>
-                </div>
-            </div>
             }
         </div>
     </div>
 </section>
 
-<!-- ============================================
-     PRICING SECTION
-     ============================================ -->
 <section class="pricing" id="pricing">
     <div class="section-container">
         <div class="section-header">
@@ -224,10 +209,11 @@
                 <span class="material-icons-outlined">payments</span>
                 Fiyatlandırma
             </div>
-            <h2 class="section-title">İşletmenize Uygun Plan</h2>
-            <p class="section-desc">Canli urun deneyimi icin once demoyu acin, sonra ihtiyaciniza gore plana gecin.</p>
+            <h2 class="section-title">İşletmenize uygun planı seçin</h2>
+            <p class="section-desc">
+                Önce demoyu açıp gerçek akışı deneyin. Sonra ekip büyüklüğünüze ve şube yapınıza uygun planla devam edin.
+            </p>
 
-            <!-- Billing toggle -->
             <div class="billing-toggle">
                 <span [class.active]="!billingAnnual()">Aylık</span>
                 <label class="toggle-switch">
@@ -236,66 +222,63 @@
                 </label>
                 <span [class.active]="billingAnnual()">
                     Yıllık
-                    <span class="save-badge">%17 Tasarruf</span>
+                    <span class="save-badge">%17 tasarruf</span>
                 </span>
             </div>
         </div>
 
         <div class="pricing-grid">
             @for (plan of plans; track plan.id) {
-            <div class="pricing-card" [class.popular]="plan.popular" [attr.data-color]="plan.color">
-                @if (plan.popular) {
-                <div class="popular-badge">
-                    <span class="material-icons-outlined">star</span>
-                    En Popüler
-                </div>
-                }
-
-                <div class="plan-header">
-                    <div class="plan-icon-wrap">
-                        <span class="material-icons-outlined plan-icon">{{ plan.icon }}</span>
-                    </div>
-                    <h3 class="plan-name">{{ plan.name }}</h3>
-                    <p class="plan-desc">{{ plan.description }}</p>
-                </div>
-
-                <div class="plan-price">
-                    <span class="price-currency">₺</span>
-                    <span class="price-amount">{{ getPrice(plan) }}</span>
-                    <span class="price-period">/ay</span>
-                </div>
-
-                @if (billingAnnual()) {
-                <div class="price-savings">
-                    Yıllık ödemede aylık ₺{{ plan.monthlyPrice - plan.annualPrice }} tasarruf
-                </div>
-                }
-
-                <a routerLink="/auth/login" [queryParams]="{ demo: 1 }"
-                    class="btn plan-btn" [class.btn-primary]="plan.popular" [class.btn-secondary]="!plan.popular">
-                    Demo'yu Dene
-                    <span class="material-icons-outlined">arrow_forward</span>
-                </a>
-
-                <ul class="plan-features">
-                    @for (feature of plan.features; track feature.text) {
-                    <li class="plan-feature" [class.disabled]="!feature.included">
-                        <span class="material-icons-outlined feature-check">
-                            {{ feature.included ? 'check_circle' : 'cancel' }}
-                        </span>
-                        {{ feature.text }}
-                    </li>
+                <div class="pricing-card" [class.popular]="plan.popular" [attr.data-color]="plan.color">
+                    @if (plan.popular) {
+                        <div class="popular-badge">
+                            <span class="material-icons-outlined">star</span>
+                            En popüler
+                        </div>
                     }
-                </ul>
-            </div>
+
+                    <div class="plan-header">
+                        <div class="plan-icon-wrap">
+                            <span class="material-icons-outlined plan-icon">{{ plan.icon }}</span>
+                        </div>
+                        <h3 class="plan-name">{{ plan.name }}</h3>
+                        <p class="plan-desc">{{ plan.description }}</p>
+                    </div>
+
+                    <div class="plan-price">
+                        <span class="price-currency">₺</span>
+                        <span class="price-amount">{{ getPrice(plan) }}</span>
+                        <span class="price-period">/ ay</span>
+                    </div>
+
+                    @if (billingAnnual()) {
+                        <div class="price-savings">
+                            Yıllık ödemede aylık ₺{{ plan.monthlyPrice - plan.annualPrice }} tasarruf edersiniz.
+                        </div>
+                    }
+
+                    <a routerLink="/auth/login" [queryParams]="{ demo: 1 }" class="btn plan-btn"
+                        [class.btn-primary]="plan.popular" [class.btn-secondary]="!plan.popular">
+                        Demo'yu Dene
+                        <span class="material-icons-outlined">arrow_forward</span>
+                    </a>
+
+                    <ul class="plan-features">
+                        @for (feature of plan.features; track feature.text) {
+                            <li class="plan-feature" [class.disabled]="!feature.included">
+                                <span class="material-icons-outlined feature-check">
+                                    {{ feature.included ? 'check_circle' : 'cancel' }}
+                                </span>
+                                {{ feature.text }}
+                            </li>
+                        }
+                    </ul>
+                </div>
             }
         </div>
     </div>
 </section>
 
-<!-- ============================================
-     TESTIMONIALS
-     ============================================ -->
 <section class="testimonials" id="testimonials">
     <div class="section-container">
         <div class="section-header">
@@ -303,64 +286,58 @@
                 <span class="material-icons-outlined">format_quote</span>
                 Referanslar
             </div>
-            <h2 class="section-title">Müşterilerimiz Ne Diyor?</h2>
+            <h2 class="section-title">Ekiplerin sahadaki deneyimi</h2>
         </div>
 
         <div class="testimonials-grid">
             @for (t of testimonials; track t.name) {
-            <div class="testimonial-card card-glass">
-                <div class="testimonial-stars">
-                    @for (s of [1,2,3,4,5]; track s) {
-                    <span class="material-icons-outlined star">star</span>
-                    }
-                </div>
-                <p class="testimonial-text">"{{ t.text }}"</p>
-                <div class="testimonial-author">
-                    <div class="author-avatar">{{ t.avatar }}</div>
-                    <div>
-                        <div class="author-name">{{ t.name }}</div>
-                        <div class="author-role">{{ t.role }}</div>
+                <div class="testimonial-card card-glass">
+                    <div class="testimonial-stars">
+                        @for (s of [1,2,3,4,5]; track s) {
+                            <span class="material-icons-outlined star">star</span>
+                        }
+                    </div>
+                    <p class="testimonial-text">"{{ t.text }}"</p>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">{{ t.avatar }}</div>
+                        <div>
+                            <div class="author-name">{{ t.name }}</div>
+                            <div class="author-role">{{ t.role }}</div>
+                        </div>
                     </div>
                 </div>
-            </div>
             }
         </div>
     </div>
 </section>
 
-<!-- ============================================
-     CTA SECTION
-     ============================================ -->
 <section class="cta-section">
     <div class="cta-container">
         <div class="cta-orb"></div>
-        <h2 class="cta-title">Bugün Başlayın, Farkı Hissedin</h2>
-        <p class="cta-desc">Canli demoyu acin, akisi deneyin, sonra abonelik kararini verin.</p>
+        <h2 class="cta-title">Bugün başlayın, farkı operasyonunuzda görün</h2>
+        <p class="cta-desc">
+            Canlı demoyu açın, barkodlu sayım ve satın alma akışlarını deneyin, sonra kararınızı verin.
+        </p>
         <div class="cta-actions">
             <a routerLink="/auth/login" [queryParams]="{ demo: 1 }" class="btn btn-primary btn-xl cta-btn">
                 <span class="material-icons-outlined">play_circle</span>
                 Demo'yu Dene
             </a>
             <a routerLink="/auth/login" class="btn btn-outline btn-xl">
-                Zaten hesabın var mı? Giriş Yap
+                Hesabınız varsa giriş yapın
             </a>
         </div>
     </div>
 </section>
 
-<!-- ============================================
-     FOOTER
-     ============================================ -->
 <footer class="footer">
-
-    <!-- Newsletter Bandı -->
     <div class="footer-newsletter-bar">
         <div class="footer-nl-inner">
             <div class="footer-nl-text">
                 <span class="material-icons-outlined footer-nl-icon">mark_email_unread</span>
                 <div>
-                    <h4 class="footer-nl-title">Güncellemelerden Haberdar Olun</h4>
-                    <p class="footer-nl-sub">Yeni özellikler, kampanyalar ve ipuçları doğrudan gelen kutunuza gelsin.</p>
+                    <h4 class="footer-nl-title">Güncellemelerden haberdar olun</h4>
+                    <p class="footer-nl-sub">Yeni özellikler, kampanyalar ve ürün duyuruları doğrudan gelen kutunuza gelsin.</p>
                 </div>
             </div>
             <div class="footer-nl-form">
@@ -373,11 +350,8 @@
         </div>
     </div>
 
-    <!-- Footer Ana Gövde -->
     <div class="footer-body">
         <div class="footer-container">
-
-            <!-- Marka Sütunu -->
             <div class="footer-brand">
                 <div class="footer-logo">
                     <div class="logo-icon logo-icon-sm">
@@ -386,10 +360,10 @@
                     <span class="logo-text">Stok<span class="logo-accent">Net</span></span>
                 </div>
                 <p class="footer-tagline">
-                    Perakende işletmeler için modern kurumsal yönetim platformu. POS'tan e-faturaya, stoktan muhasebeye tek çözüm.
+                    Perakende işletmeleri için modern operasyon platformu. POS'tan e-faturaya, stoktan cari hesaplara kadar
+                    günlük süreçleri tek merkezde toplar.
                 </p>
 
-                <!-- Sosyal Medya -->
                 <div class="footer-social">
                     <a href="#" class="social-btn" title="Twitter / X">
                         <span class="material-icons-outlined">alternate_email</span>
@@ -405,24 +379,22 @@
                     </a>
                 </div>
 
-                <!-- Güven Rozetleri -->
                 <div class="footer-trust-badges">
                     <div class="footer-trust-badge">
                         <span class="material-icons-outlined">lock</span>
-                        SSL Güvenli
+                        SSL güvenli
                     </div>
                     <div class="footer-trust-badge">
                         <span class="material-icons-outlined">verified_user</span>
-                        KVKK Uyumlu
+                        KVKK uyumlu
                     </div>
                     <div class="footer-trust-badge">
                         <span class="material-icons-outlined">cloud_done</span>
-                        %99.9 Uptime
+                        %99,9 uptime
                     </div>
                 </div>
             </div>
 
-            <!-- Bağlantı Sütunları -->
             <div class="footer-links">
                 <div class="footer-col">
                     <span class="footer-col-title">Ürün</span>
@@ -437,20 +409,20 @@
 
                 <div class="footer-col">
                     <span class="footer-col-title">Çözümler</span>
-                    <a href="#" class="footer-link">POS Sistemi</a>
-                    <a href="#" class="footer-link">Stok Yönetimi</a>
-                    <a href="#" class="footer-link">E-Fatura / e-Arşiv</a>
-                    <a href="#" class="footer-link">Cari Hesaplar</a>
-                    <a href="#" class="footer-link">Raporlama</a>
+                    <a href="#features" class="footer-link">POS sistemi</a>
+                    <a href="#features" class="footer-link">Stok yönetimi</a>
+                    <a href="#features" class="footer-link">E-Fatura / E-Arşiv</a>
+                    <a href="#features" class="footer-link">Cari hesaplar</a>
+                    <a href="#features" class="footer-link">Raporlama</a>
                 </div>
 
                 <div class="footer-col">
                     <span class="footer-col-title">Destek</span>
-                    <a href="#" class="footer-link">Yardım Merkezi</a>
-                    <a href="#" class="footer-link">Dokümantasyon</a>
-                    <a href="#" class="footer-link">API Referansı</a>
-                    <a href="#" class="footer-link">Sistem Durumu</a>
-                    <a href="#" class="footer-link">İletişim</a>
+                    <a routerLink="/gizlilik-politikasi" class="footer-link">Veri güvenliği yaklaşımı</a>
+                    <a routerLink="/kullanim-kosullari" class="footer-link">Hizmet şartları</a>
+                    <a routerLink="/cerez-politikasi" class="footer-link">Çerez tercihleri</a>
+                    <a routerLink="/auth/login" [queryParams]="{ demo: 1 }" class="footer-link">Demo erişimi</a>
+                    <a [href]="offlineDownloadUrl" class="footer-link">Offline paket indir</a>
                 </div>
 
                 <div class="footer-col">
@@ -459,17 +431,16 @@
                     <a routerLink="/auth/register" class="footer-link">Kayıt Ol</a>
                     <a [href]="offlineDownloadUrl" class="footer-link footer-link-highlight" download>
                         <span class="material-icons-outlined">download</span>
-                        Offline Mod için İndirin
+                        Offline mod için indirin
                     </a>
-                    <a href="#" class="footer-link">Gizlilik Politikası</a>
-                    <a href="#" class="footer-link">Kullanım Koşulları</a>
-                    <a href="#" class="footer-link">Çerez Politikası</a>
+                    <a routerLink="/gizlilik-politikasi" class="footer-link">Gizlilik Politikası</a>
+                    <a routerLink="/kullanim-kosullari" class="footer-link">Kullanım Koşulları</a>
+                    <a routerLink="/cerez-politikasi" class="footer-link">Çerez Politikası</a>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Footer Alt Çubuk -->
     <div class="footer-bottom">
         <div class="footer-bottom-inner">
             <span class="footer-copy">© 2026 StokNet. Tüm hakları saklıdır.</span>
@@ -477,18 +448,17 @@
             <div class="footer-bottom-center">
                 <span class="footer-made-in">
                     <span class="material-icons-outlined">favorite</span>
-                    Türkiye'de sevgiyle geliştirildi &nbsp;🇹🇷
+                    Türkiye'de özenle geliştirildi
                 </span>
             </div>
 
             <div class="footer-bottom-links">
-                <a href="#" class="footer-bottom-link">Gizlilik</a>
+                <a routerLink="/gizlilik-politikasi" class="footer-bottom-link">Gizlilik</a>
                 <span class="footer-dot">·</span>
-                <a href="#" class="footer-bottom-link">Koşullar</a>
+                <a routerLink="/kullanim-kosullari" class="footer-bottom-link">Koşullar</a>
                 <span class="footer-dot">·</span>
-                <a href="#" class="footer-bottom-link">Çerezler</a>
+                <a routerLink="/cerez-politikasi" class="footer-bottom-link">Çerezler</a>
             </div>
         </div>
     </div>
-
 </footer>

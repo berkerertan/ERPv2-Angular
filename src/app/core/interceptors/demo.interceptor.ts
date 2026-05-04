@@ -1,4 +1,4 @@
-/**
+﻿/**
  * demo.interceptor.ts
  * Demo kullanıcısı (userName === 'demo') için tüm API isteklerini keser
  * ve backend'e istek atmadan mock veri döner.
@@ -11,7 +11,7 @@ import {
     DEMO_SALES_ORDERS, DEMO_PURCHASE_ORDERS,
     DEMO_STOCK_MOVEMENTS, DEMO_FINANCE_MOVEMENTS,
     DEMO_EFATURA_INVOICES, DEMO_EARSIV_INVOICES, DEMO_ALL_INVOICES,
-    DEMO_COMPANY, DEMO_BRANCHES, DEMO_WAREHOUSES,
+    DEMO_COMPANY, DEMO_BRANCHES, DEMO_WAREHOUSES, DEMO_WH_ID, DEMO_WH2_ID,
     DEMO_SALES_REPORT, DEMO_PURCHASES_REPORT, DEMO_STOCK_REPORT,
     DEMO_CARI_BALANCES, DEMO_CARI_AGING, DEMO_INCOME_EXPENSE,
     DEMO_CASH_FLOW, DEMO_DUE_LIST,
@@ -69,6 +69,29 @@ export const demoInterceptor: HttpInterceptorFn = (req, next) => {
 
     const path   = getPath(url);
     const method = req.method.toUpperCase();
+
+    if (path.startsWith('/api/supplier-quote-requests')) {
+        if (method === 'POST' && path.endsWith('/convert-selected-offer')) {
+            return ok({ purchaseOrderId: newMockId(), orderNo: `AS-2026-${String(++_mockSeq).padStart(3, '0')}` });
+        }
+        if (method === 'POST' && path.endsWith('/select-offer')) return noContent();
+        if (method === 'PUT' && path.includes('/offers/')) return noContent();
+        if (method === 'POST') return ok(`"${newMockId()}"`);
+        const reqId = path.replace('/api/supplier-quote-requests/', '').split('/')[0];
+        if (reqId && reqId !== 'api' && reqId !== 'supplier-quote-requests') {
+            const found = buildDemoSupplierQuoteRequests().find(x => x.id === reqId);
+            return ok(found ?? buildDemoSupplierQuoteRequests()[0]);
+        }
+        return ok(buildDemoSupplierQuoteRequestList());
+    }
+
+    if (path.startsWith('/api/collection-plans')) {
+        if (method === 'POST') {
+            if (path.endsWith('/upsert')) return ok(`"${newMockId()}"`);
+            return noContent();
+        }
+        if (path.endsWith('/dashboard')) return ok(buildDemoCollectionPlanDashboard());
+    }
 
     // ── Yazma işlemleri — genel fallback ─────────────────────────────────────
     if (method === 'DELETE' || method === 'PUT' || method === 'PATCH') {
@@ -308,6 +331,9 @@ export const demoInterceptor: HttpInterceptorFn = (req, next) => {
     // ── AKTİVİTE LOGLARI (Tenant — sadece kendi işlemleri) ──────────────────
     if (path.startsWith('/api/activity-logs/me')) {
         if (path.endsWith('/summary')) return ok(DEMO_MY_ACTIVITY_SUMMARY);
+        if (path.endsWith('/export') || path.endsWith('/export/excel') || path.endsWith('/export/pdf')) {
+            return ok(new Blob(['demo-export']));
+        }
         const logId = path.replace('/api/activity-logs/me/', '').split('/')[0];
         if (logId && logId !== 'summary') {
             const found = DEMO_MY_ACTIVITY_LOGS.find(l => l.id === logId);
@@ -593,4 +619,130 @@ function suggestCari(list: typeof DEMO_CARIS, q: string | null) {
         .filter(c => !query || c.name.toLowerCase().includes(query) || (c.code ?? '').toLowerCase().includes(query))
         .slice(0, 10)
         .map(c => ({ id: c.id, code: c.code, name: c.name, label: c.name, subtitle: c.code, type: c.type }));
+}
+
+function buildDemoSupplierQuoteRequestList() {
+    return buildDemoSupplierQuoteRequests().map((x: any) => ({
+        id: x.id,
+        requestNo: x.requestNo,
+        title: x.title,
+        warehouseId: x.warehouseId,
+        warehouseName: x.warehouseName,
+        neededByDateUtc: x.neededByDateUtc,
+        status: x.status,
+        supplierCount: x.offers.length,
+        receivedOfferCount: x.offers.filter((o: any) => o.status === 2).length,
+        estimatedBestTotal: Math.min(...x.offers.map((o: any) => o.totalAmount)),
+        createdByUserName: x.createdByUserName,
+        createdAtUtc: x.createdAtUtc,
+    }));
+}
+
+function buildDemoSupplierQuoteRequests() {
+    const products = DEMO_PRODUCTS.slice(0, 6);
+    const suppliers = DEMO_SUPPLIERS.slice(0, 3);
+    return [
+        {
+            id: '70000000-0000-0000-0000-000000000001',
+            requestNo: 'TT-20260505-001',
+            title: 'May�s telefon al�m�',
+            warehouseId: DEMO_WH_ID,
+            warehouseName: DEMO_WAREHOUSES[0].name,
+            neededByDateUtc: new Date(Date.now() + 7 * 86400000).toISOString(),
+            status: 3,
+            notes: 'Bayi kampanyas� �ncesi fiyat toplan�yor.',
+            createdByUserName: 'demo',
+            createdAtUtc: new Date(Date.now() - 2 * 86400000).toISOString(),
+            selectedSupplierCariAccountId: suppliers[0].id,
+            selectedOfferId: '70000000-0000-0000-0000-000000000011',
+            items: [
+                { productId: products[4].id, productCode: products[4].code, productName: products[4].name, unit: products[4].unit, quantity: 20, targetUnitPrice: 47000, notes: '' },
+                { productId: products[5].id, productCode: products[5].code, productName: products[5].name, unit: products[5].unit, quantity: 12, targetUnitPrice: 37500, notes: '' }
+            ],
+            offers: suppliers.map((supplier, index) => ({
+                id: `70000000-0000-0000-0000-00000000001${index + 1}`,
+                supplierCariAccountId: supplier.id,
+                supplierName: supplier.name,
+                status: 2,
+                leadTimeDays: 5 + index * 2,
+                notes: index === 0 ? 'En iyi toplam fiyat.' : 'Parcali sevkiyat yapabilir.',
+                respondedAtUtc: new Date(Date.now() - (index + 1) * 3600000).toISOString(),
+                totalAmount: (46500 + index * 1200) * 20 + (37200 + index * 800) * 12,
+                isSelected: index === 0,
+                items: [
+                    { productId: products[4].id, productCode: products[4].code, productName: products[4].name, offeredQuantity: 20, unitPrice: 46500 + index * 1200, minimumOrderQuantity: 10, lineTotal: (46500 + index * 1200) * 20 },
+                    { productId: products[5].id, productCode: products[5].code, productName: products[5].name, offeredQuantity: 12, unitPrice: 37200 + index * 800, minimumOrderQuantity: 6, lineTotal: (37200 + index * 800) * 12 }
+                ]
+            }))
+        },
+        {
+            id: '70000000-0000-0000-0000-000000000002',
+            requestNo: 'TT-20260505-002',
+            title: 'Beyaz e�ya sezon a��l���',
+            warehouseId: DEMO_WH2_ID,
+            warehouseName: DEMO_WAREHOUSES[1].name,
+            neededByDateUtc: new Date(Date.now() + 14 * 86400000).toISOString(),
+            status: 2,
+            notes: 'Kad�k�y �ube i�in stok haz�rlan�yor.',
+            createdByUserName: 'demo',
+            createdAtUtc: new Date(Date.now() - 86400000).toISOString(),
+            selectedSupplierCariAccountId: null,
+            selectedOfferId: null,
+            items: [
+                { productId: DEMO_PRODUCTS[18].id, productCode: DEMO_PRODUCTS[18].code, productName: DEMO_PRODUCTS[18].name, unit: DEMO_PRODUCTS[18].unit, quantity: 8, targetUnitPrice: 14500, notes: '' },
+                { productId: DEMO_PRODUCTS[19].id, productCode: DEMO_PRODUCTS[19].code, productName: DEMO_PRODUCTS[19].name, unit: DEMO_PRODUCTS[19].unit, quantity: 10, targetUnitPrice: 11800, notes: '' }
+            ],
+            offers: suppliers.slice(1).map((supplier, index) => ({
+                id: `70000000-0000-0000-0000-00000000002${index + 1}`,
+                supplierCariAccountId: supplier.id,
+                supplierName: supplier.name,
+                status: index === 0 ? 2 : 1,
+                leadTimeDays: 7 + index * 2,
+                notes: '',
+                respondedAtUtc: index === 0 ? new Date(Date.now() - 7200000).toISOString() : null,
+                totalAmount: index === 0 ? 232000 : 0,
+                isSelected: false,
+                items: [
+                    { productId: DEMO_PRODUCTS[18].id, productCode: DEMO_PRODUCTS[18].code, productName: DEMO_PRODUCTS[18].name, offeredQuantity: 8, unitPrice: 14400, minimumOrderQuantity: 4, lineTotal: 115200 },
+                    { productId: DEMO_PRODUCTS[19].id, productCode: DEMO_PRODUCTS[19].code, productName: DEMO_PRODUCTS[19].name, offeredQuantity: 10, unitPrice: 11680, minimumOrderQuantity: 5, lineTotal: 116800 }
+                ]
+            }))
+        }
+    ];
+}
+
+function buildDemoCollectionPlanDashboard() {
+    const items = DEMO_BUYERS.slice(0, 6).map((buyer, index) => ({
+        cariAccountId: buyer.id,
+        cariCode: buyer.code,
+        cariName: buyer.name,
+        currentBalance: buyer.currentBalance,
+        riskLimit: buyer.riskLimit,
+        overdueAmount: Math.max(25000, Math.round(Math.abs(buyer.currentBalance) * (0.18 + index * 0.07))),
+        overdueDays: 8 + index * 9,
+        riskUsageRate: buyer.riskLimit > 0 ? buyer.currentBalance / buyer.riskLimit : 1,
+        suggestedPriority: index < 2 ? 4 : index < 4 ? 3 : 2,
+        suggestedAction: index < 2 ? 'Yoneticiye eskale et' : index < 4 ? 'Odeme sozu al' : 'Musteriyi ara',
+        planEntryId: index % 2 === 0 ? `80000000-0000-0000-0000-00000000000${index + 1}` : null,
+        title: `Tahsilat takibi - ${buyer.name}`,
+        priority: index < 2 ? 4 : index < 4 ? 3 : 2,
+        status: index === 0 ? 5 : index === 1 ? 3 : index === 2 ? 2 : 1,
+        nextActionDateUtc: new Date(Date.now() + (index + 1) * 86400000).toISOString(),
+        promiseDateUtc: index < 2 ? new Date(Date.now() + (index + 3) * 86400000).toISOString() : null,
+        assignedToUserName: index % 2 === 0 ? 'demo' : 'finans.operasyon',
+        notes: 'Musteri ile tahsilat plan� konu�uldu.',
+        lastContactAtUtc: new Date(Date.now() - index * 86400000).toISOString(),
+        lastContactNote: 'Nakit ak���na g�re d�n�� bekleniyor.'
+    }));
+
+    return {
+        summary: {
+            totalAccountCount: items.length,
+            plannedCount: items.filter((x: any) => !!x.planEntryId).length,
+            criticalCount: items.filter((x: any) => x.priority === 4).length,
+            totalOverdueAmount: items.reduce((sum: number, x: any) => sum + x.overdueAmount, 0),
+            plannedAmount: items.filter((x: any) => !!x.planEntryId).reduce((sum: number, x: any) => sum + x.overdueAmount, 0)
+        },
+        items
+    };
 }

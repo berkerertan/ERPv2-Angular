@@ -102,3 +102,38 @@ export interface PurchaseRecommendationResponse {
     supplierGroups: PurchaseRecommendationSupplierGroup[];
     items: PurchaseRecommendationItem[];
 }
+
+export interface PurchaseRecommendationHistoryListItem {
+    id: string;
+    warehouseId: string;
+    warehouseName: string;
+    supplierCariAccountId?: string | null;
+    supplierName?: string | null;
+    analysisDays: number;
+    coverageDays: number;
+    maxItems: number;
+    criticalOnly: boolean;
+    totalItems: number;
+    criticalItems: number;
+    totalRecommendedQuantity: number;
+    totalEstimatedCost: number;
+    createdByUserName?: string | null;
+    createdAtUtc: string;
+}
+
+export interface PurchaseRecommendationHistoryDetail {
+    id: string;
+    warehouseId: string;
+    warehouseName: string;
+    supplierCariAccountId?: string | null;
+    supplierName?: string | null;
+    analysisDays: number;
+    coverageDays: number;
+    maxItems: number;
+    criticalOnly: boolean;
+    createdByUserName?: string | null;
+    createdAtUtc: string;
+    summary: PurchaseRecommendationSummary;
+    supplierGroups: PurchaseRecommendationSupplierGroup[];
+    items: PurchaseRecommendationItem[];
+}

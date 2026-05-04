@@ -1,4 +1,4 @@
-export interface TenantActivityLogDto {
+﻿export interface TenantActivityLogDto {
     id: string;
     tenantId?: string;
     userId?: string;
@@ -6,6 +6,7 @@ export interface TenantActivityLogDto {
     description?: string;
     httpMethod?: string;
     path?: string;
+    module?: string;
     statusCode: number;
     durationMs: number;
     ipAddress?: string;
@@ -26,6 +27,10 @@ export interface TenantActivityFilter {
     onlyErrors?: boolean;
     fromUtc?: string;
     toUtc?: string;
+    module?: string;
+    httpMethod?: string;
+    businessOnly?: boolean;
+    search?: string;
     page?: number;
     pageSize?: number;
 }

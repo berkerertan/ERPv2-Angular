@@ -1,0 +1,140 @@
+<div class="crud-page">
+  <div class="page-header">
+    <div>
+      <h1>Tahsilat Planlama</h1>
+      <p class="text-muted">Riskli ve geciken alacakları önceliklendirip aksiyon planına bağlayın.</p>
+    </div>
+  </div>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <span>İzlenen Cari</span>
+      <strong>{{ dashboard()?.summary?.totalAccountCount || 0 }}</strong>
+    </div>
+    <div class="summary-card">
+      <span>Planlı Cari</span>
+      <strong>{{ dashboard()?.summary?.plannedCount || 0 }}</strong>
+    </div>
+    <div class="summary-card">
+      <span>Kritik</span>
+      <strong>{{ dashboard()?.summary?.criticalCount || 0 }}</strong>
+    </div>
+    <div class="summary-card accent">
+      <span>Toplam Gecikmiş</span>
+      <strong>{{ dashboard()?.summary?.totalOverdueAmount || 0 | number:'1.2-2' }} TL</strong>
+    </div>
+  </div>
+
+  <div class="toolbar-card">
+    <input class="form-input" [(ngModel)]="searchTerm" placeholder="Cari adı, kodu, not..." />
+    <select class="form-input" [(ngModel)]="statusFilter" (change)="load()">
+      <option [ngValue]="0">Tüm durumlar</option>
+      <option [ngValue]="1">Açık</option>
+      <option [ngValue]="2">Görüşüldü</option>
+      <option [ngValue]="3">Ödeme sözü</option>
+      <option [ngValue]="4">Tahsil edildi</option>
+      <option [ngValue]="5">Eskale</option>
+    </select>
+    <select class="form-input" [(ngModel)]="priorityFilter" (change)="load()">
+      <option [ngValue]="0">Tüm öncelikler</option>
+      <option [ngValue]="4">Kritik</option>
+      <option [ngValue]="3">Yüksek</option>
+      <option [ngValue]="2">Orta</option>
+      <option [ngValue]="1">Düşük</option>
+    </select>
+    <label class="inline-check">
+      <input type="checkbox" [(ngModel)]="onlyAssignedToMe" (change)="load()" />
+      <span>Sadece bana atananlar</span>
+    </label>
+    <button class="btn btn-secondary" (click)="load()">Yenile</button>
+  </div>
+
+  <div class="card table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Cari</th>
+          <th>Gecikmiş</th>
+          <th>Gün</th>
+          <th>Risk</th>
+          <th>Öncelik</th>
+          <th>Plan</th>
+          <th>Öneri</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of filteredItems(); track item.cariAccountId) {
+          <tr>
+            <td>
+              <div class="font-medium">{{ item.cariName }}</div>
+              <div class="text-muted">{{ item.cariCode }}</div>
+            </td>
+            <td>{{ item.overdueAmount | number:'1.2-2' }} TL</td>
+            <td>{{ item.overdueDays }}</td>
+            <td>%{{ (item.riskUsageRate * 100) | number:'1.0-0' }}</td>
+            <td><span class="priority-pill p{{ item.priority }}">{{ priorityLabel(item.priority) }}</span></td>
+            <td>{{ statusLabel(item.status) }}</td>
+            <td>{{ item.suggestedAction }}</td>
+            <td class="actions">
+              <button class="btn btn-secondary btn-sm" (click)="openPlan(item)">Planla</button>
+              <button class="btn btn-success btn-sm" (click)="markStatus(item, 4)">Tahsil</button>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="8" class="empty-state">Kayıt bulunamadı.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@if (showPlanModal() && selected()) {
+  <div class="modal-overlay" (click)="closePlanModal()">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ selected()!.cariName }} için plan</h3>
+        <button class="icon-btn" (click)="closePlanModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="info-strip">
+          <span>{{ selected()!.overdueAmount | number:'1.2-2' }} TL gecikmiş</span>
+          <span>{{ selected()!.overdueDays }} gün</span>
+          <span>{{ selected()!.suggestedAction }}</span>
+        </div>
+        <div class="form-grid">
+          <label>Başlık<input class="form-input" [(ngModel)]="formData.title" /></label>
+          <label>Öncelik
+            <select class="form-input" [(ngModel)]="formData.priority">
+              <option [ngValue]="4">Kritik</option>
+              <option [ngValue]="3">Yüksek</option>
+              <option [ngValue]="2">Orta</option>
+              <option [ngValue]="1">Düşük</option>
+            </select>
+          </label>
+          <label>Durum
+            <select class="form-input" [(ngModel)]="formData.status">
+              <option [ngValue]="1">Açık</option>
+              <option [ngValue]="2">Görüşüldü</option>
+              <option [ngValue]="3">Ödeme sözü</option>
+              <option [ngValue]="4">Tahsil edildi</option>
+              <option [ngValue]="5">Eskale</option>
+              <option [ngValue]="6">İptal</option>
+            </select>
+          </label>
+          <label>Sonraki Aksiyon<input class="form-input" type="date" [(ngModel)]="formData.nextActionDateUtc" /></label>
+          <label>Ödeme Sözü<input class="form-input" type="date" [(ngModel)]="formData.promiseDateUtc" /></label>
+          <label>Atanan<input class="form-input" [(ngModel)]="formData.assignedToUserName" /></label>
+        </div>
+        <label>Not</label>
+        <textarea class="form-input" rows="3" [(ngModel)]="formData.notes"></textarea>
+        <label>Son görüşme notu</label>
+        <textarea class="form-input" rows="3" [(ngModel)]="formData.lastContactNote"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closePlanModal()">Vazgeç</button>
+        <button class="btn btn-primary" [disabled]="isSaving()" (click)="savePlan()">{{ isSaving() ? 'Kaydediliyor...' : 'Kaydet' }}</button>
+      </div>
+    </div>
+  </div>
+}

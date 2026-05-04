@@ -2,9 +2,20 @@
     <div class="page-header">
         <div>
             <h1 class="page-title">Aktivite Geçmişi</h1>
-            <p class="page-subtitle">Yaptığınız işlemleri ve onay akışlarını buradan takip edin.</p>
+            <p class="page-subtitle">Yaptığınız işlemleri, onay akışlarını ve hata kayıtlarını buradan takip edin.</p>
         </div>
-        <button class="btn btn-secondary" (click)="refresh()">Yenile</button>
+        <div class="header-actions">
+            <button class="btn btn-secondary" (click)="refresh()">Yenile</button>
+            <button class="btn btn-secondary" (click)="exportLogs('csv')" [disabled]="isExporting()">
+                {{ isExporting('csv') ? 'CSV hazırlanıyor...' : 'CSV' }}
+            </button>
+            <button class="btn btn-secondary" (click)="exportLogs('excel')" [disabled]="isExporting()">
+                {{ isExporting('excel') ? 'Excel hazırlanıyor...' : 'Excel' }}
+            </button>
+            <button class="btn btn-primary" (click)="exportLogs('pdf')" [disabled]="isExporting()">
+                {{ isExporting('pdf') ? 'PDF hazırlanıyor...' : 'PDF' }}
+            </button>
+        </div>
     </div>
 
     @if (summary()) {
@@ -33,15 +44,32 @@
             <input
                 type="text"
                 class="form-input"
-                placeholder="İşlem, modül veya kullanıcı ara"
+                placeholder="İşlem, modül, yol veya kullanıcı ara"
                 [(ngModel)]="searchTerm"
+                (keyup.enter)="onFilterChange()"
             >
         </div>
+        <select class="form-input form-select" [(ngModel)]="selectedModule" (change)="onFilterChange()">
+            <option value="">Tüm modüller</option>
+            @for (module of moduleOptions; track module) {
+                <option [value]="module">{{ module }}</option>
+            }
+        </select>
+        <select class="form-input form-select" [(ngModel)]="selectedHttpMethod" (change)="onFilterChange()">
+            <option value="">Tüm yöntemler</option>
+            @for (method of methodOptions; track method) {
+                <option [value]="method">{{ method }}</option>
+            }
+        </select>
         <input type="date" class="form-input" [(ngModel)]="fromDate" (change)="onFilterChange()">
         <input type="date" class="form-input" [(ngModel)]="toDate" (change)="onFilterChange()">
         <button class="btn" [class.btn-danger]="onlyErrors" [class.btn-secondary]="!onlyErrors" (click)="toggleErrors()">
-            {{ onlyErrors ? 'Tüm işlemler' : 'Sadece hatalar' }}
+            {{ onlyErrors ? 'Hatalar açık' : 'Sadece hatalar' }}
         </button>
+        <button class="btn" [class.btn-primary]="businessOnly" [class.btn-secondary]="!businessOnly" (click)="toggleBusinessOnly()">
+            {{ businessOnly ? 'İş akışı açık' : 'İş akışı filtrele' }}
+        </button>
+        <button class="btn btn-secondary" (click)="clearFilters()">Temizle</button>
     </div>
 
     <div class="table-wrapper">
@@ -56,6 +84,7 @@
                         <th class="sortable" (click)="sort('occurredAtUtc')">Tarih</th>
                         <th>Modül</th>
                         <th>İşlem</th>
+                        <th>Yöntem</th>
                         <th class="sortable" (click)="sort('statusCode')">Durum</th>
                         <th class="sortable" (click)="sort('durationMs')">Süre</th>
                     </tr>
@@ -65,7 +94,9 @@
                         <tr class="clickable-row" [class.business-row]="isBusinessFlow(log)" (click)="viewDetail(log)">
                             <td class="mono">{{ log.occurredAtUtc | date:'dd.MM.yyyy HH:mm' }}</td>
                             <td>
-                                <span class="module-badge" [ngClass]="getModuleClass(log.path)">{{ getModuleLabel(log.path) }}</span>
+                                <span class="module-badge" [ngClass]="getModuleClass(log.path, log.module)">
+                                    {{ getModuleLabel(log.path, log.module) }}
+                                </span>
                             </td>
                             <td>
                                 <div class="action-cell">
@@ -74,6 +105,11 @@
                                         <span class="action-meta">{{ log.userName }}</span>
                                     }
                                 </div>
+                            </td>
+                            <td>
+                                <span class="method-badge" [ngClass]="getMethodClass(log.httpMethod)">
+                                    {{ getMethodLabel(log.httpMethod) }}
+                                </span>
                             </td>
                             <td>
                                 <span class="status-chip" [ngClass]="getStatusClass(log.statusCode)">
@@ -94,7 +130,7 @@
                 <div class="modal-header">
                     <div>
                         <h3>İşlem detayı</h3>
-                        <p>{{ getModuleLabel(log.path) }}</p>
+                        <p>{{ getModuleLabel(log.path, log.module) }}</p>
                     </div>
                     <button class="btn-icon" (click)="closeDetail()">Kapat</button>
                 </div>
@@ -103,6 +139,7 @@
                     <div class="detail-top">
                         <span class="method-badge" [ngClass]="getMethodClass(log.httpMethod)">{{ getMethodLabel(log.httpMethod) }}</span>
                         <span class="status-chip" [ngClass]="getStatusClass(log.statusCode)">{{ log.statusCode }}</span>
+                        <span class="module-badge" [ngClass]="getModuleClass(log.path, log.module)">{{ getModuleLabel(log.path, log.module) }}</span>
                     </div>
 
                     <div class="detail-highlight">

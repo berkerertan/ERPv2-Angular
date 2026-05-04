@@ -1,4 +1,4 @@
-import { Component, signal, computed } from '@angular/core';
+﻿import { Component, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -76,6 +76,7 @@ export class SidebarComponent {
                 { icon: 'request_quote', label: 'Teklifler', route: '/quotes' },
                 { icon: 'shopping_cart', label: 'Satış Siparişleri', route: '/sales-orders' },
                 { icon: 'assignment_return', label: 'Satın Alma', route: '/purchase-orders' },
+                { icon: 'price_check', label: 'Tedarikci Teklifleri', route: '/supplier-quotes' },
             ]
         },
         {
@@ -97,6 +98,7 @@ export class SidebarComponent {
             title: 'Finans & Muhasebe',
             items: [
                 { icon: 'payments', label: 'Finans', route: '/finance-movements' },
+                { icon: 'phone_in_talk', label: 'Tahsilat Planlama', route: '/collection-plans' },
                 { icon: 'receipt_long', label: 'Çek/Senet Takibi', route: '/checks-bills' },
                 { icon: 'account_balance_wallet', label: 'Banka & Kasa', route: '/treasury' },
                 { icon: 'account_tree', label: 'Hesap Planı', route: '/chart-of-accounts' },
@@ -168,3 +170,4 @@ export class SidebarComponent {
         this.clearSearch();
     }
 }
+

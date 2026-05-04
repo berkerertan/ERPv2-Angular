@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+﻿import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { PurchaseOrderService } from '../../core/services/purchase-order.service';
@@ -6,6 +6,8 @@ import { OrderStatus } from '../../core/models/sales-order.model';
 import {
     CreatePurchaseOrderRequest,
     PurchaseOrder,
+    PurchaseRecommendationHistoryDetail,
+    PurchaseRecommendationHistoryListItem,
     PurchaseRecommendationItem,
     PurchaseRecommendationResponse,
     PurchaseRecommendationSupplierGroup
@@ -61,11 +63,13 @@ export class PurchaseOrdersComponent implements OnInit {
     showRejectModal = signal(false);
     isSaving = signal(false);
     isLoadingRecommendations = signal(false);
+    isLoadingRecommendationHistory = signal(false);
     isLoadingDetail = signal(false);
     isRejecting = signal(false);
     formError = signal('');
     recommendationError = signal('');
     rejectError = signal('');
+    recommendationSource = signal<'live' | 'history'>('live');
 
     orders = signal<OrderRow[]>([]);
     suppliers = signal<CariAccount[]>([]);
@@ -74,8 +78,15 @@ export class PurchaseOrdersComponent implements OnInit {
     recommendations = signal<PurchaseRecommendationItem[]>([]);
     recommendationSummary = signal<PurchaseRecommendationResponse['summary'] | null>(null);
     recommendationGroups = signal<PurchaseRecommendationSupplierGroup[]>([]);
+    recommendationHistory = signal<PurchaseRecommendationHistoryListItem[]>([]);
+    selectedRecommendationHistoryId = signal<string | null>(null);
+    selectedRecommendationHistoryDetail = signal<PurchaseRecommendationHistoryDetail | null>(null);
     selectedOrderDetail = signal<PurchaseOrder | null>(null);
     private cariMap = new Map<string, string>();
+
+    recommendationHistorySearch = '';
+    recommendationHistoryTake = 12;
+    recommendationHistoryOnlySameWarehouse = false;
 
     recommendationFilters = {
         warehouseId: '',
@@ -120,6 +131,45 @@ export class PurchaseOrdersComponent implements OnInit {
 
         return items;
     });
+
+    readonly filteredRecommendationHistory = computed(() => {
+        const term = this.recommendationHistorySearch.trim().toLocaleLowerCase('tr-TR');
+        const warehouseId = this.recommendationFilters.warehouseId;
+
+        return this.recommendationHistory().filter(entry => {
+            if (this.recommendationHistoryOnlySameWarehouse && warehouseId && entry.warehouseId !== warehouseId) {
+                return false;
+            }
+
+            if (!term) {
+                return true;
+            }
+
+            return [
+                entry.warehouseName,
+                entry.supplierName,
+                entry.createdByUserName,
+                `${entry.analysisDays}`,
+                `${entry.coverageDays}`
+            ].some(value => (value ?? '').toLocaleLowerCase('tr-TR').includes(term));
+        });
+    });
+
+    readonly selectedRecommendationHistoryEntry = computed(() => {
+        const id = this.selectedRecommendationHistoryId();
+        if (!id) {
+            return null;
+        }
+
+        return this.recommendationHistory().find(entry => entry.id === id) ?? null;
+    });
+
+    readonly recommendationPreviewItems = computed(() =>
+        this.recommendations()
+            .slice()
+            .sort((a, b) => b.recommendedOrderQuantity - a.recommendedOrderQuantity)
+            .slice(0, 3)
+    );
 
     ngOnInit(): void {
         this.loadSuppliers();
@@ -220,10 +270,14 @@ export class PurchaseOrdersComponent implements OnInit {
         }
         this.showRecommendationModal.set(true);
         this.loadRecommendations();
+        this.loadRecommendationHistory();
     }
 
     closeRecommendationModal(): void {
         this.showRecommendationModal.set(false);
+        this.selectedRecommendationHistoryId.set(null);
+        this.selectedRecommendationHistoryDetail.set(null);
+        this.recommendationSource.set('live');
     }
 
     openOrderDetail(id: string): void {
@@ -282,7 +336,11 @@ export class PurchaseOrdersComponent implements OnInit {
                 this.recommendationSummary.set(response.summary);
                 this.recommendationGroups.set(response.supplierGroups);
                 this.recommendations.set(response.items);
+                this.selectedRecommendationHistoryId.set(null);
+                this.selectedRecommendationHistoryDetail.set(null);
+                this.recommendationSource.set('live');
                 this.isLoadingRecommendations.set(false);
+                this.loadRecommendationHistory();
             },
             error: err => {
                 this.recommendationError.set(err?.error?.detail || 'Oneriler yuklenemedi.');
@@ -292,6 +350,64 @@ export class PurchaseOrdersComponent implements OnInit {
                 this.isLoadingRecommendations.set(false);
             }
         });
+    }
+
+    loadRecommendationHistory(): void {
+        this.isLoadingRecommendationHistory.set(true);
+        this.purchaseOrderService.getRecommendationHistory(this.recommendationHistoryTake).subscribe({
+            next: data => {
+                this.recommendationHistory.set(data);
+                this.isLoadingRecommendationHistory.set(false);
+            },
+            error: () => {
+                this.recommendationHistory.set([]);
+                this.isLoadingRecommendationHistory.set(false);
+            }
+        });
+    }
+
+    applyRecommendationHistory(snapshotId: string): void {
+        this.isLoadingRecommendations.set(true);
+        this.recommendationError.set('');
+        this.purchaseOrderService.getRecommendationHistoryById(snapshotId).subscribe({
+            next: detail => {
+                this.applyRecommendationHistoryDetail(detail);
+                this.isLoadingRecommendations.set(false);
+            },
+            error: err => {
+                this.recommendationError.set(err?.error?.detail || 'Gecmis oneri yuklenemedi.');
+                this.isLoadingRecommendations.set(false);
+            }
+        });
+    }
+
+    private applyRecommendationHistoryDetail(detail: PurchaseRecommendationHistoryDetail): void {
+        this.selectedRecommendationHistoryId.set(detail.id);
+        this.selectedRecommendationHistoryDetail.set(detail);
+        this.recommendationSource.set('history');
+        this.recommendationFilters = {
+            warehouseId: detail.warehouseId,
+            supplierCariAccountId: detail.supplierCariAccountId || '',
+            analysisDays: detail.analysisDays,
+            coverageDays: detail.coverageDays,
+            maxItems: detail.maxItems,
+            criticalOnly: detail.criticalOnly
+        };
+        this.recommendationSummary.set(detail.summary);
+        this.recommendationGroups.set(detail.supplierGroups);
+        this.recommendations.set(detail.items);
+    }
+
+    historyMatchesCurrentFilters(entry: PurchaseRecommendationHistoryListItem): boolean {
+        return entry.warehouseId === this.recommendationFilters.warehouseId
+            && (entry.supplierCariAccountId || '') === (this.recommendationFilters.supplierCariAccountId || '')
+            && entry.analysisDays === this.recommendationFilters.analysisDays
+            && entry.coverageDays === this.recommendationFilters.coverageDays
+            && entry.criticalOnly === this.recommendationFilters.criticalOnly;
+    }
+
+    getRecommendationSourceLabel(): string {
+        return this.recommendationSource() === 'history' ? 'Geçmiş öneri açık' : 'Canlı öneri açık';
     }
 
     applyRecommendationsToDraft(): void {

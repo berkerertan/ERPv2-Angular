@@ -1,0 +1,38 @@
+﻿<section class="legal-page">
+    <div class="legal-backdrop"></div>
+
+    <div class="legal-shell">
+        <header class="legal-hero card-glass">
+            <a routerLink="/" class="legal-brand">
+                <span class="material-icons-outlined">arrow_back</span>
+                StokNet ana sayfasına dön
+            </a>
+
+            <div class="legal-meta">{{ document.eyebrow }}</div>
+            <h1 class="legal-title">{{ document.title }}</h1>
+            <p class="legal-summary">{{ document.summary }}</p>
+
+            <div class="legal-actions">
+                <span class="legal-updated">Son güncelleme: {{ document.lastUpdated }}</span>
+                <a routerLink="/auth/login" [queryParams]="{ demo: 1 }" class="legal-demo-link">
+                    Demo'yu Dene
+                    <span class="material-icons-outlined">arrow_forward</span>
+                </a>
+            </div>
+        </header>
+
+        <main class="legal-content card-glass">
+            @for (section of document.sections; track section.heading; let i = $index) {
+                <section class="legal-section">
+                    <div class="legal-section-number">{{ i + 1 }}</div>
+                    <div class="legal-section-body">
+                        <h2>{{ section.heading }}</h2>
+                        @for (paragraph of section.paragraphs; track paragraph) {
+                            <p>{{ paragraph }}</p>
+                        }
+                    </div>
+                </section>
+            }
+        </main>
+    </div>
+</section>

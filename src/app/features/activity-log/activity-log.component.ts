@@ -19,18 +19,25 @@ export class ActivityLogComponent implements OnInit {
     private readonly service = inject(ActivityLogService);
 
     readonly isLoading = signal(false);
+    readonly exportMode = signal<'csv' | 'excel' | 'pdf' | null>(null);
     readonly allLogs = signal<TenantActivityLogDto[]>([]);
     readonly summary = signal<TenantActivitySummaryDto | null>(null);
     readonly selected = signal<TenantActivityLogDto | null>(null);
 
     searchTerm = '';
     onlyErrors = false;
+    businessOnly = false;
     fromDate = '';
     toDate = '';
+    selectedModule = '';
+    selectedHttpMethod = '';
     currentPage = 1;
     pageSize = 50;
     sortColumn: 'occurredAtUtc' | 'statusCode' | 'durationMs' | '' = 'occurredAtUtc';
     sortDir: 'asc' | 'desc' = 'desc';
+
+    readonly moduleOptions = ['Satın alma', 'Satış', 'Stok', 'Cari', 'Bildirim', 'Aktivite', 'Oturum', 'Sistem'];
+    readonly methodOptions = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'APPROVE', 'REJECT'];
 
     readonly logs = computed(() => {
         const term = this.searchTerm.trim().toLocaleLowerCase('tr-TR');
@@ -43,8 +50,9 @@ export class ActivityLogComponent implements OnInit {
             log.userName,
             log.description,
             log.path,
+            log.module,
             this.getActionLabel(log),
-            this.getModuleLabel(log.path)
+            this.getModuleLabel(log.path, log.module)
         ].some(value => (value ?? '').toLocaleLowerCase('tr-TR').includes(term)));
     });
 
@@ -95,6 +103,44 @@ export class ActivityLogComponent implements OnInit {
         });
     }
 
+    exportLogs(format: 'csv' | 'excel' | 'pdf'): void {
+        this.exportMode.set(format);
+
+        const request = format === 'excel'
+            ? this.service.exportExcel(this.buildFilter())
+            : format === 'pdf'
+                ? this.service.exportPdf(this.buildFilter())
+                : this.service.exportCsv(this.buildFilter());
+
+        request.subscribe({
+            next: blob => {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `stoknet-aktivite-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}.${format === 'excel' ? 'xlsx' : format}`;
+                link.click();
+                URL.revokeObjectURL(url);
+                this.exportMode.set(null);
+            },
+            error: error => {
+                console.error(error);
+                this.exportMode.set(null);
+            }
+        });
+    }
+
+    clearFilters(): void {
+        this.searchTerm = '';
+        this.onlyErrors = false;
+        this.businessOnly = false;
+        this.fromDate = '';
+        this.toDate = '';
+        this.selectedModule = '';
+        this.selectedHttpMethod = '';
+        this.currentPage = 1;
+        this.refresh();
+    }
+
     onFilterChange(): void {
         this.currentPage = 1;
         this.refresh();
@@ -120,12 +166,21 @@ export class ActivityLogComponent implements OnInit {
         this.onFilterChange();
     }
 
+    toggleBusinessOnly(): void {
+        this.businessOnly = !this.businessOnly;
+        this.onFilterChange();
+    }
+
     viewDetail(log: TenantActivityLogDto): void {
         this.selected.set(log);
     }
 
     closeDetail(): void {
         this.selected.set(null);
+    }
+
+    isExporting(format?: 'csv' | 'excel' | 'pdf'): boolean {
+        return format ? this.exportMode() === format : this.exportMode() !== null;
     }
 
     getActionLabel(log: TenantActivityLogDto): string {
@@ -160,7 +215,11 @@ export class ActivityLogComponent implements OnInit {
                         : 'İşlem yapıldı';
     }
 
-    getModuleLabel(path?: string): string {
+    getModuleLabel(path?: string, module?: string): string {
+        if (module?.trim()) {
+            return module;
+        }
+
         const value = (path ?? '').toLowerCase();
         if (value.includes('/purchase-orders')) return 'Satın alma';
         if (value.includes('/sales-orders')) return 'Satış';
@@ -172,8 +231,8 @@ export class ActivityLogComponent implements OnInit {
         return 'Sistem';
     }
 
-    getModuleClass(path?: string): string {
-        const module = this.getModuleLabel(path);
+    getModuleClass(path?: string, module?: string): string {
+        const resolvedModule = this.getModuleLabel(path, module);
         return {
             'Satın alma': 'mod-purchase',
             'Satış': 'mod-sales',
@@ -183,7 +242,7 @@ export class ActivityLogComponent implements OnInit {
             'Aktivite': 'mod-activity',
             'Oturum': 'mod-auth',
             'Sistem': 'mod-system'
-        }[module] ?? 'mod-system';
+        }[resolvedModule] ?? 'mod-system';
     }
 
     getStatusClass(code: number): string {
@@ -232,8 +291,12 @@ export class ActivityLogComponent implements OnInit {
     private buildFilter(): TenantActivityFilter {
         return {
             onlyErrors: this.onlyErrors || undefined,
+            businessOnly: this.businessOnly || undefined,
             fromUtc: this.fromDate || undefined,
             toUtc: this.toDate || undefined,
+            module: this.selectedModule || undefined,
+            httpMethod: this.selectedHttpMethod || undefined,
+            search: this.searchTerm.trim() || undefined,
             page: this.currentPage,
             pageSize: this.pageSize
         };

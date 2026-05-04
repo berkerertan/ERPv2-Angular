@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+﻿import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
@@ -28,6 +28,27 @@ export class ActivityLogService {
 
     getLog(id: string): Observable<TenantActivityLogDto> {
         return this.http.get<TenantActivityLogDto>(`${this.base}/${id}`);
+    }
+
+    exportCsv(filter?: TenantActivityFilter): Observable<Blob> {
+        return this.http.get(`${this.base}/export`, {
+            params: this.buildParams(filter),
+            responseType: 'blob'
+        });
+    }
+
+    exportExcel(filter?: TenantActivityFilter): Observable<Blob> {
+        return this.http.get(`${this.base}/export/excel`, {
+            params: this.buildParams(filter),
+            responseType: 'blob'
+        });
+    }
+
+    exportPdf(filter?: TenantActivityFilter): Observable<Blob> {
+        return this.http.get(`${this.base}/export/pdf`, {
+            params: this.buildParams(filter),
+            responseType: 'blob'
+        });
     }
 
     private buildParams(filter?: Record<string, any>): HttpParams {
